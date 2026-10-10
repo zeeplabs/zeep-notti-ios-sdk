@@ -237,7 +237,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T9: `scripts/check-version.sh`
+### T9: `scripts/check-version.sh` ✅ (pass, podspec drift, bad tag, good tag verified on macOS and ubuntu:24.04)
 
 **What**: Script that compares `NottiSDKVersion.current` with the podspec `s.version` (and with the tag name on `refs/tags/*`), printing both values on mismatch.
 **Where**: `scripts/check-version.sh`
