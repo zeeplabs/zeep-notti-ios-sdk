@@ -182,7 +182,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T5: Port `NottiApiClient` + `StubURLProtocol`
+### T5: Port `NottiApiClient` + `StubURLProtocol` ✅ (NottiSDKTests 70 (40 + 29 ported + 1 domain#code); Shared 12, Ext 1, total 83. RN's ApiClient has no logger: the change is the failure message (`lastError`) the core logs; the localizedDescription mutant was verified to fail the new test. The semaphore-backstop `NottiApiClientTimeoutError` now reports its Swift-bridged domain instead of 'Notti API request timed out')
 
 **What**: Port the client verbatim and its 29 tests, plus `StubURLProtocol` into test support. Error logs use `"\(error.domain)#\(error.code)"` instead of `localizedDescription` (NottiApiClient:248-289); add 1 test asserting a `URLError` log line contains no URL.
 **Where**: `Sources/NottiSDK/Network/NottiApiClient.swift`, `Tests/NottiSDKTests/NottiApiClientTests.swift`, `Tests/NottiSDKTests/Support/StubURLProtocol.swift`
@@ -192,10 +192,10 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] Endpoints, headers (`Authorization: Bearer`), retry (5 attempts, 2/4/8/16s; 408/429/5xx transient) unchanged
-- [ ] Only logging lines differ from RN besides access level
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiApiClientTests`
-- [ ] Test count: +30 (29 + 1)
+- [x] Endpoints, headers (`Authorization: Bearer`), retry (5 attempts, 2/4/8/16s; 408/429/5xx transient) unchanged
+- [x] Only logging lines differ from RN besides access level
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiApiClientTests`
+- [x] Test count: +30 (29 + 1)
 
 **Tests**: unit
 **Gate**: quick

@@ -132,7 +132,7 @@ Port-specific requirements:
 | CORE-09 | P1: Continuity (same suite/keys/encodings) | Specify | In progress |
 | CORE-10 | P1: Continuity (no re-register on migrated state) | Specify | Pending |
 | CORE-11 | P1: Continuity (fixture test) | Specify | Pending |
-| CORE-12 | P2: No PII in logs (single logger, no PII values) | Specify | Pending |
+| CORE-12 | P2: No PII in logs (single logger, no PII values) | Specify | In progress |
 | CORE-13 | P2: No PII in logs (errors-only default) | Specify | Pending |
 
 Inherited behavior requirements (verified through CORE-07; detailed mapping is built in Tasks):
