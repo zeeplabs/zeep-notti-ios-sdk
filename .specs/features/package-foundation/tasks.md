@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/package-foundation/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: In Progress (T1 done)
+**Status**: In Progress (T1, T2 done)
 
 ---
 
@@ -72,7 +72,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T2: Repo hygiene files
+### T2: Repo hygiene files ✅ (SwiftLint 0.65.1; `Tests/.swiftlint.yml` disables `identifier_name`; an empty tree exits 1, verified with temp files)
 
 **What**: Add `.gitignore`, `LICENSE` (MIT, holder ZeepLabs), `README.md` stub (what it is, status "pre-release", SPM/CocoaPods install snippet), `CHANGELOG.md` (`[Unreleased]`) and `.swiftlint.yml` with the design thresholds.
 **Where**: repo root

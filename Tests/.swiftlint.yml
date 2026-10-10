@@ -1,0 +1,3 @@
+# Test files port RN test names verbatim (long snake_case test_ names) and use short locals.
+disabled_rules:
+  - identifier_name

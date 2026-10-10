@@ -1,0 +1,26 @@
+# SwiftLint is run in CI through the pinned image ghcr.io/realm/swiftlint:0.65.1.
+# Locally: docker run --rm -v "$PWD:/w" -w /w ghcr.io/realm/swiftlint:0.65.1 lint --strict
+
+included:
+  - Sources
+  - Tests
+
+# NottiCore.swift (~1439 lines) is ported verbatim from react-native-notti in M1;
+# splitting it is deferred so the port stays diffable. Revisit after M1.
+file_length:
+  warning: 1500
+  error: 2000
+
+type_body_length:
+  warning: 1200
+  error: 1600
+
+function_body_length:
+  warning: 80
+  error: 150
+
+line_length:
+  warning: 140
+  error: 200
+  ignores_comments: true
+  ignores_urls: true

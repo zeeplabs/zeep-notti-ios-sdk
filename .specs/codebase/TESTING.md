@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | Unit | XCTest | Run through the SPM scheme `NottiSDK-Package` on an iOS Simulator. `swift test` on macOS is not supported (UIKit / UserNotifications) |
 | HTTP stubbing | `StubURLProtocol` (ported from RN) | No network in tests |
-| Lint | SwiftLint (pinned Docker image `ghcr.io/realm/swiftlint`) | Not installed locally. Run through Docker |
+| Lint | SwiftLint 0.65.1 (pinned Docker image `ghcr.io/realm/swiftlint:0.65.1`, entrypoint is `swiftlint`) | Not installed locally. Run through Docker. Exits 1 on a tree with no Swift files |
 | Packaging | `pod lib lint` (CocoaPods 1.17.0 locally) | Available from package-foundation T8 onward |
 | Scripts | `scripts/check-version.sh`, `scripts/check-extension-safety.sh` | Available from package-foundation T9/T10 onward |
 
@@ -59,6 +59,6 @@ Future option: one git worktree plus `-derivedDataPath` per sub-agent would make
 | --- | --- |
 | build | `xcodebuild build -scheme NottiSDK-Package -destination "platform=iOS Simulator,name=$NOTTI_SIM" CODE_SIGNING_ALLOWED=NO -quiet` |
 | quick | `xcodebuild test -scheme NottiSDK-Package -destination "platform=iOS Simulator,name=$NOTTI_SIM" CODE_SIGNING_ALLOWED=NO -only-testing:<TestTarget>/<TestClass>` |
-| full | `xcodebuild test -scheme NottiSDK-Package -destination "platform=iOS Simulator,name=$NOTTI_SIM" CODE_SIGNING_ALLOWED=NO` and `docker run --rm -v "$PWD:/w" -w /w ghcr.io/realm/swiftlint:<pinned> swiftlint --strict` and, once they exist, `scripts/check-version.sh`, `scripts/check-extension-safety.sh`, `pod lib lint NottiSDK.podspec --platforms=ios` |
+| full | `xcodebuild test -scheme NottiSDK-Package -destination "platform=iOS Simulator,name=$NOTTI_SIM" CODE_SIGNING_ALLOWED=NO` and `docker run --rm -v "$PWD:/w" -w /w ghcr.io/realm/swiftlint:0.65.1 lint --strict` and, once they exist, `scripts/check-version.sh`, `scripts/check-extension-safety.sh`, `pod lib lint NottiSDK.podspec --platforms=ios` |
 
 Test counts are read from the `Executed N tests` line of `xcodebuild test`. A task's expected count is cumulative per target; a lower number means a silently dropped test and fails the task.
