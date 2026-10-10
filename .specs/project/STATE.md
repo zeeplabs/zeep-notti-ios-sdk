@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-10-09
-**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Design approved 2026-10-09. Tasks drafted 2026-10-09 (package-foundation T1-T12, core-port C1-C13, `.specs/codebase/TESTING.md`), approved 2026-10-09. package-foundation Done (T1–T12; CI proven on PR #1, awaiting merge). Next: core-port C1.
+**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Design approved 2026-10-09. Tasks drafted 2026-10-09 (package-foundation T1-T12, core-port C1-C13, `.specs/codebase/TESTING.md`), approved 2026-10-09. package-foundation Done (T1–T12; CI proven on PR #1, merged to main 2026-10-09). Next: core-port C1.
 
 ---
 
