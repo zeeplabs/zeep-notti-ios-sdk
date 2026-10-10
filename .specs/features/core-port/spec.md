@@ -121,14 +121,14 @@ Port-specific requirements:
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| CORE-01 | P1: Core without RN (components ported, no RN symbols) | Specify | In progress |
-| CORE-02 | P1: Core without RN (all deps injectable) | Specify | In progress |
+| CORE-01 | P1: Core without RN (components ported, no RN symbols) | Execute | Implemented (T1-T8; RN-symbol grep empty, T13) |
+| CORE-02 | P1: Core without RN (all deps injectable) | Execute | Implemented (T2, T5-T9) |
 | CORE-03 | P1: Core without RN (container replaces statics) | Execute | Implemented (T4, T6, T9) |
 | CORE-04 | P1: Core without RN (pre-init events persisted) | Execute | Implemented (T10) |
 | CORE-05 | P1: Core without RN (native sdk_version) | Execute | Implemented (T9) |
-| CORE-06 | P1: Parity tests (suite ported, counts, drop list) | Specify | In progress |
-| CORE-07 | P1: Parity tests (every iOS RN ID → test) | Specify | Pending |
-| CORE-08 | P1: Parity tests (close SDK-04/12/13/17 core-layer gaps) | Specify | Pending |
+| CORE-06 | P1: Parity tests (suite ported, counts, drop list) | Execute | Implemented (T1-T7, T10; counts in traceability.md) |
+| CORE-07 | P1: Parity tests (every iOS RN ID → test) | Execute | Implemented (T13, traceability.md) |
+| CORE-08 | P1: Parity tests (close SDK-04/12/13/17 core-layer gaps) | Execute | Implemented (T9, T10) |
 | CORE-09 | P1: Continuity (same suite/keys/encodings) | Execute | Implemented (T2, T3, T12) |
 | CORE-10 | P1: Continuity (no re-register on migrated state) | Execute | Implemented (T12) |
 | CORE-11 | P1: Continuity (fixture test) | Execute | Implemented (T12) |
@@ -143,7 +143,7 @@ Inherited behavior requirements (verified through CORE-07; detailed mapping is b
 - `segment-telemetry-reporting` (SEGTEL-01..15): All (iOS variants: 24h orphan cap, `notti_session_last_seen_at_ms`, telemetry counted/evicted first in the 32 cap)
 - `device-profile-fields` (DPF-01..21): All. DPF-17..21 email/phone core logic here; JS-surface wording → `public-api`
 
-**Coverage:** 13 port requirements, 13 mapped to tasks (see `tasks.md`). About 78 inherited IDs, mapped test-by-test in task T13 (`traceability.md`).
+**Coverage:** 13 port requirements, 13 mapped to tasks (see `tasks.md`), all implemented (independent Verifier pending). 80 inherited IDs, 78 iOS-applicable, mapped test-by-test in `traceability.md` (T13).
 
 ---
 
