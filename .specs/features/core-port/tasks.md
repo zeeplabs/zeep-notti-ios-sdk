@@ -272,7 +272,7 @@ Levels used: `.error` for give-ups and terminal failures (login/mutateTags/profi
 
 ---
 
-### T9: `NottiRuntime`
+### T9: `NottiRuntime` ✅ (NottiSDKTests 210 (197 + 13); Shared 12, Ext 1, total 223. Mutants `invalidate` removed and a per-core `SessionGate` were both killed by the start-twice / stop tests)
 
 **What**: The container per design: `shared`, injectable `init`, `eventStore`/`eventBuffer`/`sessionGate`, lock-protected `core`, `start` (invalidate old core first; `sdkVersion: NottiSDKVersion.current`), `stop`, `onDeviceIdChanged`, `onNetworkAvailable`, `onApnsToken` (hex), `onApnsRegistrationFailed`, `sanitizeTags` (from NottiImpl:325-341), background observer and network observer started in `init`.
 **Where**: `Sources/NottiSDK/Runtime/NottiRuntime.swift`, `Tests/NottiSDKTests/NottiRuntimeTests.swift`
@@ -282,7 +282,7 @@ Levels used: `.error` for give-ups and terminal failures (login/mutateTags/profi
 
 **Done when**:
 
-- [ ] Tests (isolated runtime, stub HTTP):
+- [x] Tests (isolated runtime, stub HTTP):
   - `start` sends `sdk_version` equal to `NottiSDKVersion.current`; empty constant omits the field (CORE-05)
   - `start` twice: first core invalidated, second adopts the open session, `session_count` unchanged
   - `onApnsToken` converts bytes to lowercase hex and reaches `onTokenRefreshed`
@@ -290,13 +290,15 @@ Levels used: `.error` for give-ups and terminal failures (login/mutateTags/profi
   - `onNetworkAvailable` with no core is a no-op
   - `sanitizeTags` keeps only string values (RN parity)
   - SDK-12 and SDK-13 direct tests at this layer (behavior per RN spec; names recorded in traceability)
-- [ ] No mutable static besides `shared`
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiRuntimeTests`
-- [ ] Test count: +≥8 (exact number stated in the summary)
+- [x] No mutable static besides `shared` (`shared` is a `static let`; `sanitizeTags` is a static func)
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiRuntimeTests`
+- [x] Test count: +13 (the 7 listed + `stop`, network observer reconnect flush, background observer closes the gate without a core, device-id forwarding, SDK-12, SDK-13 as separate tests)
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(runtime): add NottiRuntime replacing RN process statics`
+
+Notes (T9): the design's `sleeper` init parameter is not a separate argument; the sleeper is part of the injected `apiClientFactory` (tests pass `NottiApiClient(..., sleeper: { _ in })`). `sdkVersion` is an init parameter defaulting to `NottiSDKVersion.current` (production never passes it); it exists so the "empty value omits the field" half of CORE-05 is testable. `networkObserver` is a `private var` (set once in `init`) because its callback captures `self` weakly. `shared` and the providers' `live()` are `@available(iOSApplicationExtension, unavailable)`. An APNs token that arrives with no core is dropped, as in RN (`NottiImpl.activeCore?` was nil).
 
 ---
 
