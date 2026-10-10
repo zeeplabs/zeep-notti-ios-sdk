@@ -108,7 +108,8 @@ jobs:
           sudo xcode-select -s "$XCODE_APP"
           pod --version
 
-      # Fails if the extension product/subspec ever depends on app code (PKG-02, PKG-06).
+      # Fails if the platform/tools version drift or the extension product/subspec ever
+      # depends on, compiles or bundles app code (PKG-01, PKG-02, PKG-06, PKG-07).
       - name: Package graph (PKG-01, PKG-02, PKG-06)
         run: scripts/check-package-graph.sh
 

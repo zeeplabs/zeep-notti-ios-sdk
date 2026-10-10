@@ -145,25 +145,25 @@ Open questions: none (the `n` rows were settled in `design.md`, approved 2026-10
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| PKG-01 | P1: SPM (products + platform) | Execute | Done |
-| PKG-02 | P1: SPM (NSE has no edge to app target; shared internal target) | Execute | Done |
-| PKG-03 | P1: SPM (extension-API-only) | Execute | Done |
-| PKG-04 | P1: SPM (simulator + device builds) | Execute | Done |
-| PKG-05 | P1: CocoaPods (`pod lib lint` both subspecs) | Execute | Done |
-| PKG-06 | P1: CocoaPods (default Core; NSE-only Extension) | Execute | Done |
-| PKG-07 | P1: CocoaPods (tests excluded from globs) | Execute | Done |
-| PKG-08 | P1: CI (build + test + lint + SwiftLint) | Execute | Done |
-| PKG-09 | P1: CI (fails on failure; flaky visible) | Execute | Done |
-| PKG-10 | P1: CI (smoke test per product) | Execute | Done |
-| PKG-11 | P1: Privacy manifest (app) | Execute | Done |
-| PKG-12 | P1: Privacy manifest (NSE) | Execute | Done |
-| PKG-13 | P1: Privacy manifest (update rule) | Execute | Done |
-| PKG-14 | P2: Version constant | Execute | Done |
-| PKG-15 | P2: Version drift check in CI | Execute | Done |
-| PKG-16 | P2: Repo hygiene files | Execute | Done |
-| PKG-17 | P2: SwiftLint clean | Execute | Done |
+| PKG-01 | P1: SPM (products + platform) | Validate | ✅ Verified |
+| PKG-02 | P1: SPM (NSE has no edge to app target; shared internal target) | Validate | ✅ Verified |
+| PKG-03 | P1: SPM (extension-API-only) | Validate | ✅ Verified |
+| PKG-04 | P1: SPM (simulator + device builds) | Validate | ✅ Verified |
+| PKG-05 | P1: CocoaPods (`pod lib lint` both subspecs) | Validate | ✅ Verified |
+| PKG-06 | P1: CocoaPods (default Core; NSE-only Extension) | Validate | ✅ Verified |
+| PKG-07 | P1: CocoaPods (tests excluded from globs) | Validate | ✅ Verified |
+| PKG-08 | P1: CI (build + test + lint + SwiftLint) | Validate | ✅ Verified |
+| PKG-09 | P1: CI (fails on failure; flaky visible) | Validate | ✅ Verified |
+| PKG-10 | P1: CI (smoke test per product) | Validate | ✅ Verified |
+| PKG-11 | P1: Privacy manifest (app) | Validate | ✅ Verified |
+| PKG-12 | P1: Privacy manifest (NSE) | Validate | ✅ Verified |
+| PKG-13 | P1: Privacy manifest (update rule) | Validate | ✅ Verified |
+| PKG-14 | P2: Version constant | Validate | ✅ Verified |
+| PKG-15 | P2: Version drift check in CI | Validate | ✅ Verified |
+| PKG-16 | P2: Repo hygiene files | Validate | ✅ Verified |
+| PKG-17 | P2: SwiftLint clean | Validate | ✅ Verified |
 
-**Coverage:** 17 total, 17 mapped to tasks (see tasks.md), 17 done. PKG-03 also gets a real NSE build in `example-and-release`.
+**Coverage:** 17 total, 17 mapped to tasks (see tasks.md), 17 verified (Verifier round 6 PASS, 2026-10-10). PKG-03 also gets a real NSE build in `example-and-release`.
 
 ---
 
