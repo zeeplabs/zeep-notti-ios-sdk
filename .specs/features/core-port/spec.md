@@ -121,12 +121,12 @@ Port-specific requirements:
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| CORE-01 | P1: Core without RN (components ported, no RN symbols) | Specify | Pending |
+| CORE-01 | P1: Core without RN (components ported, no RN symbols) | Specify | In progress |
 | CORE-02 | P1: Core without RN (all deps injectable) | Specify | Pending |
 | CORE-03 | P1: Core without RN (container replaces statics) | Specify | Pending |
 | CORE-04 | P1: Core without RN (pre-init events persisted) | Specify | Pending |
 | CORE-05 | P1: Core without RN (native sdk_version) | Specify | Pending |
-| CORE-06 | P1: Parity tests (suite ported, counts, drop list) | Specify | Pending |
+| CORE-06 | P1: Parity tests (suite ported, counts, drop list) | Specify | In progress |
 | CORE-07 | P1: Parity tests (every iOS RN ID → test) | Specify | Pending |
 | CORE-08 | P1: Parity tests (close SDK-04/12/13/17 core-layer gaps) | Specify | Pending |
 | CORE-09 | P1: Continuity (same suite/keys/encodings) | Specify | Pending |
