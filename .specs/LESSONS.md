@@ -74,6 +74,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: Sources/NottiShared/NottiLogger.swift:41 (CORE-13, mutant G2) (logging)
 - last seen: 2026-10-10T21:36:49Z
 
+### L-011 - Give every conjunct of a multi-condition guard (e.g. both ids non-empty) its own negative test; one 'empty id' case covers only one of them.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `events` · harmful: 0
+- features: core-port
+- evidence: Sources/NottiSDK/Events/NottiNotificationHandler.swift:92 (SDKCTR-04, mutant H8) (events)
+- last seen: 2026-10-10T22:15:59Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

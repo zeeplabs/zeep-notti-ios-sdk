@@ -1,4 +1,16 @@
-# Validation: core-port - FAIL ❌
+# Validation: core-port - PASS ✅ (round 2)
+
+**Date**: 2026-10-10 (round 2; round 1 the same day)
+**Spec**: `.specs/features/core-port/spec.md`
+**Diff range**: round 2 re-verifies `main` (`437b826`) `..4303e49` on `feat/core-port`. Round-1 fix commit: `2643c4d..4303e49`.
+**Verifier**: independent sub-agents (author ≠ verifier). Round 2 was run by a different agent from round 1, which wrote neither the code nor the round-1 report.
+**Environment**: Xcode 27.0, simulator `iPhone 17 Pro`, CocoaPods (local), SwiftLint 0.65.1 (Docker). RN baseline `../zeep-notti-react-native` at `52e4b55`.
+
+**Verdict (round 2)**: PASS. All three round-1 gaps are closed: R1, L4, L6 and G2 are killed again, and so are 8 variants of them. The fix commit changes only the suite-name constant in `Sources`. 31 round-2 mutants: 25 killed, 6 survived. None of the 6 is blocking (each is classified below). All gates are green, and CI on PR #3 (head `4303e49`) is green. See [Round 2](#round-2) at the end. The round-1 report below is kept unchanged as a record. Its only edit is the sensor-result label, renamed so that the verdict parser reads round 2's verdict.
+
+<details><summary>Round 1 header (FAIL)</summary>
+
+Round 1 verdict: FAIL ❌
 
 **Date**: 2026-10-10
 **Spec**: `.specs/features/core-port/spec.md`
@@ -7,6 +19,9 @@
 **Environment**: Xcode 27.0 (27A266a), simulator `iPhone 17 Pro`, CocoaPods (local), SwiftLint 0.65.1 (Docker). RN baseline `../zeep-notti-react-native` at `52e4b55`, files extracted with `git show 52e4b55:ios/<file>`.
 
 **Verdict**: FAIL. Three surviving mutants in the scope of CORE ACs (CORE-09, CORE-12, CORE-13). The code itself has no defect and is a faithful port: every gap is a test that does not detect a regression. All fixes are small test additions (one also adds a constant). Everything else passes.
+
+
+</details>
 
 ---
 
@@ -130,7 +145,7 @@ Scratch: `git worktree add --detach <scratchpad>/wt HEAD`, separate `-derivedDat
 | G2 | `NottiLogger.swift:41` | initial `_level` = `.verbose` (constant untouched) | ❌ **Survived** (233 + 13 pass) |
 
 **Sensor depth**: P0-full manual (37 mutants: retry/backoff, transient vs terminal, keys, queue cap/corrupt path, session gate/start-stop, click parsing, log redaction, continuity).
-**Result**: 33/37 killed. FAIL ❌ (R1, L4, G2 blocking; L6 non-blocking, already recorded).
+**Round-1 sensor outcome** - 33/37 killed. FAIL ❌ (R1, L4, G2 blocking; L6 non-blocking, already recorded).
 
 ---
 
@@ -224,3 +239,108 @@ Scratch: `git worktree add --detach <scratchpad>/wt HEAD`, separate `-derivedDat
 **What works**: a faithful port (normalized `diff -w` clean apart from the listed changes); RN test parity per file, with all names kept; retry/backoff, transient/terminal, keys, queue cap and corrupt path, session gate, click handling and continuity all have killing tests; no PII interpolated in any log site; extension-safe.
 
 **Next steps**: implement Fixes 1-3 (tests + one constant), then run the independent Verifier round 2.
+
+---
+
+## Round 2
+
+**Date**: 2026-10-10 · **HEAD**: `4303e49` · **Verifier**: an independent sub-agent that is neither the implementer nor the round-1 Verifier.
+**Verdict**: PASS ✅
+
+### Fix commit scope (AD-002)
+
+`git diff 2643c4d..4303e49 -- Sources` touches one file: `Sources/NottiSDK/Runtime/NottiRuntime.swift:18-27`. It adds `static let defaultsSuiteName = "notti_prefs"`, makes `shared` use `UserDefaults(suiteName: defaultsSuiteName)`, and rewords the doc comment. No ported file changed. The rest of the commit is tests (`NottiDeviceStoreKeysTests` +1, `NottiLoggingPrivacyTests` +2 with helpers, `NottiLoggerTests` +1) and specs.
+
+### Gap closure
+
+| Round-1 gap | AC | Fix evidence | Mutants re-applied (round 2) | Status |
+| --- | --- | --- | --- | --- |
+| Gap 1: suite name untested | CORE-09 | `Tests/NottiSDKTests/NottiDeviceStoreKeysTests.swift:112` `XCTAssertEqual(NottiRuntime.defaultsSuiteName, "notti_prefs")` | **R1** (constant → `notti_prefs_v2`): killed by `test_productionSuiteNameMatchesRN`. **R1b** (literal `"notti_prefs_v2"` written into `shared` with the constant intact) and **R1c** (`shared` uses `UserDefaults.standard`): survived on the full suite (236 + 14). See finding F1 | ✅ Closed (residual: F1, Note) |
+| Gap 2: registration-failure log not sentinel-scanned | CORE-12 | `Tests/NottiSDKTests/NottiLoggingPrivacyTests.swift:147-163` (terminal 400 and 5×503): `:200` `XCTAssertEqual(failures.map(\.message), [expected])`, `:201` `XCTAssertEqual(failures.map(\.level), [.error])`, plus a sentinel scan over every captured line. Five POSTs asserted at `:161` | **L4** (`\(token)` appended at `NottiCore.swift:725`): killed by both new tests. **L4u** (`token.uppercased()`): killed. **L6** (`.error`→`.warn` at that site): killed. **L7** (new variant: `externalUserId` appended to the login-failure log, `NottiCore.swift:423`): killed by `test_fullFlowWithFailuresAtVerboseLogsNoSentinelValue` | ✅ Closed |
+| Gap 3: initial effective level untested | CORE-13 | `Tests/NottiSharedTests/NottiLoggerTests.swift:25-26` `XCTAssertEqual(savedLevel, .error)`, `XCTAssertEqual(NottiLogger.level, .error)`. `savedLevel` is read in `setUp` without being assigned, and every test restores it in `tearDown`. If a test leaked a level, this check would fail rather than pass falsely | **G2** (`_level = .verbose`), **G2n** (`.none`), **G2w** (`.warn`): all killed by `test_initialEffectiveLevelIsError`. **G3** (`NottiRuntime.init` sets `NottiLogger.level = .verbose`): killed by `test_defaultLevelIsErrorAndNothingBelowItIsEmitted`. **G4** (`<=`→`<` in the level filter): killed | ✅ Closed |
+
+### Spec-anchored ACs (round 2 delta)
+
+CORE-09, CORE-12 and CORE-13 now have discriminating tests (evidence above). CORE-01..08, CORE-10 and CORE-11 were re-checked against HEAD:
+- Port fidelity: normalized `diff -w` against RN `52e4b55`, with access modifiers and comments stripped. `NottiApiClient`: only `lastError` = `domain#code` (listed). `NottiNetworkObserver` / `NottiEventBuffer`: only `static let shared` removed. `NottiEventStore`: only the `guard` split for the `.warn`. `NottiDeviceStore`: whitespace only. `NottiCore`: the logger signature, 2× `[self]` (SPEC_DEVIATION) and 24 `logger(` sites, whose message strings are identical, compared mechanically. The round-1 table holds.
+- `grep -rnE "RCT|React" Sources/` → no match.
+- New mutants on CORE-03/04/10 paths (RT1-RT3, H7-H11, CT1) are killed (table below).
+
+**Status**: ✅ 13/13 ACs covered with discriminating tests. No spec-precision gap.
+
+### Discrimination sensor (round 2)
+
+Scratch: `git worktree add --detach <scratchpad>/r2/wt HEAD`, separate `-derivedDataPath`, one mutant at a time, file restored after each (`clean_after: true` for all 31). The worktree was removed afterwards. Real-tree `git status --porcelain` is empty before and after. A mutant is reported as surviving only when the tests that exercise the mutated path ran. R1b, R1c and G2 ran the full SDK + Shared suites.
+
+| # | File | Mutation | Tests run | Result |
+| --- | --- | --- | --- | --- |
+| R1 | `NottiRuntime.swift:20` | `defaultsSuiteName` → `notti_prefs_v2` | full (236 + 14) | ✅ Killed |
+| R1b | `NottiRuntime.swift:25` | `shared` opens the literal `"notti_prefs_v2"` (constant intact) | full | ❌ Survived → F1 (Note) |
+| R1c | `NottiRuntime.swift:25` | `shared` uses `UserDefaults.standard` | full | ❌ Survived → F1 (Note) |
+| L4 | `NottiCore.swift:725` | `\(token)` appended to the registration-failure log | LP + Core | ✅ Killed (2) |
+| L4u | `NottiCore.swift:725` | `token.uppercased()` appended | LP | ✅ Killed (2) |
+| L6 | `NottiCore.swift:725` | `.error` → `.warn` | LP + Core | ✅ Killed (2) |
+| L7 | `NottiCore.swift:423` | `externalUserId` appended to the login-failure log | LP | ✅ Killed |
+| G2 | `NottiLogger.swift:41` | `_level = .verbose` | full | ✅ Killed |
+| G2n | `NottiLogger.swift:41` | `_level = .none` | Shared | ✅ Killed |
+| G2w | `NottiLogger.swift:41` | `_level = .warn` | Shared | ✅ Killed |
+| G3 | `NottiRuntime.swift` `init` | runtime forces `NottiLogger.level = .verbose` | LP + RT | ✅ Killed |
+| G4 | `NottiLogger.swift` `log` | level filter `<=` → `<` | Shared | ✅ Killed (2) |
+| H7 | `NottiNotificationHandler.swift:74` | a dismiss reports `clicked` | NH | ✅ Killed (2) |
+| H8 | `NottiNotificationHandler.swift:92` | `!deliveryId.isEmpty` removed | NH (19) | ❌ Survived → F2 (Minor) |
+| H9 | `NottiNotificationHandler.swift:69-70` | body tap enqueues `clicked` before `opened` | NH | ✅ Killed (7) |
+| H10 | `NottiNotificationHandler.swift:79` | custom action reports `opened` instead of `clicked` | NH | ✅ Killed |
+| H11 | `NottiNotificationHandler.swift:62` | body tap buffers `.received` instead of `.clicked` | NH | ✅ Killed (3) |
+| B2 | `NottiEventBuffer.swift` `setHandler` | buffered clicks replayed on attach | EB + NH | ✅ Killed (10) |
+| B3 | `NottiEventBuffer.swift:39` | buffer cap 10 → 11 | EB | ✅ Killed |
+| B4 | `NottiEventBuffer.swift:40` | dedupe memory 50 → 1 | EB + NH (31) | ❌ Survived → F3 (Note) |
+| B5 | `NottiEventBuffer.swift` `emit` | `deliveredKeys` dedupe removed | EB + NH | ✅ Killed |
+| B6 | `NottiEventBuffer.swift` `takeInitialClick` | oldest click wins instead of latest | EB | ✅ Killed |
+| N2 | `NottiNetworkObserver.swift:109` | `lastStatus` never updated | NO + RT | ✅ Killed |
+| N3 | `NottiNetworkObserver.swift` `cancel` | the monitor is not cancelled | NO + RT | ✅ Killed |
+| ES1 | `NottiEventStore.swift:97` | cap overflow drops the newest instead of the oldest | ES | ✅ Killed |
+| ES3 | `NottiEventStore.swift:88` | `createdAtMs` written in seconds | ES + CT + Core (132) | ❌ Survived → F4 (Note) |
+| CT1 | `NottiEventStore.swift` `PendingEvent` | JSON key `createdAtMs` → `created_at_ms` (RN encoding broken) | ES + CT | ✅ Killed (CT ×2) |
+| CT4 | `NottiCore.swift` `initializeOnQueue` | a nil token falls back to the persisted `lastToken` (re-registers on migrated state) | CT + Core (125) | ❌ Survived → F5 (Note) |
+| RT1 | `NottiRuntime.swift` `stop` | core dropped without `invalidate()` | RT + LP | ✅ Killed |
+| RT2 | `NottiRuntime.swift` `makeCore` | each core gets a fresh `SessionGate` (no adoption) | RT | ✅ Killed (4) |
+| RT3 | `NottiRuntime.swift` `makeCore` | `onDeviceIdChanged` not forwarded | RT | ✅ Killed |
+
+**Sensor depth**: P0-full manual (31 mutants: 12 on the round-1 gaps and their variants, 19 in areas round 1 covered less).
+**Round-2 sensor outcome** - 25/31 killed. The 6 survivors are classified non-blocking below, so the sensor does not block.
+
+### Findings (round 2)
+
+- **F1 - Note (CORE-09 residual, owned by `public-api`)**: R1b and R1c survive because the test asserts the constant, not the wiring of `shared` (`NottiRuntime.swift:24-27`), which is the implementer's stated limitation. Judgement: not blocking. `NottiRuntime.shared` has **no caller in M1** (`grep -rn "NottiRuntime.shared" Sources Tests` → none), so the wiring cannot regress any M1 behavior. A regression now needs someone to replace a named constant with a different literal on the one line that uses it. The likely regression, editing the value, is guarded (R1 killed). **Action for `public-api`**: when the facade starts using `shared`, add a facade-level test that the production runtime reads and writes the `notti_prefs` suite. For example, seed a key in `UserDefaults(suiteName: "notti_prefs")` and observe it through the runtime's store, then clean up. Alternatively, expose the runtime's suite name for an assertion.
+- **F2 - Minor (SDKCTR-04 edge, non-blocking)**: H8 survives. No test sends a non-empty `notification_id` with an **empty** `delivery_id`. `test_willPresentWithAnEmptyIdSkipsEnqueue` (`NottiNotificationHandlerTests.swift:111`) empties only `notification_id`. The code is faithful to RN (`NottiPushDelegate.swift:126-127` RN). SDKCTR-04's spec outcome ("no `notification_id`/`delivery_id` → skip silently") is covered by the absent-id tests, and empty strings are not in the RN spec. Impact if the check regresses: a malformed payload, which the backend contract never sends, would queue an event whose report gets a terminal 4xx and is dropped. **Suggested fix (one test, can go with `delegate-integration` or a follow-up)**: `willPresent(makeRemoteUserInfo(notificationId: "n-1", deliveryId: ""))` → `XCTAssertTrue(runtime.eventStore.all().isEmpty)`.
+- **F3 - Note**: B4 survives. The dedupe memory size (50) is a ported tuning bound. RN's own tests do not assert it either. Dedupe itself (SDK-18 "a pulled click is never also delivered") is guarded (B5 killed). Duplicate delivery to listeners is part of the `public-api` listener surface.
+- **F4 - Note**: ES3 survives. `PendingEvent.createdAtMs` has no consumer (`grep -rn createdAtMs Sources` hits only `NottiEventStore.swift`), and it is never sent to the backend. The persisted *encoding* (key name and type) is guarded by CT1. The value's unit is unobservable in M1.
+- **F5 - Note**: CT4 survives because no test calls the token provider back with `nil` while a `lastToken` is persisted. The branch is unreachable in production: the live iOS `tokenProvider` never invokes its callback (`NottiPlatformProviders.swift:64-75`), and tokens arrive only through `onApnsToken` → `onTokenRefreshed`. CORE-10 holds on the real path (`NottiContinuityTests.swift:118`). Worth one test if a future provider can yield `nil` (for example, a wrapper).
+- **F6 - Note (process)**: an `xcodebuild` process that this Verifier did not start (PID 89298, origin unknown) was running when round 2 began. It was gone after the first gate run, which ends with `pkill xcodebuild` in the watchdog. No result depends on it: every gate and every mutant ran alone afterwards.
+- No LGPD/PII violation: all 24 core log strings are RN-identical with no PII interpolated, and L4/L4u/L7 prove the sentinel scan now catches token and external-id leaks at the failure sites. No extension-safety violation. No port-fidelity defect.
+- Round-1 notes N1-N9 still apply unchanged.
+
+### Gate check (round 2, HEAD `4303e49`)
+
+- **Tests**: `xcodebuild test -scheme NottiSDK-Package -destination "platform=iOS Simulator,name=iPhone 17 Pro" CODE_SIGNING_ALLOWED=NO` → `** TEST SUCCEEDED **`. `NottiSharedTests` 14, `NottiSDKTests` 236, `NottiSDKExtensionTests` 1 = **251**, 0 failures, 0 skipped (round 1: 247, +4: 1 + 2 + 1).
+- **SwiftLint** `lint --strict` (0.65.1, Docker): `Found 0 violations, 0 serious in 42 files.` rc 0.
+- **Scripts**: `version ok: 0.1.0`, `extension safety ok`, `package graph ok`, each rc 0.
+- **`pod lib lint NottiSDK.podspec --platforms=ios`**: `NottiSDK passed validation.` rc 0.
+- **CI (PR #3, draft, head `4303e49`)**: run `38089421897` (`pull_request`) succeeded. `checks`, `lint`, `pod-lint` and `test` all pass, and CI's test log shows 236 / 14 / 1.
+
+### Requirement traceability update (round 2)
+
+| Requirement | Previous status | New status |
+| --- | --- | --- |
+| CORE-01..08, CORE-10, CORE-11 | ✅ Verified (round 1), re-checked | ✅ Verified |
+| CORE-09 | ❌ Needs Fix | ✅ Verified (F1 note → `public-api`) |
+| CORE-12 | ❌ Needs Fix | ✅ Verified |
+| CORE-13 | ❌ Needs Fix | ✅ Verified |
+
+### Summary (round 2)
+
+**Overall**: ✅ Ready (merge-ready from the verification side)
+**Spec-anchored check**: 13/13 ACs matched with discriminating tests; 0 spec-precision gaps.
+**Sensor**: round 2 25/31 killed. All round-1 blocking survivors are now killed. The 6 new survivors are non-blocking (F1-F5).
+**Gate**: 251 passed, 0 failed; SwiftLint 0; 3 scripts ok; `pod lib lint` passed; CI green.
+**Next steps**: open the PR for review. Carry F1 into `public-api` (facade-level suite-name test) and F2 as a one-test follow-up.
