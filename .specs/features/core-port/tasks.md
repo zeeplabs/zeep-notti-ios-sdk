@@ -327,7 +327,7 @@ Notes (T10): `handleWillPresent` returns `true` for every input, because RN call
 
 ---
 
-### T11: No-PII-in-logs flow test
+### T11: No-PII-in-logs flow test ✅ (NottiSDKTests 231 (229 + 2); NottiSharedTests 13 (12 + 1 `.none`-message test, STATE todo); Ext 1, total 245. A mutant interpolating `externalUserId` into the login failure log was killed)
 
 **What**: One test that runs initialize → token → register → login(sentinel) → setEmail(sentinel) → setPhone(sentinel) → addTags(sentinel) → event flush with injected failures, at `.verbose`, capturing `NottiLogger.sink`, and asserts no sentinel (including the token hex) appears. A second test asserts the default level is `.error` and nothing below it is emitted.
 **Where**: `Tests/NottiSDKTests/NottiLoggingPrivacyTests.swift`
@@ -337,14 +337,16 @@ Notes (T10): `handleWillPresent` returns `true` for every input, because RN call
 
 **Done when**:
 
-- [ ] Sentinels are synthetic (`sentinel-email@example.invalid`, etc.)
-- [ ] The flow produces at least one log line per level used (proves the sink is wired, not silently empty)
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiLoggingPrivacyTests`
-- [ ] Test count: +2
+- [x] Sentinels are synthetic (`sentinel-email@example.invalid`, etc.)
+- [x] The flow produces at least one log line per level used (proves the sink is wired, not silently empty); one call site per level is also asserted at its T7 level (login give-up `.error`, event stays queued `.warn`, queued mutation `.debug`)
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiLoggingPrivacyTests`
+- [x] Test count: +2 in NottiSDKTests, plus +1 in `NottiSharedTests/NottiLoggerTests` (`log(.none, ...)` is dropped even at `.verbose`: closes the package-foundation Verifier todo)
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `test(core): assert no PII in logs across a full flow`
+
+Notes (T11): the flow also turns location sharing on so the country sentinel (`XQ`) goes through the country read and its failing PATCH. Every request after registration fails with a stubbed network error (retried 5x with a no-op sleeper, then given up), which drives the `.error`/`.warn` paths.
 
 ---
 

@@ -51,6 +51,20 @@ final class NottiLoggerTests: XCTestCase {
         XCTAssertFalse(evaluated)
     }
 
+    func test_messageAtLevelNoneIsNeverEmittedEvenAtVerbose() {
+        NottiLogger.level = .verbose
+        var evaluated = false
+        func expensive() -> String {
+            evaluated = true
+            return "noise"
+        }
+
+        NottiLogger.log(.none, expensive())
+
+        XCTAssertTrue(captured.isEmpty)
+        XCTAssertFalse(evaluated)
+    }
+
     func test_levelNoneDropsEverything() {
         NottiLogger.level = .none
         NottiLogger.log(.error, "boom")
