@@ -114,6 +114,12 @@ final class NottiNotificationHandlerTests: XCTestCase {
         XCTAssertTrue(runtime.eventStore.all().isEmpty)
     }
 
+    func test_willPresentWithAnEmptyDeliveryIdSkipsEnqueue() {
+        willPresent(makeRemoteUserInfo(notificationId: "n-1", deliveryId: ""))
+
+        XCTAssertTrue(runtime.eventStore.all().isEmpty)
+    }
+
     func test_willPresentForANonRemotePushSkipsEnqueueEvenWithIds() {
         let userInfo: [AnyHashable: Any] = ["notification_id": "n-1", "delivery_id": "d-1"]
         willPresent(userInfo)
