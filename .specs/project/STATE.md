@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-10-10
-**Current Work:** `package-foundation` DONE 2026-10-10 (Verifier PASS round 6; lessons L-001..L-007). `core-port` Execute DONE 2026-10-10 on branch `feat/core-port` (draft PR #3): T1-T13, one commit each; full gate green after T13: 247 tests (Shared 13, SDK 233, Ext 1), SwiftLint 0, guard scripts, `pod lib lint` (all + Extension), strict device builds. Ported files follow AD-007; fixture values per AD-008. Verifier round 1 FAIL (R1, L4, G2 survived; `validation.md`). Round-1 gaps closed 2026-10-10: `NottiRuntime.defaultsSuiteName` + suite-name test (CORE-09), registration-failure sentinel tests at `.error` (CORE-12, also L6 at that site), initial effective log level test (CORE-13); R1, L4, L6, G2 verified killed; full gate green: 251 tests (Shared 14, SDK 236, Ext 1). Verifier round 2 PASS (draft PR #3, CI green). Round-2 note F2 closed: empty `delivery_id` test (SDKCTR-04, mutant H8 killed), 252 tests (Shared 14, SDK 237, Ext 1). Next: Verifier round 3 (confirm F2), then merge PR #3.
+**Current Work:** `package-foundation` DONE 2026-10-10 (Verifier PASS round 6; lessons L-001..L-007). `core-port` Execute DONE 2026-10-10 on branch `feat/core-port` (draft PR #3): T1-T13, one commit each; full gate green after T13: 247 tests (Shared 13, SDK 233, Ext 1), SwiftLint 0, guard scripts, `pod lib lint` (all + Extension), strict device builds. Ported files follow AD-007; fixture values per AD-008. Verifier round 1 FAIL (R1, L4, G2 survived; `validation.md`). Round-1 gaps closed 2026-10-10: `NottiRuntime.defaultsSuiteName` + suite-name test (CORE-09), registration-failure sentinel tests at `.error` (CORE-12, also L6 at that site), initial effective log level test (CORE-13); R1, L4, L6, G2 verified killed; full gate green: 251 tests (Shared 14, SDK 236, Ext 1). Verifier round 2 PASS (draft PR #3, CI green). Round-2 note F2 closed: empty `delivery_id` test (SDKCTR-04, mutant H8 killed), 252 tests (Shared 14, SDK 237, Ext 1). Verifier round 3 PASS (`validate_state.py` exit 0); core-port DONE, merged via PR #3. Next: `public-api` (Specify).
 
 ---
 
@@ -131,6 +131,11 @@ This repo's lessons live in `.specs/LESSONS.md` (managed by `lessons.py`; L-001.
 
 - [ ] (AD-008, post-M1) Rename the RN fixture values in ported tests (`a@b.com`, `+5511999999999` first) to `example.invalid` / `fixture` values; list each rename in core-port `traceability.md`.
 - [ ] (core-port T8) `NottiPlatformProviders.live()` closures (APNs registration, permission prompt, `CLGeocoder`, `UIDevice`) are build-verified only; exercise them on a device in `example-and-release`.
+
+- [ ] (core-port Verifier r2 F1, public-api) `NottiRuntime.shared` wiring to `defaultsSuiteName` is untested (only the constant is); add a facade-level test that the production runtime uses `notti_prefs`.
+- [ ] (core-port Verifier r1 N1, public-api) `NottiRuntime.start` always rebuilds the core; if `Notti.initialize` maps to `start`, a second identical initialize re-registers. Decide idempotency in the public-api spec.
+- [ ] (core-port Verifier r1 N7, LGPD — validate internally/legal) Assess declaring `NSPrivacyCollectedDataTypeUserID` (core sends `external_user_id`) and possibly Device ID in `PrivacyInfo.xcprivacy` (AD-005 scope).
+- [ ] (core-port Verifier r3 F7, delegate-integration) Add a `didReceive` test with an empty `delivery_id` (empty-id checks only tested on `willPresent`).
 
 ## Preferences
 

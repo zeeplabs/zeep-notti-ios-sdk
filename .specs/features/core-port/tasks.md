@@ -4,7 +4,7 @@
 **Testing**: `.specs/codebase/TESTING.md`
 **Source baseline**: `../zeep-notti-react-native/ios` at `52e4b55`
 **Depends on feature**: `package-foundation` done (all 12 tasks) (targets, `NottiLogger`, `NottiPayloadKeys`, `NottiSDKVersion`, CI)
-**Status**: Approved (2026-10-09; reformatted 2026-10-09 to the current `tlc-spec-driven` template: task ids `C1..C13` renamed to `T1..T13`, no task content changed). Execute done: T1-T13 on `feat/core-port` (2026-10-10; 247 tests: Shared 13, SDK 233, Ext 1; full gate green). Next: independent Verifier
+**Status**: Approved (2026-10-09; reformatted 2026-10-09 to the current `tlc-spec-driven` template: task ids `C1..C13` renamed to `T1..T13`, no task content changed). Execute done: T1-T13 on `feat/core-port` (2026-10-10; 247 tests: Shared 13, SDK 233, Ext 1; full gate green). Verifier: round 1 FAIL, round 2 PASS, round 3 PASS (`validation.md`). **Status: Done** (2026-10-10, 252 tests: Shared 14, SDK 237, Ext 1).
 
 ---
 

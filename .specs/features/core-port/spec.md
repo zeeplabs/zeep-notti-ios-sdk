@@ -121,19 +121,19 @@ Port-specific requirements:
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| CORE-01 | P1: Core without RN (components ported, no RN symbols) | Execute | ✅ Verified (Verifier round 2, 2026-10-10; T1-T8; RN-symbol grep empty, T13) |
-| CORE-02 | P1: Core without RN (all deps injectable) | Execute | ✅ Verified (Verifier round 2, 2026-10-10; T2, T5-T9) |
-| CORE-03 | P1: Core without RN (container replaces statics) | Execute | ✅ Verified (Verifier round 2, 2026-10-10; T4, T6, T9) |
-| CORE-04 | P1: Core without RN (pre-init events persisted) | Execute | ✅ Verified (Verifier round 2, 2026-10-10; T10) |
-| CORE-05 | P1: Core without RN (native sdk_version) | Execute | ✅ Verified (Verifier round 2, 2026-10-10; T9) |
-| CORE-06 | P1: Parity tests (suite ported, counts, drop list) | Execute | ✅ Verified (Verifier round 2, 2026-10-10; T1-T7, T10; counts in traceability.md) |
-| CORE-07 | P1: Parity tests (every iOS RN ID → test) | Execute | ✅ Verified (Verifier round 2, 2026-10-10; T13, traceability.md) |
-| CORE-08 | P1: Parity tests (close SDK-04/12/13/17 core-layer gaps) | Execute | ✅ Verified (Verifier round 2, 2026-10-10; T9, T10) |
-| CORE-09 | P1: Continuity (same suite/keys/encodings) | Execute | ✅ Verified (Verifier round 2, 2026-10-10; T2, T3, T12) |
-| CORE-10 | P1: Continuity (no re-register on migrated state) | Execute | ✅ Verified (Verifier round 2, 2026-10-10; T12) |
-| CORE-11 | P1: Continuity (fixture test) | Execute | ✅ Verified (Verifier round 2, 2026-10-10; T12) |
-| CORE-12 | P2: No PII in logs (single logger, no PII values) | Execute | ✅ Verified (Verifier round 2, 2026-10-10; T5, T7, T9, T11) |
-| CORE-13 | P2: No PII in logs (errors-only default) | Execute | ✅ Verified (Verifier round 2, 2026-10-10; T11) |
+| CORE-01 | P1: Core without RN (components ported, no RN symbols) | Execute | ✅ Verified (Verifier round 3, 2026-10-10; T1-T8; RN-symbol grep empty, T13) |
+| CORE-02 | P1: Core without RN (all deps injectable) | Execute | ✅ Verified (Verifier round 3, 2026-10-10; T2, T5-T9) |
+| CORE-03 | P1: Core without RN (container replaces statics) | Execute | ✅ Verified (Verifier round 3, 2026-10-10; T4, T6, T9) |
+| CORE-04 | P1: Core without RN (pre-init events persisted) | Execute | ✅ Verified (Verifier round 3, 2026-10-10; T10) |
+| CORE-05 | P1: Core without RN (native sdk_version) | Execute | ✅ Verified (Verifier round 3, 2026-10-10; T9) |
+| CORE-06 | P1: Parity tests (suite ported, counts, drop list) | Execute | ✅ Verified (Verifier round 3, 2026-10-10; T1-T7, T10; counts in traceability.md) |
+| CORE-07 | P1: Parity tests (every iOS RN ID → test) | Execute | ✅ Verified (Verifier round 3, 2026-10-10; T13, traceability.md) |
+| CORE-08 | P1: Parity tests (close SDK-04/12/13/17 core-layer gaps) | Execute | ✅ Verified (Verifier round 3, 2026-10-10; T9, T10) |
+| CORE-09 | P1: Continuity (same suite/keys/encodings) | Execute | ✅ Verified (Verifier round 3, 2026-10-10; T2, T3, T12) |
+| CORE-10 | P1: Continuity (no re-register on migrated state) | Execute | ✅ Verified (Verifier round 3, 2026-10-10; T12) |
+| CORE-11 | P1: Continuity (fixture test) | Execute | ✅ Verified (Verifier round 3, 2026-10-10; T12) |
+| CORE-12 | P2: No PII in logs (single logger, no PII values) | Execute | ✅ Verified (Verifier round 3, 2026-10-10; T5, T7, T9, T11) |
+| CORE-13 | P2: No PII in logs (errors-only default) | Execute | ✅ Verified (Verifier round 3, 2026-10-10; T11) |
 
 Inherited behavior requirements (verified through CORE-07; detailed mapping is built in Tasks):
 
@@ -143,7 +143,7 @@ Inherited behavior requirements (verified through CORE-07; detailed mapping is b
 - `segment-telemetry-reporting` (SEGTEL-01..15): All (iOS variants: 24h orphan cap, `notti_session_last_seen_at_ms`, telemetry counted/evicted first in the 32 cap)
 - `device-profile-fields` (DPF-01..21): All. DPF-17..21 email/phone core logic here; JS-surface wording → `public-api`
 
-**Coverage:** 13 port requirements, 13 mapped to tasks (see `tasks.md`), all verified (independent Verifier round 2 PASS, `validation.md`). 80 inherited IDs, 78 iOS-applicable, mapped test-by-test in `traceability.md` (T13).
+**Coverage:** 13 port requirements, 13 mapped to tasks (see `tasks.md`), all verified (independent Verifier round 3 PASS, `validation.md`). 80 inherited IDs, 78 iOS-applicable, mapped test-by-test in `traceability.md` (T13).
 
 ---
 
