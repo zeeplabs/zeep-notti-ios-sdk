@@ -352,6 +352,8 @@ Notes (T11): the flow also turns location sharing on so the country sentinel (`X
 
 Round-1 fix (T11, Verifier Gaps 2 and 3, CORE-12/13): +2 `NottiLoggingPrivacyTests` drive the registration-failure log site (`NottiCore.registerDevice`, raw token in scope) after every PII sentinel is set: a terminal 400 and 5 exhausted 503s on the device POST. Each asserts the exact failure line (`... device registration failed: HTTP 400|503`), its `.error` level and the sentinel scan; mutants L4 (`\(token)` appended) and L6 (`.error`→`.warn` at that site) killed. +1 `NottiLoggerTests.test_initialEffectiveLevelIsError` reads `NottiLogger.level` without assigning it (every test restores the level in `tearDown`); mutant G2 (`_level = .verbose`) killed. Counts after the fixes: Shared 14, SDK 236, Ext 1, total 251.
 
+Round-2 note F2 (T10, SDKCTR-04): +1 `NottiNotificationHandlerTests.test_willPresentWithAnEmptyDeliveryIdSkipsEnqueue` (`notification_id` set, `delivery_id` empty); mutant H8 (drop `!deliveryId.isEmpty`) killed. Counts: Shared 14, SDK 237, Ext 1, total 252.
+
 ---
 
 ### T12: RN 0.6.0 continuity fixture ✅ (NottiSDKTests 233 (231 + 2); Shared 13, Ext 1, total 247)

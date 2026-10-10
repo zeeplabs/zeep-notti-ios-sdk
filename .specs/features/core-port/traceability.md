@@ -43,7 +43,7 @@ Where an RN story's ACs are covered by one group of tests, the row lists the tes
 | SDKCTR-01 | Body tap with ids is reported (now `opened` + `clicked`) | `NH.test_didReceiveDefaultActionWithIdsEnqueuesExactlyOneOpenedAndOneClicked`, `Api.test_reportEventSendsPostWithCorrectPathHeadersAndBody`, `Core.test_registrationSuccessFlushesAQueuedEventAndRemovesIt` | Covered |
 | SDKCTR-02 | Cold-start tap still reported | `NH.test_coldStartEventsHandledBeforeStartAreFlushedAfterRegistration` (CORE-04), `NH.test_didReceiveDefaultActionStillBuffersTheClickForAColdStart` | Covered |
 | SDKCTR-03 | Custom action → `clicked` only; dismiss → nothing | `NH.test_didReceiveCustomActionEnqueuesOneClickedEventAndNoOpened`, `NH.test_didReceiveDismissActionSkipsEnqueueEvenWithIds` | Covered |
-| SDKCTR-04 | No ids → skip silently | `NH.test_willPresentWithoutIdsSkipsEnqueue`, `NH.test_willPresentWithAnEmptyIdSkipsEnqueue`, `NH.test_didReceiveDefaultActionWithoutIdsSkipsEnqueue`, `NH.test_didReceiveCustomActionWithoutIdsSkipsEnqueue` | Covered |
+| SDKCTR-04 | No ids → skip silently | `NH.test_willPresentWithoutIdsSkipsEnqueue`, `NH.test_willPresentWithAnEmptyIdSkipsEnqueue`, `NH.test_willPresentWithAnEmptyDeliveryIdSkipsEnqueue`, `NH.test_didReceiveDefaultActionWithoutIdsSkipsEnqueue`, `NH.test_didReceiveCustomActionWithoutIdsSkipsEnqueue` | Covered |
 | SDKCTR-05 | Foreground `willPresent` reports `received` | `NH.test_willPresentWithNotificationAndDeliveryIdsEnqueuesAReceivedEvent`, `NH.test_eventHandledWithARegisteredCoreIsFlushedRightAway` | Covered |
 | SDKCTR-06 | No `received` expected in background/killed | Scope statement: the only `received` source is `handleWillPresent` (foreground). `NH.test_willPresentForANonRemotePushSkipsEnqueueEvenWithIds` bounds the entry point. Background `received` from the NSE is a deferred idea (STATE) | Covered (scope); no behavior to test |
 | SDKCTR-07 | Network/5xx retried 5x with backoff | `Api.test_reportEvent5xxResponsesExhaustTheRetryCapAtExactlyFiveAttempts`, `Api.test_networkErrorIsRetriedPerTheSameBackoffSchedule` | Covered |
@@ -162,7 +162,7 @@ Where an RN story's ACs are covered by one group of tests, the row lists the tes
 | — | — | `NottiContinuityTests` | 2 | new (CORE-10/11) |
 | **RN total** | **213** | | | |
 
-Suite totals after T13: `NottiSharedTests` 13, `NottiSDKTests` 233, `NottiSDKExtensionTests` 1 = 247. After the Verifier round 1 fixes: 14, 236, 1 = 251 (`NottiLoggerTests` +1).
+Suite totals after T13: `NottiSharedTests` 13, `NottiSDKTests` 233, `NottiSDKExtensionTests` 1 = 247. After the Verifier round 1 fixes: 14, 236, 1 = 251 (`NottiLoggerTests` +1). After the Verifier round 2 note F2 (SDKCTR-04, empty `delivery_id`): 14, 237, 1 = 252.
 
 ---
 
