@@ -75,21 +75,27 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             | tee "$RUNNER_TEMP/notti-tests.log"
 
+      # Xcode 26+ marks a retried test as "started (Iteration 2 of 2)"; the older
+      # phrases are kept for a crash-restart. Any match means a test failed at
+      # least once, even if the job ends green.
       - name: Flag retried (flaky) tests
         if: always()
         run: |
           log="$RUNNER_TEMP/notti-tests.log"
-          if grep -q "Restarting tests after unexpected exit\|^Testing failed:\|Repeating test" "$log" 2>/dev/null; then
-            echo "::warning::Tests needed a retry to pass - a test is flaky, not just green. Investigate before release."
-            grep -n "Restarting tests after unexpected exit\|^Testing failed:\|Repeating test" "$log" || true
+          pattern='started \(Iteration [2-9][0-9]* of|Restarting tests after unexpected exit'
+          if grep -qE "$pattern" "$log" 2>/dev/null; then
+            echo "::warning::Tests needed a retry - a test is flaky, not just green. Investigate before release."
+            grep -nE "$pattern" "$log" || true
           fi
 
-      - name: Device builds (PKG-04)
+      # Warnings fail these builds (PKG-04). The extension product is also built
+      # with APPLICATION_EXTENSION_API_ONLY so the compiler rejects app-only API (PKG-03).
+      - name: Device builds (PKG-03, PKG-04)
         run: |
           set -o pipefail
-          for scheme in NottiSDK NottiSDKExtension; do
-            xcodebuild build -scheme "$scheme" -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO -quiet
-          done
+          strict=(CODE_SIGNING_ALLOWED=NO SWIFT_TREAT_WARNINGS_AS_ERRORS=YES GCC_TREAT_WARNINGS_AS_ERRORS=YES)
+          xcodebuild build -scheme NottiSDK -destination 'generic/platform=iOS' "${strict[@]}" -quiet
+          xcodebuild build -scheme NottiSDKExtension -destination 'generic/platform=iOS' "${strict[@]}" APPLICATION_EXTENSION_API_ONLY=YES -quiet
 
   pod-lint:
     runs-on: macos-26
