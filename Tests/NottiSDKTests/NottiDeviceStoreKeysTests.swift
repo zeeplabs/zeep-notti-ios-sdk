@@ -105,6 +105,13 @@ final class NottiDeviceStoreKeysTests: XCTestCase {
         XCTAssertEqual(Set(persistedKeys()), Self.frozenKeys)
     }
 
+    /// The production runtime (`NottiRuntime.shared`) opens this suite. RN 0.6.0
+    /// stores everything in `notti_prefs`; another name orphans migrated state.
+    /// Asserted on the constant so the real suite is never opened or mutated.
+    func test_productionSuiteNameMatchesRN() {
+        XCTAssertEqual(NottiRuntime.defaultsSuiteName, "notti_prefs")
+    }
+
     private func persistedKeys() -> [String] {
         Array((defaults.persistentDomain(forName: suiteName) ?? [:]).keys)
     }

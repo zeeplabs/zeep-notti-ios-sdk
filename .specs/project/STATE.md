@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-10-10
-**Current Work:** `package-foundation` DONE 2026-10-10 (Verifier PASS round 6; lessons L-001..L-007). `core-port` Execute DONE 2026-10-10 on branch `feat/core-port` (not pushed): T1-T13, one commit each; full gate green after T13: 247 tests (Shared 13, SDK 233, Ext 1), SwiftLint 0, guard scripts, `pod lib lint` (all + Extension), strict device builds. Ported files follow AD-007; fixture values per AD-008. Next: independent Verifier for core-port (writes `validation.md`), then PR.
+**Current Work:** `package-foundation` DONE 2026-10-10 (Verifier PASS round 6; lessons L-001..L-007). `core-port` Execute DONE 2026-10-10 on branch `feat/core-port` (not pushed): T1-T13, one commit each; full gate green after T13: 247 tests (Shared 13, SDK 233, Ext 1), SwiftLint 0, guard scripts, `pod lib lint` (all + Extension), strict device builds. Ported files follow AD-007; fixture values per AD-008. Verifier round 1 FAIL (R1, L4, G2 survived; `validation.md`). Round-1 gaps closed 2026-10-10: `NottiRuntime.defaultsSuiteName` + suite-name test (CORE-09), registration-failure sentinel tests at `.error` (CORE-12, also L6 at that site), initial effective log level test (CORE-13); R1, L4, L6, G2 verified killed; full gate green: 251 tests (Shared 14, SDK 236, Ext 1). Next: independent Verifier round 2, then PR.
 
 ---
 

@@ -300,6 +300,8 @@ Levels used: `.error` for give-ups and terminal failures (login/mutateTags/profi
 
 Notes (T9): the design's `sleeper` init parameter is not a separate argument; the sleeper is part of the injected `apiClientFactory` (tests pass `NottiApiClient(..., sleeper: { _ in })`). `sdkVersion` is an init parameter defaulting to `NottiSDKVersion.current` (production never passes it); it exists so the "empty value omits the field" half of CORE-05 is testable. `networkObserver` is a `private var` (set once in `init`) because its callback captures `self` weakly. `shared` and the providers' `live()` are `@available(iOSApplicationExtension, unavailable)`. An APNs token that arrives with no core is dropped, as in RN (`NottiImpl.activeCore?` was nil).
 
+Round-1 fix (T9, Verifier Gap 1, CORE-09): the suite name moved to `NottiRuntime.defaultsSuiteName` (`"notti_prefs"`, new code, not a port), which `shared` uses. `NottiDeviceStoreKeysTests.test_productionSuiteNameMatchesRN` asserts it; mutant R1 (`notti_prefs_v2`) killed. Asserted on the constant only: the real suite is never opened by tests.
+
 ---
 
 ### T10: `NottiNotificationHandler` ✅ (NottiSDKTests 229 (210 + 19: 15 ported + 4 added); Shared 12, Ext 1, total 242)
@@ -347,6 +349,8 @@ Notes (T10): `handleWillPresent` returns `true` for every input, because RN call
 **Commit**: `test(core): assert no PII in logs across a full flow`
 
 Notes (T11): the flow also turns location sharing on so the country sentinel (`XQ`) goes through the country read and its failing PATCH. Every request after registration fails with a stubbed network error (retried 5x with a no-op sleeper, then given up), which drives the `.error`/`.warn` paths.
+
+Round-1 fix (T11, Verifier Gaps 2 and 3, CORE-12/13): +2 `NottiLoggingPrivacyTests` drive the registration-failure log site (`NottiCore.registerDevice`, raw token in scope) after every PII sentinel is set: a terminal 400 and 5 exhausted 503s on the device POST. Each asserts the exact failure line (`... device registration failed: HTTP 400|503`), its `.error` level and the sentinel scan; mutants L4 (`\(token)` appended) and L6 (`.error`→`.warn` at that site) killed. +1 `NottiLoggerTests.test_initialEffectiveLevelIsError` reads `NottiLogger.level` without assigning it (every test restores the level in `tearDown`); mutant G2 (`_level = .verbose`) killed. Counts after the fixes: Shared 14, SDK 236, Ext 1, total 251.
 
 ---
 

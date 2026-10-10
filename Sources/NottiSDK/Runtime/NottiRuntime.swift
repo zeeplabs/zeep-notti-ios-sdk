@@ -15,10 +15,14 @@ import NottiShared
 /// Tests build isolated instances with `init(...)` and never touch `shared`.
 final class NottiRuntime {
 
-    /// The process-wide runtime, wired to `notti_prefs` and the OS providers.
+    /// UserDefaults suite shared with react-native-notti 0.6.0 (CORE-09). Renaming
+    /// it would orphan every migrated device's registration and pending events.
+    static let defaultsSuiteName = "notti_prefs"
+
+    /// The process-wide runtime, wired to `defaultsSuiteName` and the OS providers.
     @available(iOSApplicationExtension, unavailable)
     static let shared = NottiRuntime(
-        defaults: UserDefaults(suiteName: "notti_prefs") ?? .standard,
+        defaults: UserDefaults(suiteName: defaultsSuiteName) ?? .standard,
         providers: .live()
     )
 
