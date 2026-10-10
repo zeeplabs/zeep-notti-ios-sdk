@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Pinned against the macos-26 runner image (actions/runner-images README,
+  # checked 2026-10-09). Update both together when the image changes.
+  XCODE_APP: /Applications/Xcode_26.6.app
+  NOTTI_SIM: iPhone 17
+  SWIFTLINT_IMAGE: ghcr.io/realm/swiftlint:0.65.1
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: SwiftLint
+        run: docker run --rm -v "$PWD:/w" -w /w "$SWIFTLINT_IMAGE" lint --strict --reporter github-actions-logging
+
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Version drift (PKG-15)
+        run: scripts/check-version.sh
+
+      - name: Extension safety (PKG-03)
+        run: scripts/check-extension-safety.sh
+
+  test:
+    runs-on: macos-26
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s "$XCODE_APP"
+          xcodebuild -version
+
+      # Prints what the runner actually has, so a drifted pin fails with an
+      # actionable log instead of a bare "destination not found".
+      - name: Toolchain sanity
+        run: |
+          xcodebuild -list
+          xcodebuild -showsdks | grep -i iphone
+          xcrun simctl list devices available | grep -F "$NOTTI_SIM" || {
+            echo "::error::Simulator '$NOTTI_SIM' not available on this runner"; exit 1; }
+
+      # `-retry-tests-on-failure` keeps infra noise from failing the build; the
+      # next step surfaces any retry as a warning so a real flake stays visible.
+      - name: Unit tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -scheme NottiSDK-Package \
+            -destination "platform=iOS Simulator,name=$NOTTI_SIM" \
+            -retry-tests-on-failure \
+            -test-iterations 2 \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee "$RUNNER_TEMP/notti-tests.log"
+
+      - name: Flag retried (flaky) tests
+        if: always()
+        run: |
+          log="$RUNNER_TEMP/notti-tests.log"
+          if grep -q "Restarting tests after unexpected exit\|^Testing failed:\|Repeating test" "$log" 2>/dev/null; then
+            echo "::warning::Tests needed a retry to pass - a test is flaky, not just green. Investigate before release."
+            grep -n "Restarting tests after unexpected exit\|^Testing failed:\|Repeating test" "$log" || true
+          fi
+
+      - name: Device builds (PKG-04)
+        run: |
+          set -o pipefail
+          for scheme in NottiSDK NottiSDKExtension; do
+            xcodebuild build -scheme "$scheme" -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO -quiet
+          done
+
+  pod-lint:
+    runs-on: macos-26
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s "$XCODE_APP"
+          pod --version
+
+      - name: pod lib lint (all subspecs)
+        run: pod lib lint NottiSDK.podspec --platforms=ios
+
+      - name: pod lib lint (Extension only)
+        run: pod lib lint NottiSDK.podspec --platforms=ios --subspec=Extension
