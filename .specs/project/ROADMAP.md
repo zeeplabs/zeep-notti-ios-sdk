@@ -12,13 +12,13 @@
 
 ### Features
 
-**package-foundation** - IN PROGRESS (spec)
+**package-foundation** - DONE (2026-10-09, PR #1)
 
 - Git repo, `Package.swift` (two products: app SDK and NSE SDK) and podspec `NottiSDK` (products `NottiSDK` + `NottiSDKExtension`)
 - Module layout, internal shared target for code used by both products (payload parsing, key constants)
 - CI workflow (build and test both products on the simulator), SwiftLint, `PrivacyInfo.xcprivacy` skeletons
 
-**core-port** - IN PROGRESS (spec)
+**core-port** - IN PROGRESS (tasks approved; next C1)
 
 - Port `NottiCore`, `NottiApiClient`, `NottiDeviceStore`, `NottiEventStore`, `NottiEventBuffer`, `NottiNetworkObserver` and `NottiNotificationParsing` from the RN repo
 - Remove the RN coupling (`Notti.mm`, `@objc` NSDictionary shell); replace the global statics (`NottiImpl.activeCore` / `eventStore`) with an owned dependency graph that stays cold-start safe

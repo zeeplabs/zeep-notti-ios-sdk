@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/package-foundation/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: In Progress (T1–T11 done)
+**Status**: Done (T1–T12, 2026-10-09; CI proven on PR #1)
 
 ---
 
@@ -305,7 +305,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T12: GitHub Actions CI workflow
+### T12: GitHub Actions CI workflow ✅ (PR #1: run 38012275374 green, 38012402254 red on a deliberate failure, 38012555329 green after dropping it; Xcode 26.6 + iPhone 17 confirmed on macos-26. Triggers only on PRs and `main`, so a branch push alone does not run CI)
 
 **What**: `.github/workflows/ci.yml` with jobs `lint`, `checks`, `test`, `pod-lint` per design, pinned Xcode + simulator in one `env:` block, flaky-warning grep ported from RN. Prove it red/green on a branch.
 **Where**: `.github/workflows/ci.yml`
