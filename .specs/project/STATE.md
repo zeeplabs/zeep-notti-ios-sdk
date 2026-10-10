@@ -1,0 +1,84 @@
+# State
+
+**Last Updated:** 2026-10-09
+**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Now: Design.
+
+---
+
+## Recent Decisions (Last 60 days)
+
+### AD-001: This SDK is the single source of truth for Notti iOS logic (2026-10-09)
+
+**Decision:** The Swift core currently in `zeep-notti-react-native/ios` is extracted into this repo. In M2, the RN SDK depends on this pod and deletes its own Swift core.
+**Reason:** Removes a second Swift implementation (RN's AD-001 already forces Swift + Kotlin duplication). Mirrors OneSignal, where `react-native-onesignal` wraps `OneSignal-iOS-SDK`.
+**Trade-off:** RN iOS releases now depend on this SDK's releases. The public API must stay `@objc`-bridgeable for the Turbo Module. Until M2 ships, both copies exist and fixes must be applied twice.
+**Impact:** The core port preserves behavior, backend contract and UserDefaults keys exactly. Any behavior change goes through a spec in this repo first.
+
+### AD-002: v1 scope = behavior parity with react-native-notti 0.6.0 (2026-10-09)
+
+**Decision:** M1 ships every iOS behavior RN 0.6.0 has (registration, identity, tags, email/phone, permission, profile fields, session telemetry, received/opened/clicked events, NSE rich media). No new behavior.
+**Reason:** Keeps the port verifiable against the existing XCTest suite and spec IDs. New features go in M3.
+**Trade-off:** Known RN gaps (no consent API, PII in UserDefaults, no Retry-After) ship in v0.1.0 too.
+**Impact:** Feature specs in M1 reference the RN requirement IDs instead of redefining behavior.
+
+### AD-003: Distribution via SPM (source) + CocoaPods (2026-10-09)
+
+**Decision:** Source-based `Package.swift` with two products (app SDK and NSE SDK) plus a podspec.
+**Reason:** SPM is the native default; the podspec is required for RN (CocoaPods) consumption in M2. OneSignal's binary-only SPM adds release tooling we don't need yet.
+**Trade-off:** Two manifests to keep in sync; CI must build both.
+**Impact:** The NSE product must not depend on the app module. Shared code goes in an internal target.
+
+### AD-004: APNs/delegate capture via swizzling with opt-out (2026-10-09)
+
+**Decision:** Swizzling is on by default (OneSignal model). An Info.plist key disables it; a manual forwarding API is always available.
+**Reason:** One-line integration for native apps. The RN SDK today requires manual AppDelegate forwarding and taking over `UNUserNotificationCenter.delegate`, which conflicts with other push SDKs.
+**Trade-off:** Swizzling is ObjC-runtime work in Swift, fragile across iOS versions and hard to unit test. It must forward to host originals and guard against double-swizzle (OneSignal `SwizzlingForwarder` pattern).
+**Impact:** Its own feature (`delegate-integration`) with a dedicated test strategy. Manual calls made while swizzling is active must be ignored with a warning, to avoid double-processing.
+
+---
+
+## Active Blockers
+
+_none_
+
+---
+
+## Lessons Learned
+
+_none yet._ Candidate lessons inherited from the RN repo (`../zeep-notti-react-native/.specs/LESSONS.md`) apply as guidance only:
+
+- L-001: test the layer that implements the acceptance criterion, not just the facade that calls it
+- L-002: the Verifier re-derives proof of properties and does not trust task notes
+
+---
+
+## Quick Tasks Completed
+
+| #   | Description | Date | Commit | Status |
+| --- | ----------- | ---- | ------ | ------ |
+
+---
+
+## Deferred Ideas
+
+- [ ] NSE reports `received` in the background through an App Group (needs a backend/contract review). Captured during: project init
+- [ ] Badge increment in the NSE. Captured during: project init
+- [ ] Privacy consent gating API (`setConsentRequired` / `setConsentGiven`) and a local data wipe. Captured during: project init
+- [ ] Keychain storage for email/phone (LGPD). Captured during: project init
+- [ ] Binary xcframework distribution. Captured during: project init
+
+---
+
+## Todos
+
+- [x] Pod/package name: `NottiSDK` (Julio, 2026-10-09). NSE product `NottiSDKExtension` confirmed (2026-10-09). License MIT.
+- [x] `git init` (branch `main`, 2026-10-09).
+- [x] GitHub remote `origin` = `git@github.com:zeeplabs/zeep-notti-ios-sdk.git` (2026-10-09). Nothing pushed yet.
+- [x] Swift 5 language mode for M1; Swift 6 strict concurrency deferred (2026-10-09).
+- [ ] Confirm that the RN `sdk-core-v1` "Needs Fix" item (native prerequisite path with no test) is closed or carried into the core-port spec.
+
+---
+
+## Preferences
+
+**Model Guidance Shown:** never
