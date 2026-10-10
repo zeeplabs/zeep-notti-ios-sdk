@@ -350,7 +350,7 @@ Notes (T11): the flow also turns location sharing on so the country sentinel (`X
 
 ---
 
-### T12: RN 0.6.0 continuity fixture
+### T12: RN 0.6.0 continuity fixture ✅ (NottiSDKTests 233 (231 + 2); Shared 13, Ext 1, total 247)
 
 **What**: Hand-author `rn-0.6.0-state.plist` from RN key/encoding definitions with synthetic values (device id, token, tags, external id, subscribed, profile fields + acks + `notti_profile_field_ack_migrated`, session counters + `notti_session_last_seen_at_ms`, two pending events written by hand from `PendingEvent` field names). Add `.copy("Fixtures")` to the test target and a test that loads it into a per-test suite and starts the runtime.
 **Where**: `Tests/NottiSDKTests/Fixtures/rn-0.6.0-state.plist`, `Package.swift` (test resources), `Tests/NottiSDKTests/NottiContinuityTests.swift`
@@ -360,14 +360,16 @@ Notes (T11): the flow also turns location sharing on so the country sentinel (`X
 
 **Done when**:
 
-- [ ] No real PII in the fixture (only `example.invalid` / `fixture` values)
-- [ ] Test: no `POST /devices` when RN would not re-register; `getDeviceId()` returns the fixture id; the 2 pending events flush with their original `delivery_id`s
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiContinuityTests`
-- [ ] Test count: +≥1
+- [x] No real PII in the fixture (only `example.invalid` / `fixture` values; country `ZZ` is a user-assigned ISO code)
+- [x] Test: no `POST /devices` when RN would not re-register; `getDeviceId()` returns the fixture id; the 2 pending events flush with their original `delivery_id`s
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiContinuityTests`
+- [x] Test count: +2
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `test(storage): add RN 0.6.0 continuity fixture test`
+
+Notes (T12): "when RN would not re-register" = launch before APNs delivers a token (on iOS `tokenProvider` never answers synchronously). RN registers (upsert `POST`) every time a token arrives, so the second test delivers the same token and asserts one `POST`, the same device id, no device-id change, no ack migration (the `notti_profile_field_ack_migrated` flag is read), and only the RN re-send of held email/phone. The first test also shows RN behavior that follows from the migrated state: the open session left by the killed RN process is closed at its last heartbeat and its PATCH is addressed to the RN device id. `appStateProvider` hops to main (as `live()` does), so `initialize` runs before the foreground flush.
 
 ---
 
