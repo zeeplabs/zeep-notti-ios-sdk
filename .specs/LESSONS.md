@@ -32,6 +32,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: spec.md PKG-04 (ci)
 - last seen: 2026-10-10T01:59:45Z
 
+### L-004 - An architectural invariant (e.g. 'extension never depends on app code') needs a CI check that fails on the forbidden edge; build success and inspection do not detect it.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `architecture` · harmful: 0
+- features: package-foundation
+- evidence: Package.swift:24 / NottiSDK.podspec:40 (PKG-02, PKG-06) (architecture)
+- last seen: 2026-10-10T02:12:50Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

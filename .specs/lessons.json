@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 4,
+  "next_id": 5,
   "lessons": [
     {
       "id": "L-001",
@@ -58,6 +58,24 @@
       ],
       "created": "2026-10-10T01:59:45Z",
       "last_seen": "2026-10-10T01:59:45Z"
+    },
+    {
+      "id": "L-004",
+      "key": "surviving_mutant::an architectural invariant e g extension never depends on app code needs a ci check that fails on the forbidden edge build success and inspection do not detect it",
+      "text": "An architectural invariant (e.g. 'extension never depends on app code') needs a CI check that fails on the forbidden edge; build success and inspection do not detect it.",
+      "signal": "surviving_mutant",
+      "scope": "architecture",
+      "status": "candidate",
+      "features": [
+        "package-foundation"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "Package.swift:24 / NottiSDK.podspec:40 (PKG-02, PKG-06) (architecture)"
+      ],
+      "created": "2026-10-10T02:12:50Z",
+      "last_seen": "2026-10-10T02:12:50Z"
     }
   ]
 }
