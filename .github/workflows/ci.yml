@@ -108,6 +108,10 @@ jobs:
           sudo xcode-select -s "$XCODE_APP"
           pod --version
 
+      # Fails if the extension product/subspec ever depends on app code (PKG-02, PKG-06).
+      - name: Package graph (PKG-01, PKG-02, PKG-06)
+        run: scripts/check-package-graph.sh
+
       - name: pod lib lint (all subspecs)
         run: pod lib lint NottiSDK.podspec --platforms=ios
 
