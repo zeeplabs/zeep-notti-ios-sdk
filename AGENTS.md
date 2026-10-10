@@ -17,7 +17,7 @@ Sources/NottiShared/       internal, extension-safe, `package` access (AD-006)
 Sources/NottiSDK/          app-only
 Sources/NottiSDKExtension/ Notification Service Extension, extension-safe, never depends on NottiSDK
 Tests/<Target>Tests/       XCTest, run through the SPM scheme NottiSDK-Package
-scripts/                   check-version.sh, check-extension-safety.sh
+scripts/                   check-version.sh, check-extension-safety.sh, check-package-graph.sh
 ```
 
 ## Commands
@@ -32,7 +32,7 @@ xcodebuild test -scheme NottiSDK-Package -destination "platform=iOS Simulator,na
 # lint (SwiftLint is pinned; not installed locally)
 docker run --rm -v "$PWD:/w" -w /w ghcr.io/realm/swiftlint:0.65.1 lint --strict
 # guards and packaging
-scripts/check-version.sh && scripts/check-extension-safety.sh
+scripts/check-version.sh && scripts/check-extension-safety.sh && scripts/check-package-graph.sh
 pod lib lint NottiSDK.podspec --platforms=ios
 ```
 
@@ -70,7 +70,7 @@ Do not add `dpearson2699/swift-ios-skills` (PolyForm Perimeter license) to this 
 
 ### Extension safety
 
-`NottiShared` and `NottiSDKExtension` must not use `UIApplication`, `import UIKit`, `beginBackgroundTask`, `registerForRemoteNotifications` or `CLLocationManager`. App-only API in `NottiSDK` is marked `@available(iOSApplicationExtension, unavailable)`. `scripts/check-extension-safety.sh` enforces this in CI.
+`NottiShared` and `NottiSDKExtension` must not use `UIApplication`, `import UIKit`, `beginBackgroundTask`, `registerForRemoteNotifications` or `CLLocationManager`. App-only API in `NottiSDK` is marked `@available(iOSApplicationExtension, unavailable)`. `scripts/check-extension-safety.sh` enforces this in CI, the extension device build uses `APPLICATION_EXTENSION_API_ONLY=YES`, and `scripts/check-package-graph.sh` fails if `NottiSDKExtension` (SPM) or the `Extension` subspec (CocoaPods) ever depends on app code.
 
 ### Code conventions
 
