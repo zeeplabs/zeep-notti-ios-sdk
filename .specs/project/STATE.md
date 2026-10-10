@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-10-09
-**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Design approved 2026-10-09. Tasks drafted 2026-10-09 (package-foundation T1-T12, core-port T1-T13 (originally C1-C13), `.specs/codebase/TESTING.md`), approved 2026-10-09. package-foundation executed (T1–T12; CI proven on PR #1, merged to main 2026-10-09); Verifier pending (no `validation.md` yet). Next: package-foundation Verifier, then core-port T1.
+**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Design approved 2026-10-09. Tasks drafted 2026-10-09 (package-foundation T1-T12, core-port T1-T13 (originally C1-C13), `.specs/codebase/TESTING.md`), approved 2026-10-09. package-foundation DONE 2026-10-10: Verifier PASS in round 6 (rounds 1-5 FAIL, every gap fixed in PR #2; rounds 4-6 authorized by Julio beyond the 3-round limit); lessons L-001..L-007 in `.specs/LESSONS.md`. Next: core-port T1.
 
 ---
 
@@ -101,12 +101,15 @@ This repo's lessons live in `.specs/LESSONS.md` (managed by `lessons.py`; L-001.
 - [x] Privacy manifest scope: see AD-005.
 - [x] Spike result: CocoaPods honors `-package-name` via `OTHER_SWIFT_FLAGS`. See AD-006.
 
-- [ ] Run the independent Verifier for package-foundation and write `.specs/features/package-foundation/validation.md` (required by the current `tlc-spec-driven`; `validate_state.py` fails without it).
+- [x] Independent Verifier for package-foundation: PASS in round 6 (2026-10-10), `validation.md` committed; `validate_state.py` exit 0.
 - [ ] Note: core-port task ids were renamed `C1..C13` → `T1..T13` (2026-10-09) to match the template; older notes and commits may still say `C<n>`.
 
 - [ ] (Verifier r1 note, non-blocking) Add a test that exercises the CocoaPods branch of `NottiSDKResources` / `NottiSDKExtensionResources` (today only compiled by `pod lib lint`). Natural home: `example-and-release` (CocoaPods example app).
 - [ ] (Verifier r1 note, non-blocking) Assert privacy manifest `NSPrivacyCollectedDataTypePurposes` per type in `PrivacyManifestTests` (AD-005 purposes are only checked by review today).
 - [ ] (Verifier r1 note, non-blocking) Run the spec's PKG-06 independent test (throwaway Podfile with app + NSE targets, `pod install` + build) in `example-and-release`.
+
+- [ ] (Verifier r5/r6 note, non-blocking) PKG-04: the simulator compile inside `xcodebuild test` does not treat warnings as errors (only device builds and `pod lib lint` do). Decide whether to add the flags to the test step.
+- [ ] (Verifier r5/r6 note, core-port) `NottiLogger.log` drops `.none` messages via a guard that no test covers; add the test with CORE-12/13 (core-port T11).
 
 ## Preferences
 

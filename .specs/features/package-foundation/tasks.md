@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/package-foundation/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: Executed (T1–T12, 2026-10-09; CI proven on PR #1). **Verifier pending**: the current `tlc-spec-driven` requires a `validation.md` written by an independent Verifier (author != verifier) before the feature counts as done. Reformatted afterwards to the current `tlc-spec-driven` template (sections and one-edge-per-line diagrams only; no task content changed).
+**Status**: Done (2026-10-10). Executed T1–T12 on 2026-10-09 (PR #1); independent Verifier FAIL in rounds 1-5, fixes in PR #2, PASS in round 6 (`validation.md`).
 
 ---
 

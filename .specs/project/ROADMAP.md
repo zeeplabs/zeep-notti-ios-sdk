@@ -12,7 +12,7 @@
 
 ### Features
 
-**package-foundation** - EXECUTED (2026-10-09, PR #1); Verifier pending
+**package-foundation** - DONE (2026-10-10; PR #1 + PR #2; Verifier PASS round 6)
 
 - Git repo, `Package.swift` (two products: app SDK and NSE SDK) and podspec `NottiSDK` (products `NottiSDK` + `NottiSDKExtension`)
 - Module layout, internal shared target for code used by both products (payload parsing, key constants)
