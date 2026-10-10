@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/package-foundation/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: In Progress (T1–T10 done)
+**Status**: In Progress (T1–T11 done)
 
 ---
 
@@ -282,7 +282,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T11: Device and simulator builds of both products
+### T11: Device and simulator builds of both products ✅ (4/4 builds green, 0 warnings; throwaway SPM consumer linking both products builds, no duplicate symbols; no fix needed)
 
 **What**: Verify locally that both products build for the iOS Simulator and for a generic iOS device (arm64), and that both products can be linked together without duplicate symbols. Fix whatever fails. No new files expected.
 **Where**: none (fixes only, if needed)
