@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/package-foundation/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: In Progress (T1, T2 done)
+**Status**: In Progress (T1–T3 done)
 
 ---
 
@@ -95,7 +95,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T3: `Package.swift`, version constant and placeholder targets
+### T3: `Package.swift`, version constant and placeholder targets ✅ (NottiSharedTests 1/1)
 
 **What**: Create `Package.swift` per design (tools 5.9, iOS 15, Swift 5 mode, products `NottiSDK` + `NottiSDKExtension`, internal `NottiShared`, three test targets), `NottiSDKVersion.swift`, placeholder `NottiSDK.swift` / `NottiSDKExtension.swift`, and the first smoke test (version is semver). Uses the access keyword decided in T1.
 **Where**: `Package.swift`, `Sources/NottiShared/NottiSDKVersion.swift`, `Sources/NottiSDK/NottiSDK.swift`, `Sources/NottiSDKExtension/NottiSDKExtension.swift`, `Tests/NottiSharedTests/NottiSDKVersionTests.swift`, placeholder files so `NottiSDKTests` / `NottiSDKExtensionTests` compile
