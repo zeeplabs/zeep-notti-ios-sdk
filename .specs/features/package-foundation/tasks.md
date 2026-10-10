@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/package-foundation/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: In Progress (T1–T7 done)
+**Status**: In Progress (T1–T8 done)
 
 ---
 
@@ -214,7 +214,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T8: `NottiSDK.podspec`
+### T8: `NottiSDK.podspec` ✅ (lint passes: full, `--subspec=Extension`, `--use-libraries`; resource access via `#if SWIFT_PACKAGE`)
 
 **What**: Podspec per design (subspecs Shared/Core/Extension, `resource_bundles`, `cocoapods_version >= 1.12`, `pod_target_xcconfig` per AD-006).
 **Where**: `NottiSDK.podspec`
