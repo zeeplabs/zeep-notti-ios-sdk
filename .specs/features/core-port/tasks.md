@@ -99,7 +99,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ## Task Breakdown
 
-### T1: Move `NottiNotificationParsing` to `NottiShared`
+### T1: Move `NottiNotificationParsing` to `NottiShared` ✅ (NottiSharedTests 12/12; NottiSDKTests 2, NottiSDKExtensionTests 1, total 15; 4-space reindent + file-scoped lint disables per AD-007)
 
 **What**: Port the parser into `NottiShared` with `package` access, replacing its literal keys with `NottiPayloadKeys`; port its 6 tests.
 **Where**: `Sources/NottiShared/NottiNotificationParsing.swift`, `Tests/NottiSharedTests/NottiNotificationParsingTests.swift`
@@ -109,10 +109,10 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] Behavior unchanged; only access level and key constants differ from RN
-- [ ] `scripts/check-extension-safety.sh` still passes
-- [ ] Gate passes: quick `-only-testing:NottiSharedTests/NottiNotificationParsingTests`
-- [ ] Test count: NottiSharedTests 12 (6 + 6)
+- [x] Behavior unchanged; only access level and key constants differ from RN
+- [x] `scripts/check-extension-safety.sh` still passes
+- [x] Gate passes: quick `-only-testing:NottiSharedTests/NottiNotificationParsingTests`
+- [x] Test count: NottiSharedTests 12 (6 + 6)
 
 **Tests**: unit
 **Gate**: quick

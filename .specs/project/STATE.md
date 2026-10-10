@@ -54,6 +54,13 @@
 **Trade-off:** Relies on an undocumented-for-CocoaPods compiler flag passed through `OTHER_SWIFT_FLAGS`. The CI `pod-lint` job is the regression guard. Not verified on Xcode 26.x locally; CI (`macos-26`) covers it in T12.
 **Impact:** package-foundation T3 onward uses `package`; design.md "Cross-target visibility" stands as written.
 
+### AD-007: Ported files are re-indented to 4 spaces and keep RN's lint exceptions in file-scoped disables (2026-10-10)
+
+**Decision:** Every file ported from `react-native-notti` (`52e4b55`, 2-space indent) is re-indented mechanically to 4 spaces (leading spaces doubled; the RN files have no tabs and no multi-line string literals) and gets a final newline. Verbatim parity is checked with a whitespace-insensitive diff (`diff -w <rn-file> <ported-file>`). SwiftLint rules the RN code itself breaks (e.g. `trailing_comma`, `force_try`, `force_cast`, `identifier_name` for `ms`, `closure_parameter_position`) are disabled for that file only, with a `// swiftlint:disable <rules>` header and a matching `// swiftlint:enable` footer (the footer satisfies `blanket_disable_command`). Only rules that actually fire are listed. The code tokens stay identical to RN.
+**Reason:** AGENTS.md requires 4-space indentation and zero SwiftLint violations, and AD-002 requires a token-level verbatim port. Fixing the lint findings in code would add diff lines that are not in the task's allowed change list; relaxing `.swiftlint.yml` would also relax new code (`NottiRuntime`, `public-api`).
+**Trade-off:** `git diff`/plain `diff` against RN shows every line as changed; reviewers must use `diff -w`. The disabled rules are real style debt, revisited after M1 together with the `NottiCore` split.
+**Impact:** core-port T1–T7 (and later ports). Each ported file starts with a provenance comment naming its RN source.
+
 ---
 
 ## Active Blockers
