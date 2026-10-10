@@ -18,14 +18,14 @@
 - Module layout, internal shared target for code used by both products (payload parsing, key constants)
 - CI workflow (build and test both products on the simulator), SwiftLint, `PrivacyInfo.xcprivacy` skeletons
 
-**core-port** - EXECUTED (2026-10-10, T1-T13 on `feat/core-port`; Verifier pending)
+**core-port** - DONE (2026-10-10; PR #3; Verifier PASS round 3)
 
 - Port `NottiCore`, `NottiApiClient`, `NottiDeviceStore`, `NottiEventStore`, `NottiEventBuffer`, `NottiNetworkObserver` and `NottiNotificationParsing` from the RN repo
 - Remove the RN coupling (`Notti.mm`, `@objc` NSDictionary shell); replace the global statics (`NottiImpl.activeCore` / `eventStore`) with an owned dependency graph that stays cold-start safe
 - `sdk_version` becomes a native constant
 - Port the XCTest suite and keep the counts traceable to the original requirement IDs (SDK-, SDKCTR-, SDKOPEN-, SEGTEL-, DPF-)
 
-**public-api** - PLANNED
+**public-api** - PLANNED (next)
 
 - Swift-first facade: `Notti.initialize`, `login`/`logout`, `Notti.User` (tags, email, phone, subscription), `Notti.Notifications` (requestPermission, listeners, initial click), device id accessor and observer
 - `@objc` interop surface usable by ObjC hosts and the future RN bridge

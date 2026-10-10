@@ -1,4 +1,14 @@
-# Validation: core-port - PASS ✅ (round 2)
+# Validation: core-port - PASS ✅ (round 3)
+
+**Date**: 2026-10-10 (rounds 1-3 the same day)
+**Spec**: `.specs/features/core-port/spec.md`
+**Diff range**: round 3 confirms `4a72f5d..063f6e8` (round-2 note F2) on top of the round-2 range `main` (`437b826`) `..4303e49`.
+**Verifier**: independent sub-agents (author ≠ verifier). Round 3 was run by an agent that wrote neither the code, the F2 fix, nor the round-1/2 reports.
+**Environment**: Xcode 27.0, simulator `iPhone 17 Pro`, CocoaPods (local), SwiftLint 0.65.1 (Docker). RN baseline `../zeep-notti-react-native` at `52e4b55`.
+
+**Verdict (round 3)**: PASS. Commit `063f6e8` adds one test (`Tests/NottiSDKTests/NottiNotificationHandlerTests.swift:117-121`) and spec docs only; no `Sources` change (AD-002). H8 is killed, and so is every variant that weakens the check on the `willPresent` path (5/7 killed). The 2 survivors move an empty-id check onto the `willPresent` path only, so they matter only for an empty id on the `didReceive` path, which no spec AC covers (F7, Note). Full gate green at 252 tests; CI on PR #3 (head `063f6e8`) green. See [Round 3](#round-3) at the end. Rounds 1 and 2 are kept unchanged below as a record.
+
+<details><summary>Round 2 header (PASS)</summary>
 
 **Date**: 2026-10-10 (round 2; round 1 the same day)
 **Spec**: `.specs/features/core-port/spec.md`
@@ -7,6 +17,9 @@
 **Environment**: Xcode 27.0, simulator `iPhone 17 Pro`, CocoaPods (local), SwiftLint 0.65.1 (Docker). RN baseline `../zeep-notti-react-native` at `52e4b55`.
 
 **Verdict (round 2)**: PASS. All three round-1 gaps are closed: R1, L4, L6 and G2 are killed again, and so are 8 variants of them. The fix commit changes only the suite-name constant in `Sources`. 31 round-2 mutants: 25 killed, 6 survived. None of the 6 is blocking (each is classified below). All gates are green, and CI on PR #3 (head `4303e49`) is green. See [Round 2](#round-2) at the end. The round-1 report below is kept unchanged as a record. Its only edit is the sensor-result label, renamed so that the verdict parser reads round 2's verdict.
+
+</details>
+
 
 <details><summary>Round 1 header (FAIL)</summary>
 
@@ -344,3 +357,69 @@ Scratch: `git worktree add --detach <scratchpad>/r2/wt HEAD`, separate `-derived
 **Sensor**: round 2 25/31 killed. All round-1 blocking survivors are now killed. The 6 new survivors are non-blocking (F1-F5).
 **Gate**: 251 passed, 0 failed; SwiftLint 0; 3 scripts ok; `pod lib lint` passed; CI green.
 **Next steps**: open the PR for review. Carry F1 into `public-api` (facade-level suite-name test) and F2 as a one-test follow-up.
+
+---
+
+## Round 3
+
+**Date**: 2026-10-10 · **HEAD**: `063f6e8` · **Verifier**: an independent sub-agent that is neither the implementer nor the round-1/2 Verifier.
+**Verdict**: PASS ✅
+
+### Fix commit scope (AD-002)
+
+`git diff --stat 4a72f5d..063f6e8` touches 4 files: `Tests/NottiSDKTests/NottiNotificationHandlerTests.swift` (+6), `.specs/features/core-port/tasks.md` (+2), `.specs/features/core-port/traceability.md` (+2/-2) and `.specs/project/STATE.md` (+1/-1). No `Sources` change, so no ported file changed.
+
+### F2 closure (SDKCTR-04)
+
+New test `Tests/NottiSDKTests/NottiNotificationHandlerTests.swift:117` `test_willPresentWithAnEmptyDeliveryIdSkipsEnqueue`: `willPresent(makeRemoteUserInfo(notificationId: "n-1", deliveryId: ""))` then `:120` `XCTAssertTrue(runtime.eventStore.all().isEmpty)`. The fixture has `aps`, so the payload reaches `enqueueIfReportable` (`Sources/NottiSDK/Events/NottiNotificationHandler.swift:90-98`) and the test exercises the `!deliveryId.isEmpty` clause at `:92`. It is the one suggested in round 2.
+
+### Discrimination sensor (round 3)
+
+Scratch: `git worktree add --detach <scratchpad>/r3/wt HEAD`, separate `-derivedDataPath`, one mutant at a time on the `guard` at `NottiNotificationHandler.swift:91-92`, file restored after each (worktree `git status --porcelain` empty after every mutant). Each run executed all 20 `NottiNotificationHandlerTests`, the only class that drives `enqueueIfReportable`. Baseline on the unmutated worktree: 20/20 pass. The worktree was removed afterwards.
+
+| # | Mutation at `:91-92` | Path affected | Result |
+| --- | --- | --- | --- |
+| H8 | `!deliveryId.isEmpty` removed | both | ✅ Killed by `test_willPresentWithAnEmptyDeliveryIdSkipsEnqueue` |
+| H8n | `!notificationId.isEmpty` removed (round-1 H3) | both | ✅ Killed by `test_willPresentWithAnEmptyIdSkipsEnqueue` |
+| H8cp | copy-paste slip: second clause checks `!notificationId.isEmpty` again | both | ✅ Killed by `test_willPresentWithAnEmptyDeliveryIdSkipsEnqueue` |
+| H8or | both clauses folded into `!(notificationId.isEmpty && deliveryId.isEmpty)` | both | ✅ Killed by both empty-id tests (2) |
+| H8a | empty-`delivery_id` check kept only on `didReceive` (`type == received \|\| !deliveryId.isEmpty`) | `willPresent` | ✅ Killed by `test_willPresentWithAnEmptyDeliveryIdSkipsEnqueue` |
+| H8b | empty-`delivery_id` check kept only on `willPresent` (`type != received \|\| !deliveryId.isEmpty`) | `didReceive` | ❌ Survived → F7 (Note) |
+| H8c | empty-`notification_id` check kept only on `willPresent` | `didReceive` | ❌ Survived → F7 (Note) |
+
+**Sensor depth**: targeted (7 mutants on the SDKCTR-04 guard, the round-2 F2 site).
+**Round-3 sensor outcome** - 5/7 killed. H8 is killed. The 2 survivors are classified non-blocking below, so the sensor does not block.
+
+### Findings (round 3)
+
+- **F2 - closed**: H8 and the `willPresent`-side variants (H8cp, H8or, H8a) are killed.
+- **F7 - Note (empty ids on the `didReceive` path, SDKCTR-04 / SDKOPEN-08 edge)**: H8b and H8c survive because no test sends a tap (default or custom action) with an **empty** `notification_id` or `delivery_id`. The `didReceive` tests use absent ids (`NottiNotificationHandlerTests.swift:208-226`). Judgement: not blocking. (1) The RN ACs specify **absence**, not empty strings: RN `ctr-event-reporting` SDKCTR-04 AC4 "WHEN `data` has no `notification_id`/`delivery_id`" and `opened-event-reporting` SDKOPEN-08 "WHEN `data` lacks `notification_id` or `delivery_id`". Absence is covered on both `didReceive` branches. (2) Both paths share one `guard` in `enqueueIfReportable`. Both survivors had to add a `type`-dependent branch to that shared guard, so a plain edit to the guard cannot cause them. The same edit is killed on the `willPresent` side. (3) The code is RN-faithful, and the impact matches round-2 F2: a malformed payload that the backend contract never sends would queue an event that gets a terminal 4xx and is dropped. **Optional follow-up (with `delegate-integration`)**: one `didReceive(makeRemoteUserInfo(notificationId: "n-1", deliveryId: ""), actionIdentifier: UNNotificationDefaultActionIdentifier)` test that asserts an empty `eventStore`.
+- Round-2 notes F1, F3-F6 and round-1 notes N1-N9 still apply unchanged. No LGPD/PII, extension-safety or port-fidelity finding: the commit has no `Sources` change.
+
+### Doc accuracy
+
+- `traceability.md:46` (SDKCTR-04 row) now lists `NH.test_willPresentWithAnEmptyDeliveryIdSkipsEnqueue`, and `traceability.md:165` says 14/237/1 = 252. Both match the gate run below.
+- `tasks.md:355` (round-2 note F2 under T10) has the right test name, the H8 kill and 252. Confirmed above.
+- `STATE.md:4` records round 2 PASS, F2 closed and 252, and names round 3 next. That is accurate as of `063f6e8`; this round's PASS is recorded here.
+
+### Gate check (round 3, HEAD `063f6e8`, real checkout, no mutants)
+
+- **Tests**: `xcodebuild test -scheme NottiSDK-Package -destination "platform=iOS Simulator,name=iPhone 17 Pro" CODE_SIGNING_ALLOWED=NO` → `** TEST SUCCEEDED **`. `NottiSharedTests` 14, `NottiSDKTests` 237, `NottiSDKExtensionTests` 1 = **252**, 0 failures (round 2: 251, +1).
+- **SwiftLint** `lint --strict` (0.65.1, Docker): `Found 0 violations, 0 serious in 42 files.` rc 0.
+- **Scripts**: `version ok: 0.1.0`, `extension safety ok`, `package graph ok`, rc 0.
+- **`pod lib lint NottiSDK.podspec --platforms=ios`**: `NottiSDK passed validation.`
+- **CI (PR #3, draft, head `063f6e8`)**: run `38090972355` (`pull_request`) succeeded. `checks`, `lint`, `pod-lint` and `test` all pass, and CI's test log shows 237 / 14 / 1.
+
+### Requirement traceability update (round 3)
+
+| Requirement | Previous status | New status |
+| --- | --- | --- |
+| CORE-01..13 | ✅ Verified (round 2) | ✅ Verified (round 3; CORE-07's SDKCTR-04 row is now discriminating against H8) |
+
+### Summary (round 3)
+
+**Overall**: ✅ Ready (merge-ready from the verification side)
+**Spec-anchored check**: 13/13 ACs still covered; F2 closed.
+**Sensor**: round 3 5/7 killed; the 2 survivors are non-blocking (F7).
+**Gate**: 252 passed, 0 failed; SwiftLint 0; 3 scripts ok; `pod lib lint` passed; CI green on `063f6e8`.
+**Next steps**: mark PR #3 ready and merge. Carry F1 into `public-api`. F7 (optional `didReceive` empty-id test) can go with `delegate-integration`.
