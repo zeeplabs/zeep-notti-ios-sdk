@@ -44,6 +44,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: scripts/check-package-graph.sh:53-62 (PKG-06, PKG-07) (architecture)
 - last seen: 2026-10-10T02:24:29Z
 
+### L-006 - Guard a manifest with an allowlist of permitted keys/shapes, not a denylist of known-bad fields; platform-scoped attributes and nested specs bypass field-by-field checks.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `architecture` · harmful: 0
+- features: package-foundation
+- evidence: scripts/check-package-graph.sh:55-95 (PKG-06) (architecture)
+- last seen: 2026-10-10T13:57:47Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
