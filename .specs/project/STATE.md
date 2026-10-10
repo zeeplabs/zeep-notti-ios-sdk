@@ -64,10 +64,10 @@ _none_
 
 ## Lessons Learned
 
-_none yet._ Candidate lessons inherited from the RN repo (`../zeep-notti-react-native/.specs/LESSONS.md`) apply as guidance only:
+This repo's lessons live in `.specs/LESSONS.md` (managed by `lessons.py`; L-001..L-003 from the package-foundation Verifier, 2026-10-09). Candidate lessons inherited from the RN repo (`../zeep-notti-react-native/.specs/LESSONS.md`) apply as guidance only:
 
-- L-001: test the layer that implements the acceptance criterion, not just the facade that calls it
-- L-002: the Verifier re-derives proof of properties and does not trust task notes
+- RN L-001: test the layer that implements the acceptance criterion, not just the facade that calls it
+- RN L-002: the Verifier re-derives proof of properties and does not trust task notes
 
 ---
 
@@ -103,6 +103,10 @@ _none yet._ Candidate lessons inherited from the RN repo (`../zeep-notti-react-n
 
 - [ ] Run the independent Verifier for package-foundation and write `.specs/features/package-foundation/validation.md` (required by the current `tlc-spec-driven`; `validate_state.py` fails without it).
 - [ ] Note: core-port task ids were renamed `C1..C13` → `T1..T13` (2026-10-09) to match the template; older notes and commits may still say `C<n>`.
+
+- [ ] (Verifier r1 note, non-blocking) Add a test that exercises the CocoaPods branch of `NottiSDKResources` / `NottiSDKExtensionResources` (today only compiled by `pod lib lint`). Natural home: `example-and-release` (CocoaPods example app).
+- [ ] (Verifier r1 note, non-blocking) Assert privacy manifest `NSPrivacyCollectedDataTypePurposes` per type in `PrivacyManifestTests` (AD-005 purposes are only checked by review today).
+- [ ] (Verifier r1 note, non-blocking) Run the spec's PKG-06 independent test (throwaway Podfile with app + NSE targets, `pod install` + build) in `example-and-release`.
 
 ## Preferences
 
