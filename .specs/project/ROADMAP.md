@@ -18,7 +18,7 @@
 - Module layout, internal shared target for code used by both products (payload parsing, key constants)
 - CI workflow (build and test both products on the simulator), SwiftLint, `PrivacyInfo.xcprivacy` skeletons
 
-**core-port** - IN PROGRESS (tasks approved; next T1)
+**core-port** - EXECUTED (2026-10-10, T1-T13 on `feat/core-port`; Verifier pending)
 
 - Port `NottiCore`, `NottiApiClient`, `NottiDeviceStore`, `NottiEventStore`, `NottiEventBuffer`, `NottiNetworkObserver` and `NottiNotificationParsing` from the RN repo
 - Remove the RN coupling (`Notti.mm`, `@objc` NSDictionary shell); replace the global statics (`NottiImpl.activeCore` / `eventStore`) with an owned dependency graph that stays cold-start safe

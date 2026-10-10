@@ -4,7 +4,7 @@
 **Testing**: `.specs/codebase/TESTING.md`
 **Source baseline**: `../zeep-notti-react-native/ios` at `52e4b55`
 **Depends on feature**: `package-foundation` done (all 12 tasks) (targets, `NottiLogger`, `NottiPayloadKeys`, `NottiSDKVersion`, CI)
-**Status**: Approved (2026-10-09; reformatted 2026-10-09 to the current `tlc-spec-driven` template: task ids `C1..C13` renamed to `T1..T13`, no task content changed). Execute in progress: T1-T7 done 2026-10-10 on `feat/core-port` (210 tests: Shared 12, SDK 197, Ext 1); next T8
+**Status**: Approved (2026-10-09; reformatted 2026-10-09 to the current `tlc-spec-driven` template: task ids `C1..C13` renamed to `T1..T13`, no task content changed). Execute done: T1-T13 on `feat/core-port` (2026-10-10; 247 tests: Shared 13, SDK 233, Ext 1; full gate green). Next: independent Verifier
 
 ---
 
@@ -373,7 +373,7 @@ Notes (T12): "when RN would not re-register" = launch before APNs delivers a tok
 
 ---
 
-### T13: Traceability and parity proof
+### T13: Traceability and parity proof ✅ (no tests; counts unchanged: Shared 13, SDK 233, Ext 1, total 247. Full gate green: tests, SwiftLint 0, 3 scripts, `pod lib lint` (all + Extension), strict device builds (SDK + NSE with `APPLICATION_EXTENSION_API_ONLY=YES`))
 
 **What**: Write `traceability.md` mapping every iOS-applicable RN ID (SDK-, SDKCTR-, SDKOPEN-, SEGTEL-, DPF-) to test names here, with N/A rows and reasons (Android-only, `public-api`, `delegate-integration`, `example-and-release`), the RN → here test count table, and the list of renamed/moved/dropped tests. Run the full gate and the RN-symbol grep.
 **Where**: `.specs/features/core-port/traceability.md`, `.specs/features/core-port/spec.md` (status column)
@@ -383,15 +383,17 @@ Notes (T12): "when RN would not re-register" = launch before APNs delivers a tok
 
 **Done when**:
 
-- [ ] No iOS-applicable RN ID without a test or an explicit move/N/A reason
-- [ ] Count table: here ≥ RN per file (Core 123, ApiClient 29, DeviceStore 18, EventBuffer 12, EventStore 6, Parsing 6, NetworkObserver 4; PushDelegate 15 accounted)
-- [ ] `grep -rnE "RCT|React" Sources/` is empty
-- [ ] Full gate passes; CI green on the PR
-- [ ] spec.md requirement statuses updated
+- [x] No iOS-applicable RN ID without a test or an explicit move/N/A reason (80 IDs; SDK-11 N/A Android-only; SDKOPEN-11 docs → `example-and-release`)
+- [x] Count table: here ≥ RN per file (Core 123, ApiClient 30, DeviceStore 18 + 1, EventBuffer 12, EventStore 7, Parsing 6, NetworkObserver 4; PushDelegate 15 → NotificationHandler 15 + 4)
+- [x] `grep -rnE "RCT|React" Sources/` is empty
+- [ ] Full gate passes; CI green on the PR — local full gate green; CI not run (no PR opened: push/PR are outside this execution's authority)
+- [x] spec.md requirement statuses updated (Implemented; Verified is the Verifier's call)
 
 **Tests**: none (documentation + gate run)
 **Gate**: full
 **Commit**: `docs(specs): add core-port traceability and parity proof`
+
+Notes (T13): fixture-value decision recorded as AD-008 (ported tests keep RN values; new tests use `example.invalid` / `fixture`). Traceability test names were checked mechanically against the `func test_` declarations in `Tests/`.
 
 ---
 

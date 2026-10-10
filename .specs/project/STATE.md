@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-10-10
-**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Design approved 2026-10-09. Tasks drafted 2026-10-09 (package-foundation T1-T12, core-port T1-T13 (originally C1-C13), `.specs/codebase/TESTING.md`), approved 2026-10-09. package-foundation DONE 2026-10-10: Verifier PASS in round 6 (rounds 1-5 FAIL, every gap fixed in PR #2; rounds 4-6 authorized by Julio beyond the 3-round limit); lessons L-001..L-007 in `.specs/LESSONS.md`. core-port Execute started 2026-10-10 on branch `feat/core-port`: T1-T7 done (one commit each; full gate green after T7: 210 tests (Shared 12, SDK 197, Ext 1), SwiftLint 0, guard scripts, `pod lib lint`). Ported files follow AD-007. Next: core-port T8.
+**Current Work:** `package-foundation` DONE 2026-10-10 (Verifier PASS round 6; lessons L-001..L-007). `core-port` Execute DONE 2026-10-10 on branch `feat/core-port` (not pushed): T1-T13, one commit each; full gate green after T13: 247 tests (Shared 13, SDK 233, Ext 1), SwiftLint 0, guard scripts, `pod lib lint` (all + Extension), strict device builds. Ported files follow AD-007; fixture values per AD-008. Next: independent Verifier for core-port (writes `validation.md`), then PR.
 
 ---
 
@@ -61,6 +61,13 @@
 **Trade-off:** `git diff`/plain `diff` against RN shows every line as changed; reviewers must use `diff -w`. The disabled rules are real style debt, revisited after M1 together with the `NottiCore` split.
 **Impact:** core-port T1–T7 (and later ports). Each ported file starts with a provenance comment naming its RN source.
 
+### AD-008: Ported RN tests keep their fixture values in M1 (2026-10-10)
+
+**Decision:** Tests ported from `react-native-notti` keep their fixture values verbatim (`user@example.com`, `a@example.com`, `a@b.com`, `+5511999999999`, `+10000000000`). Tests written in this repo use `example.invalid` / `fixture` values.
+**Reason:** Porting rule 1 (1:1 port) and the values never leave the test process: all requests go to `StubURLProtocol` and no log line carries a value (CORE-12).
+**Trade-off:** `a@b.com` (registered domain) and `+5511999999999` (valid São Paulo mobile format) are not reserved test values. AGENTS.md's synthetic-values rule is met by new tests only until the rename.
+**Impact:** core-port `traceability.md` section 5. Rename post-M1 (todo), listing each rename in `traceability.md`.
+
 ---
 
 ## Active Blockers
@@ -119,8 +126,11 @@ This repo's lessons live in `.specs/LESSONS.md` (managed by `lessons.py`; L-001.
 - [x] (Verifier r5/r6 note, core-port; done in T11: `NottiLoggerTests.test_messageAtLevelNoneIsNeverEmittedEvenAtVerbose`) `NottiLogger.log` drops `.none` messages via a guard that no test covers; add the test with CORE-12/13 (core-port T11).
 - [x] (core-port T7; partly done in T11: one `.error`, `.warn` and `.debug` site asserted in `NottiLoggingPrivacyTests`; the other 21 levels stay review-only) The 24 `NottiCore` log levels are not asserted by any test (the ported RN tests check message text only). Cover at least one `.error`, `.warn` and `.debug` site in T11, or record why not.
 - [ ] (core-port T5) The semaphore-backstop `NottiApiClientTimeoutError` is a private Swift struct, so its `domain#code` failure text is the bridged Swift type name instead of RN's "Notti API request timed out". No PII; revisit wording post-M1 if it hurts diagnostics.
-- [ ] (core-port T2-T7) Ported RN tests keep their fixture values verbatim (`user@example.com`, `+5511999999999`, `+10000000000` in `NottiCoreTests`). They are reserved/synthetic, but not the `example.invalid` / `fixture` style AGENTS.md asks for in new tests. Decide in T13 whether to rename them (each rename listed in `traceability.md`).
+- [x] (core-port T2-T7; decided in T13 as AD-008) Ported RN tests keep their fixture values verbatim (`user@example.com`, `+5511999999999`, `+10000000000` in `NottiCoreTests`). They are reserved/synthetic, but not the `example.invalid` / `fixture` style AGENTS.md asks for in new tests. Decide in T13 whether to rename them (each rename listed in `traceability.md`).
 - [ ] (AD-007, post-M1) Remove the file-scoped SwiftLint disables in ported files (`trailing_comma`, `force_try`, `force_cast`, `identifier_name`, `large_tuple`, `closure_parameter_position`, `line_length`, `cyclomatic_complexity`, `function_parameter_count`, `unneeded_synthesized_initializer`, `static_over_final_class`, `file_length`, `type_body_length`) together with the `NottiCore` split.
+
+- [ ] (AD-008, post-M1) Rename the RN fixture values in ported tests (`a@b.com`, `+5511999999999` first) to `example.invalid` / `fixture` values; list each rename in core-port `traceability.md`.
+- [ ] (core-port T8) `NottiPlatformProviders.live()` closures (APNs registration, permission prompt, `CLGeocoder`, `UIDevice`) are build-verified only; exercise them on a device in `example-and-release`.
 
 ## Preferences
 
