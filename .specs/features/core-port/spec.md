@@ -124,7 +124,7 @@ Port-specific requirements:
 | CORE-01 | P1: Core without RN (components ported, no RN symbols) | Specify | In progress |
 | CORE-02 | P1: Core without RN (all deps injectable) | Specify | In progress |
 | CORE-03 | P1: Core without RN (container replaces statics) | Execute | Implemented (T4, T6, T9) |
-| CORE-04 | P1: Core without RN (pre-init events persisted) | Specify | Pending |
+| CORE-04 | P1: Core without RN (pre-init events persisted) | Execute | Implemented (T10) |
 | CORE-05 | P1: Core without RN (native sdk_version) | Execute | Implemented (T9) |
 | CORE-06 | P1: Parity tests (suite ported, counts, drop list) | Specify | In progress |
 | CORE-07 | P1: Parity tests (every iOS RN ID → test) | Specify | Pending |
