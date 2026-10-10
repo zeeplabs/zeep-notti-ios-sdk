@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 7,
+  "next_id": 8,
   "lessons": [
     {
       "id": "L-001",
@@ -112,6 +112,24 @@
       ],
       "created": "2026-10-10T13:57:47Z",
       "last_seen": "2026-10-10T13:57:47Z"
+    },
+    {
+      "id": "L-007",
+      "key": "surviving_mutant::every declared manifest value an ac names platform tools version needs its own assertion builds passing does not prove a minimum version constraint",
+      "text": "Every declared manifest value an AC names (platform, tools version) needs its own assertion; builds passing does not prove a minimum-version constraint.",
+      "signal": "surviving_mutant",
+      "scope": "ci",
+      "status": "candidate",
+      "features": [
+        "package-foundation"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "Package.swift:6 (PKG-01) (ci)"
+      ],
+      "created": "2026-10-10T19:14:45Z",
+      "last_seen": "2026-10-10T19:14:45Z"
     }
   ]
 }

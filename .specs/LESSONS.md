@@ -50,6 +50,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: scripts/check-package-graph.sh:55-95 (PKG-06) (architecture)
 - last seen: 2026-10-10T13:57:47Z
 
+### L-007 - Every declared manifest value an AC names (platform, tools version) needs its own assertion; builds passing does not prove a minimum-version constraint.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `ci` · harmful: 0
+- features: package-foundation
+- evidence: Package.swift:6 (PKG-01) (ci)
+- last seen: 2026-10-10T19:14:45Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
