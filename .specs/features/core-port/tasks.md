@@ -4,7 +4,7 @@
 **Testing**: `.specs/codebase/TESTING.md`
 **Source baseline**: `../zeep-notti-react-native/ios` at `52e4b55`
 **Depends on feature**: `package-foundation` done (all 12 tasks) (targets, `NottiLogger`, `NottiPayloadKeys`, `NottiSDKVersion`, CI)
-**Status**: Approved (2026-10-09; reformatted 2026-10-09 to the current `tlc-spec-driven` template: task ids `C1..C13` renamed to `T1..T13`, no task content changed)
+**Status**: Approved (2026-10-09; reformatted 2026-10-09 to the current `tlc-spec-driven` template: task ids `C1..C13` renamed to `T1..T13`, no task content changed). Execute in progress: T1-T7 done 2026-10-10 on `feat/core-port` (210 tests: Shared 12, SDK 197, Ext 1); next T8
 
 ---
 
@@ -223,7 +223,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T7: Port `NottiCore`
+### T7: Port `NottiCore` ✅ (NottiSDKTests 197 (74 + 123); Shared 12, Ext 1, total 210. Full gate green: tests, SwiftLint 0, 3 scripts, pod lib lint. Doubles + LogSink in Support/)
 
 **What**: Port `NottiCore.swift` verbatim, change `logger: (String) -> Void` to `logger: (NottiLogLevel, String) -> Void` and give each of the 24 call sites a level (failure/give-up `.error`, retry/degraded `.warn`, lifecycle `.debug`; message text unchanged). Port the 123 tests and the core test doubles (`ThreadProbeApiClient`, `PatchHookApiClient`, `SlowEventApiClient`) to `Support/`.
 **Where**: `Sources/NottiSDK/Core/NottiCore.swift`, `Tests/NottiSDKTests/NottiCoreTests.swift`, `Tests/NottiSDKTests/Support/*.swift`
@@ -233,15 +233,19 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] `diff` against RN shows only: access level, logger signature, the 24 call-site levels
-- [ ] Serial queue label `app.notti.sdk.core` and semaphore timeouts unchanged
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiCoreTests`
-- [ ] Test count: +123
-- [ ] Full gate passes (SwiftLint thresholds hold for the 1439-line file)
+- [x] `diff` against RN shows only: access level, logger signature, the 24 call-site levels
+- [x] Serial queue label `app.notti.sdk.core` and semaphore timeouts unchanged
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiCoreTests`
+- [x] Test count: +123
+- [x] Full gate passes (SwiftLint thresholds hold for the 1439-line file)
 
 **Tests**: unit
 **Gate**: full
 **Commit**: `feat(core): port NottiCore with leveled logging`
+
+**SPEC_DEVIATION (T7):** besides access level, logger signature and the 24 levels, two outer closures in `NottiCore` (`requestPermission` and `syncPermissionStatusIfNeeded`, each `self.onWorkQueue { ... }` around a `[weak self]` mutation) now capture `[self]` explicitly. RN captures the same strong `self` implicitly, so behavior is unchanged. Reason: Xcode 27 emits `#ImplicitStrongCapture` warnings there and `pod lib lint` (full gate, CI) fails on warnings. Marked inline with `// SPEC_DEVIATION:`.
+
+Levels used: `.error` for give-ups and terminal failures (login/mutateTags/profile/subscription PATCH not retried, missing or invalid config, registration failed, permanent country-clear rejection, pending-mutation overflow drop, terminal event drop); `.warn` for retried or degraded paths (permission prompt before init, no push token, not-echoed field, permission/telemetry/country PATCH retried later, foreground registration retry, country clear pending, event stays queued); `.debug` for lifecycle (mutation queued/replaced/flushed, country dropped after opt-out).
 
 ---
 

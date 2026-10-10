@@ -1,7 +1,7 @@
 # State
 
-**Last Updated:** 2026-10-09
-**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Design approved 2026-10-09. Tasks drafted 2026-10-09 (package-foundation T1-T12, core-port T1-T13 (originally C1-C13), `.specs/codebase/TESTING.md`), approved 2026-10-09. package-foundation DONE 2026-10-10: Verifier PASS in round 6 (rounds 1-5 FAIL, every gap fixed in PR #2; rounds 4-6 authorized by Julio beyond the 3-round limit); lessons L-001..L-007 in `.specs/LESSONS.md`. Next: core-port T1.
+**Last Updated:** 2026-10-10
+**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Design approved 2026-10-09. Tasks drafted 2026-10-09 (package-foundation T1-T12, core-port T1-T13 (originally C1-C13), `.specs/codebase/TESTING.md`), approved 2026-10-09. package-foundation DONE 2026-10-10: Verifier PASS in round 6 (rounds 1-5 FAIL, every gap fixed in PR #2; rounds 4-6 authorized by Julio beyond the 3-round limit); lessons L-001..L-007 in `.specs/LESSONS.md`. core-port Execute started 2026-10-10 on branch `feat/core-port`: T1-T7 done (one commit each; full gate green after T7: 210 tests (Shared 12, SDK 197, Ext 1), SwiftLint 0, guard scripts, `pod lib lint`). Ported files follow AD-007. Next: core-port T8.
 
 ---
 
@@ -117,6 +117,10 @@ This repo's lessons live in `.specs/LESSONS.md` (managed by `lessons.py`; L-001.
 
 - [ ] (Verifier r5/r6 note, non-blocking) PKG-04: the simulator compile inside `xcodebuild test` does not treat warnings as errors (only device builds and `pod lib lint` do). Decide whether to add the flags to the test step.
 - [ ] (Verifier r5/r6 note, core-port) `NottiLogger.log` drops `.none` messages via a guard that no test covers; add the test with CORE-12/13 (core-port T11).
+- [ ] (core-port T7) The 24 `NottiCore` log levels are not asserted by any test (the ported RN tests check message text only). Cover at least one `.error`, `.warn` and `.debug` site in T11, or record why not.
+- [ ] (core-port T5) The semaphore-backstop `NottiApiClientTimeoutError` is a private Swift struct, so its `domain#code` failure text is the bridged Swift type name instead of RN's "Notti API request timed out". No PII; revisit wording post-M1 if it hurts diagnostics.
+- [ ] (core-port T2-T7) Ported RN tests keep their fixture values verbatim (`user@example.com`, `+5511999999999`, `+10000000000` in `NottiCoreTests`). They are reserved/synthetic, but not the `example.invalid` / `fixture` style AGENTS.md asks for in new tests. Decide in T13 whether to rename them (each rename listed in `traceability.md`).
+- [ ] (AD-007, post-M1) Remove the file-scoped SwiftLint disables in ported files (`trailing_comma`, `force_try`, `force_cast`, `identifier_name`, `large_tuple`, `closure_parameter_position`, `line_length`, `cyclomatic_complexity`, `function_parameter_count`, `unneeded_synthesized_initializer`, `static_over_final_class`, `file_length`, `type_body_length`) together with the `NottiCore` split.
 
 ## Preferences
 
