@@ -249,7 +249,7 @@ Levels used: `.error` for give-ups and terminal failures (login/mutateTags/profi
 
 ---
 
-### T8: `NottiPlatformProviders`, location reader, background task
+### T8: `NottiPlatformProviders`, location reader, background task ✅ (build-only: no pure helper exists outside the closures (language normalization is `NottiCore.normalizedLanguageCode`, already covered by NottiCoreTests), so no providers test file; counts unchanged: Shared 12, SDK 197, Ext 1, total 210. Build gate, strict device builds (SDK + NSE with `APPLICATION_EXTENSION_API_ONLY=YES`), SwiftLint 0, 3 scripts green)
 
 **What**: Move the provider closures from `NottiImpl.init` (:108-233) into `NottiPlatformProviders` with `static func live()` marked `@available(iOSApplicationExtension, unavailable)`; port `NottiLocationReader` (:389-462) and `NottiBackgroundTask` (:274-302). Unit-test the pure parts (e.g. hex/locale/timezone formatting, if any are pure); OS-backed closures are build-verified.
 **Where**: `Sources/NottiSDK/Platform/NottiPlatformProviders.swift`, `Sources/NottiSDK/Platform/NottiLocationReader.swift`, `Sources/NottiSDK/Platform/NottiBackgroundTask.swift`, `Tests/NottiSDKTests/NottiPlatformProvidersTests.swift` (only if a pure helper exists)
@@ -259,14 +259,16 @@ Levels used: `.error` for give-ups and terminal failures (login/mutateTags/profi
 
 **Done when**:
 
-- [ ] Every `NottiCore.init` provider parameter has a matching field
-- [ ] No `RCT*`/React symbol; `live()` carries the extension-unavailable attribute
-- [ ] Gate passes: build (and quick for the providers test file if created)
-- [ ] Test count: unchanged or + number of pure-helper tests (stated in the summary)
+- [x] Every `NottiCore.init` provider parameter has a matching field (12: token, permission, version, location permission, country, OS, model, timezone, language, permission status, app state, background task)
+- [x] No `RCT*`/React symbol; `live()` carries the extension-unavailable attribute (also `NottiLocationReader` and `NottiBackgroundTask`)
+- [x] Gate passes: build (no providers test file created)
+- [x] Test count: unchanged (210)
 
 **Tests**: build (matrix: platform providers) + unit for pure helpers
 **Gate**: build
 **Commit**: `feat(platform): port OS-backed providers from NottiImpl`
+
+**SPEC_DEVIATION (T8):** besides moving the closures, two non-structural diffs against RN (`diff -w` on NottiImpl.swift:119-214): (1) the `permissionRequester` comment said "an RCTPromiseResolveBlock may be resolved from any thread"; it now says "the caller's completion", because CORE-01 forbids `RCT*` symbols in `Sources/` (comment only); (2) `permissionStatusProvider` has an explicit `case .ephemeral: status = nil` before `@unknown default`. RN reached `.ephemeral` through `@unknown default` (also nil), so the value is unchanged; Xcode 27 warns "switch must be exhaustive" and the strict device build / `pod lib lint` fail on warnings. Marked inline. One `NottiLocationReader` is now created per `live()` call; RN created one per `NottiImpl` (per JS reload).
 
 ---
 
