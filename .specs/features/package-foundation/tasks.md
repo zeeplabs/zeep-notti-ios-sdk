@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/package-foundation/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: In Progress (T1–T4 done)
+**Status**: In Progress (T1–T5 done)
 
 ---
 
@@ -144,7 +144,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T5: `NottiPayloadKeys`
+### T5: `NottiPayloadKeys` ✅ (NottiSharedTests 6/6)
 
 **What**: Payload key constants and the internal-key filter lists currently in RN `NottiNotificationParsing.swift:50-51`, plus a test that freezes their string values.
 **Where**: `Sources/NottiShared/NottiPayloadKeys.swift`, `Tests/NottiSharedTests/NottiPayloadKeysTests.swift`
