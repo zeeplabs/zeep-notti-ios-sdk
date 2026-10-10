@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/package-foundation/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: In Progress (T1–T8 done)
+**Status**: In Progress (T1–T10 done)
 
 ---
 
@@ -260,7 +260,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T10: `scripts/check-extension-safety.sh`
+### T10: `scripts/check-extension-safety.sh` ✅ (pass and planted `UIApplication.shared` fail verified)
 
 **What**: Script that greps `Sources/NottiShared` and `Sources/NottiSDKExtension` for `UIApplication`, `import UIKit`, `beginBackgroundTask`, `registerForRemoteNotifications`, `CLLocationManager`, and fails on any match.
 **Where**: `scripts/check-extension-safety.sh`
