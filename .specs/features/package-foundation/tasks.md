@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/package-foundation/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: In Progress (T1–T6 done)
+**Status**: In Progress (T1–T7 done)
 
 ---
 
@@ -191,7 +191,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T7: `NottiSDKExtension` privacy manifest
+### T7: `NottiSDKExtension` privacy manifest ✅ (NottiSDKExtensionTests 1/1)
 
 **What**: `PrivacyInfo.xcprivacy` for `NottiSDKExtension` (RN NSE baseline: FileTimestamp), wired as a resource, with a presence + content test.
 **Where**: `Sources/NottiSDKExtension/Resources/PrivacyInfo.xcprivacy`, `Package.swift` (resources), `Tests/NottiSDKExtensionTests/PrivacyManifestTests.swift`

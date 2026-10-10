@@ -19,7 +19,11 @@ let package = Package(
             dependencies: ["NottiShared"],
             resources: [.process("Resources/PrivacyInfo.xcprivacy")]
         ),
-        .target(name: "NottiSDKExtension", dependencies: ["NottiShared"]),
+        .target(
+            name: "NottiSDKExtension",
+            dependencies: ["NottiShared"],
+            resources: [.process("Resources/PrivacyInfo.xcprivacy")]
+        ),
         .testTarget(name: "NottiSharedTests", dependencies: ["NottiShared"]),
         .testTarget(name: "NottiSDKTests", dependencies: ["NottiSDK", "NottiShared"]),
         .testTarget(name: "NottiSDKExtensionTests", dependencies: ["NottiSDKExtension", "NottiShared"]),
