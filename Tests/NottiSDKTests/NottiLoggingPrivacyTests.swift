@@ -142,6 +142,84 @@ final class NottiLoggingPrivacyTests: XCTestCase {
         }
     }
 
+    /// CORE-12 at the registration-failure site (`NottiCore.registerDevice`, where
+    /// the raw push token is in scope): a terminal 4xx on the device POST.
+    func test_registrationTerminal4xxLogsNoSentinelValueAndFailsAtError() {
+        runFlowWithFailedRegistration(responses: [.status(400)])
+
+        let requests = StubURLProtocol.recordedRequests()
+        XCTAssertEqual(requests.filter { $0.httpMethod == "POST" && $0.url?.path.hasSuffix("/devices") == true }.count, 1)
+        assertRegistrationFailureLogged("Notti.initialize: device registration failed: HTTP 400")
+        assertNoSentinelInLogs()
+    }
+
+    /// Same site, after the retry cap is exhausted on 5xx (non-terminal failure).
+    func test_registrationExhausted5xxLogsNoSentinelValueAndFailsAtError() {
+        runFlowWithFailedRegistration(responses: Array(repeating: .status(503), count: 5))
+
+        let requests = StubURLProtocol.recordedRequests()
+        XCTAssertEqual(requests.filter { $0.httpMethod == "POST" && $0.url?.path.hasSuffix("/devices") == true }.count, 5)
+        assertRegistrationFailureLogged("Notti.initialize: device registration failed: HTTP 503")
+        assertNoSentinelInLogs()
+    }
+
+    /// initialize -> login / setEmail / setPhone / addTags / country (all queued
+    /// before registration) -> APNs token -> the device POST answers `responses`.
+    /// Captured at `.verbose`.
+    private func runFlowWithFailedRegistration(responses: [StubURLProtocol.StubResponse]) {
+        NottiLogger.level = .verbose
+        NottiDeviceStore(defaults: defaults).setLocationSharingEnabled(true)
+        let country = sentinelCountry
+        let runtime = makeRuntime(providers: NottiPlatformProviders(
+            tokenProvider: { _ in },
+            permissionRequester: { $0(true) },
+            hasLocationPermission: { true },
+            countryProvider: { $0(country) },
+            appStateProvider: { $0(true) }
+        ))
+
+        runtime.start(appId: "app-fixture", clientKey: "key-fixture", baseUrl: "https://notti.example.invalid")
+        let core = runtime.core
+        core?.login(sentinelExternalId)
+        core?.setEmail(sentinelEmail)
+        core?.setPhone(sentinelPhone)
+        core?.mutateTags(add: NottiRuntime.sanitizeTags(["segment": sentinelTagValue]), remove: nil)
+        drain(core)
+
+        for response in responses { StubURLProtocol.enqueue(response) }
+        runtime.onApnsToken(tokenBytes)
+        drain(core)
+    }
+
+    private func assertRegistrationFailureLogged(
+        _ expected: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let failures = captured.filter { $0.message.hasPrefix("Notti.initialize: device registration failed") }
+        XCTAssertEqual(failures.map(\.message), [expected], file: file, line: line)
+        XCTAssertEqual(failures.map(\.level), [.error], file: file, line: line)
+    }
+
+    private func assertNoSentinelInLogs(file: StaticString = #filePath, line: UInt = #line) {
+        let sentinels = [
+            sentinelEmail, sentinelPhone, sentinelExternalId, sentinelTagValue,
+            tokenHex, tokenHex.uppercased(), sentinelCountry
+        ]
+        let lines = captured
+        XCTAssertFalse(lines.isEmpty, "the sink captured nothing", file: file, line: line)
+        for logLine in lines {
+            for sentinel in sentinels {
+                XCTAssertFalse(
+                    logLine.message.contains(sentinel),
+                    "PII sentinel '\(sentinel)' leaked in: \(logLine.message)",
+                    file: file,
+                    line: line
+                )
+            }
+        }
+    }
+
     /// CORE-13: at the default level only errors reach the sink, even when the
     /// flow produces warnings and debug lines.
     func test_defaultLevelIsErrorAndNothingBelowItIsEmitted() {

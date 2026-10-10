@@ -18,6 +18,14 @@ final class NottiLoggerTests: XCTestCase {
         super.tearDown()
     }
 
+    /// CORE-13: the level a host app gets without configuring anything. Reads the
+    /// effective `level` without assigning it first; every test in this target
+    /// restores the level it found in `tearDown`, so the initial value is intact.
+    func test_initialEffectiveLevelIsError() {
+        XCTAssertEqual(savedLevel, .error)
+        XCTAssertEqual(NottiLogger.level, .error)
+    }
+
     func test_defaultLevelIsErrorOnly() {
         XCTAssertEqual(NottiLogger.defaultLevel, .error)
 

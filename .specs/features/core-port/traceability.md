@@ -137,11 +137,11 @@ Where an RN story's ACs are covered by one group of tests, the row lists the tes
 | CORE-06 | Section 3 |
 | CORE-07 | Section 1 |
 | CORE-08 | SDK-04: `RT.test_onApnsRegistrationFailedLogsDomainAndCodeWithoutRegisteringAndTheCoreStaysUsable`; SDK-12/13: `RT.test_addTagsThroughTheRuntimeCorePatchesTheFullMergedMap`, `RT.test_removeTagsThroughTheRuntimeCorePatchesTheRemainingMap`; SDK-17: `NH.test_willPresentEmitsTheParsedPayloadToTheReceivedHandlerOnlyForARemotePush` |
-| CORE-09 | `NottiDeviceStoreKeysTests` (golden keys), `ES.*`, `CT.*` |
+| CORE-09 | `NottiDeviceStoreKeysTests` (golden keys; `test_productionSuiteNameMatchesRN` for the `notti_prefs` suite), `ES.*`, `CT.*` |
 | CORE-10 | `CT.test_rnStateIsAdoptedWithoutRegistrationAndItsPendingEventsFlush`, `CT.test_sameTokenReRegistrationKeepsTheRnDeviceIdAndSkipsTheAckMigration` |
 | CORE-11 | `CT.*` with `Fixtures/rn-0.6.0-state.plist` |
-| CORE-12 | `LP.test_fullFlowWithFailuresAtVerboseLogsNoSentinelValue`, `Api.test_aNetworkErrorIsReportedAsDomainAndCodeWithoutTheRequestUrl`, `RT.test_onApnsRegistrationFailedLogsDomainAndCodeWithoutRegisteringAndTheCoreStaysUsable` |
-| CORE-13 | `LP.test_defaultLevelIsErrorAndNothingBelowItIsEmitted`, `NottiLoggerTests.test_defaultLevelIsErrorOnly`, `NottiLoggerTests.test_messageAtLevelNoneIsNeverEmittedEvenAtVerbose` |
+| CORE-12 | `LP.test_fullFlowWithFailuresAtVerboseLogsNoSentinelValue`, `LP.test_registrationTerminal4xxLogsNoSentinelValueAndFailsAtError`, `LP.test_registrationExhausted5xxLogsNoSentinelValueAndFailsAtError`, `Api.test_aNetworkErrorIsReportedAsDomainAndCodeWithoutTheRequestUrl`, `RT.test_onApnsRegistrationFailedLogsDomainAndCodeWithoutRegisteringAndTheCoreStaysUsable` |
+| CORE-13 | `LP.test_defaultLevelIsErrorAndNothingBelowItIsEmitted`, `NottiLoggerTests.test_initialEffectiveLevelIsError`, `NottiLoggerTests.test_defaultLevelIsErrorOnly`, `NottiLoggerTests.test_messageAtLevelNoneIsNeverEmittedEvenAtVerbose` |
 
 ---
 
@@ -151,18 +151,18 @@ Where an RN story's ACs are covered by one group of tests, the row lists the tes
 | --- | --- | --- | --- | --- |
 | `NottiCoreTests.swift` | 123 | `NottiCoreTests` | 123 | 1:1 |
 | `NottiApiClientTests.swift` | 29 | `NottiApiClientTests` | 30 | +1 `domain#code` (CORE-12) |
-| `NottiDeviceStoreTests.swift` | 18 | `NottiDeviceStoreTests` + `NottiDeviceStoreKeysTests` | 18 + 1 | +1 golden key list |
+| `NottiDeviceStoreTests.swift` | 18 | `NottiDeviceStoreTests` + `NottiDeviceStoreKeysTests` | 18 + 2 | +1 golden key list, +1 suite name (Verifier round 1) |
 | `NottiEventBufferTests.swift` | 12 | `NottiEventBufferTests` | 12 | 1:1 |
 | `NottiEventStoreTests.swift` | 6 | `NottiEventStoreTests` | 7 | +1 corrupt-queue `.warn` |
 | `NottiNotificationParsingTests.swift` | 6 | `NottiNotificationParsingTests` (NottiSharedTests) | 6 | 1:1 |
 | `NottiNetworkObserverTests.swift` | 4 | `NottiNetworkObserverTests` | 4 | 1:1 |
 | `NottiPushDelegateTests.swift` | 15 | `NottiNotificationHandlerTests` | 15 + 4 | all 15 ported to plain inputs; +4 (SDK-17, SDK-18, CORE-04, opportunistic flush) |
 | — | — | `NottiRuntimeTests` | 13 | new (runtime) |
-| — | — | `NottiLoggingPrivacyTests` | 2 | new (CORE-12/13) |
+| — | — | `NottiLoggingPrivacyTests` | 4 | new (CORE-12/13); +2 registration failure (Verifier round 1) |
 | — | — | `NottiContinuityTests` | 2 | new (CORE-10/11) |
 | **RN total** | **213** | | | |
 
-Suite totals after T13: `NottiSharedTests` 13, `NottiSDKTests` 233, `NottiSDKExtensionTests` 1 = 247.
+Suite totals after T13: `NottiSharedTests` 13, `NottiSDKTests` 233, `NottiSDKExtensionTests` 1 = 247. After the Verifier round 1 fixes: 14, 236, 1 = 251 (`NottiLoggerTests` +1).
 
 ---
 
