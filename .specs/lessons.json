@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 11,
+  "next_id": 12,
   "lessons": [
     {
       "id": "L-001",
@@ -184,6 +184,24 @@
       ],
       "created": "2026-10-10T21:36:49Z",
       "last_seen": "2026-10-10T21:36:49Z"
+    },
+    {
+      "id": "L-011",
+      "key": "surviving_mutant::give every conjunct of a multi condition guard e g both ids non empty its own negative test one empty id case covers only one of them",
+      "text": "Give every conjunct of a multi-condition guard (e.g. both ids non-empty) its own negative test; one 'empty id' case covers only one of them.",
+      "signal": "surviving_mutant",
+      "scope": "events",
+      "status": "candidate",
+      "features": [
+        "core-port"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "Sources/NottiSDK/Events/NottiNotificationHandler.swift:92 (SDKCTR-04, mutant H8) (events)"
+      ],
+      "created": "2026-10-10T22:15:59Z",
+      "last_seen": "2026-10-10T22:15:59Z"
     }
   ]
 }
