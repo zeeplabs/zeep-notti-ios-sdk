@@ -1,0 +1,541 @@
+// Ported from react-native-notti 52e4b55 ios/Tests/NottiApiClientTests.swift (AD-002).
+// Changes: `@testable import NottiSDK`; adds the domain#code error test (CORE-12).
+// Lint rules the RN code breaks are disabled for this file only (AD-007).
+// swiftlint:disable force_try force_cast line_length trailing_comma
+
+import XCTest
+@testable import NottiSDK
+
+final class NottiApiClientTests: XCTestCase {
+
+    private var client: NottiApiClient!
+    private var sleeps: [UInt64] = []
+    /// A `URLSession` is not released until it is invalidated, so one left
+    /// behind per test keeps its delegate queue and CFNetwork worker threads
+    /// alive for the rest of the process — including the whole of
+    /// `NottiCoreTests`, which runs after this class and pays for it in
+    /// per-request latency on a shared CI runner.
+    private var sessions: [URLSession] = []
+
+    override func setUp() {
+        super.setUp()
+        StubURLProtocol.reset()
+        sleeps = []
+        let session = stubSession()
+        client = NottiApiClient(
+            session: session,
+            baseUrl: "https://notti.example.com",
+            appId: "app-1",
+            clientKey: "secret-key",
+            sleeper: { ms in self.sleeps.append(ms) }
+        )
+    }
+
+    override func tearDown() {
+        for session in sessions { session.invalidateAndCancel() }
+        sessions.removeAll()
+        super.tearDown()
+    }
+
+    private func stubSession() -> URLSession {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StubURLProtocol.self]
+        let session = URLSession(configuration: config)
+        sessions.append(session)
+        return session
+    }
+
+    func test_validatedBaseUrlAcceptsAbsoluteHttpUrlsAndRejectsEverythingElse() {
+        XCTAssertEqual(NottiApiClient.validatedBaseUrl("https://push.example.com"), "https://push.example.com")
+        XCTAssertEqual(NottiApiClient.validatedBaseUrl("http://localhost:8080"), "http://localhost:8080")
+        XCTAssertEqual(NottiApiClient.validatedBaseUrl(" https://push.example.com/// "), "https://push.example.com")
+
+        XCTAssertNil(NottiApiClient.validatedBaseUrl("my host.example.com"))
+        XCTAssertNil(NottiApiClient.validatedBaseUrl("push.example.com"))
+        XCTAssertNil(NottiApiClient.validatedBaseUrl("https://"))
+        XCTAssertNil(NottiApiClient.validatedBaseUrl("ftp://push.example.com"))
+        XCTAssertNil(NottiApiClient.validatedBaseUrl("https://ex ample.com/%zz"))
+        XCTAssertNil(NottiApiClient.validatedBaseUrl(""))
+    }
+
+    func test_anUnusableBaseUrlFailsTheCallInsteadOfCrashing() {
+        // Defense in depth for the public API client: even handed a baseUrl that
+        // cannot form a URL at all (invalid percent-escape here — current
+        // Foundation percent-encodes most other garbage instead of returning nil),
+        // it must return a failure rather than force-unwrap.
+        let brokenClient = NottiApiClient(
+            session: stubSession(),
+            baseUrl: "https://ex ample.com/%zz",
+            appId: "app-1",
+            clientKey: "secret-key",
+            sleeper: { _ in }
+        )
+
+        guard case .failure(let postError) = brokenClient.createOrUpdateDevice(token: "t", platform: "ios") else {
+            return XCTFail("expected failure")
+        }
+        XCTAssertTrue(postError.contains("baseUrl"))
+
+        guard case .failure(let patchError) = brokenClient.patchDevice(deviceId: "d", token: "t", fields: [:]) else {
+            return XCTFail("expected failure")
+        }
+        XCTAssertTrue(patchError.contains("baseUrl"))
+        XCTAssertEqual(StubURLProtocol.recordedRequests().count, 0)
+    }
+
+    func test_createOrUpdateDeviceSendsPostWithCorrectHeadersAndBody() {
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{}}"#))
+
+        let result = client.createOrUpdateDevice(token: "apns-token", platform: "ios")
+
+        let recorded = StubURLProtocol.recordedRequests()
+        XCTAssertEqual(recorded.count, 1)
+        XCTAssertEqual(recorded[0].httpMethod, "POST")
+        XCTAssertEqual(recorded[0].url?.path, "/v1/apps/app-1/devices")
+        XCTAssertEqual(recorded[0].value(forHTTPHeaderField: "Authorization"), "Bearer secret-key")
+
+        let sentBody = try! JSONSerialization.jsonObject(with: bodyData(recorded[0])) as! [String: Any]
+        XCTAssertEqual(sentBody["token"] as? String, "apns-token")
+        XCTAssertEqual(sentBody["platform"] as? String, "ios")
+
+        guard case .success(let response) = result else { return XCTFail("expected success") }
+        XCTAssertEqual(response.id, "device-1")
+    }
+
+    func test_aNonStringTagValueIsSkippedNotTheWholeDictionary() {
+        // `json["tags"] as? [String: String]` used to fail the ENTIRE cast if even
+        // one value wasn't a string, silently dropping every valid tag over one
+        // bad value from the backend. Matches Android's per-key tolerance.
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{"plan":"vip","score":42}}"#))
+
+        let result = client.createOrUpdateDevice(token: "t", platform: "ios")
+
+        guard case .success(let response) = result else { return XCTFail("expected success") }
+        XCTAssertEqual(response.id, "device-1")
+        XCTAssertEqual(response.tags, ["plan": "vip"])
+    }
+
+    func test_patchDeviceAlwaysIncludesTheCachedTokenField() {
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{"plan":"vip"}}"#))
+
+        let result = client.patchDevice(deviceId: "device-1", token: "apns-token", fields: ["subscribed": true])
+
+        let recorded = StubURLProtocol.recordedRequests()
+        XCTAssertEqual(recorded[0].httpMethod, "PATCH")
+        XCTAssertEqual(recorded[0].url?.path, "/v1/apps/app-1/devices/device-1")
+
+        let sentBody = try! JSONSerialization.jsonObject(with: bodyData(recorded[0])) as! [String: Any]
+        XCTAssertEqual(sentBody["token"] as? String, "apns-token")
+        XCTAssertEqual(sentBody["subscribed"] as? Bool, true)
+
+        guard case .success(let response) = result else { return XCTFail("expected success") }
+        XCTAssertEqual(response.tags, ["plan": "vip"])
+    }
+
+    func test_patchDeviceAckExposesTheEchoedProfileFields() {
+        // The backend answers PATCH with the full stored device; the six read-once
+        // profile fields are the SDK's only server-side ack that a value landed.
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{},"app_version":"1.2.3","device_os":"18.0","device_model":"iPhone17,1","sdk_version":"0.5.0","timezone_id":"America/Sao_Paulo","language":"pt","country":"BR"}"#))
+
+        let result = client.patchDevice(deviceId: "device-1", token: "apns-token", fields: ["app_version": "1.2.3"])
+
+        guard case .success(let response) = result else { return XCTFail("expected success") }
+        XCTAssertEqual(response.profileFields, [
+            "app_version": "1.2.3",
+            "device_os": "18.0",
+            "device_model": "iPhone17,1",
+            "sdk_version": "0.5.0",
+            "timezone_id": "America/Sao_Paulo",
+            "language": "pt",
+        ])
+    }
+
+    func test_patchDeviceAckWithoutADeviceBodyHasNoEchoedProfileFields() {
+        StubURLProtocol.enqueue(.status(204))
+
+        let result = client.patchDevice(deviceId: "device-1", token: "apns-token", fields: ["app_version": "1.2.3"])
+
+        guard case .success(let response) = result else { return XCTFail("expected success") }
+        XCTAssertEqual(response.profileFields, [:])
+    }
+
+    func test_patchDeviceAckSkipsNonStringAndBlankEchoedProfileFields() {
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","app_version":123,"device_os":"","language":null,"timezone_id":"UTC"}"#))
+
+        let result = client.patchDevice(deviceId: "device-1", token: "apns-token", fields: ["timezone_id": "UTC"])
+
+        guard case .success(let response) = result else { return XCTFail("expected success") }
+        XCTAssertEqual(response.profileFields, ["timezone_id": "UTC"])
+    }
+
+    func test_5xxResponseRetriesThenSucceedsWithoutExhaustingTheCap() {
+        StubURLProtocol.enqueue(.status(500))
+        StubURLProtocol.enqueue(.status(503))
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{}}"#))
+
+        let result = client.createOrUpdateDevice(token: "t", platform: "ios")
+
+        XCTAssertEqual(StubURLProtocol.recordedRequests().count, 3)
+        XCTAssertEqual(sleeps, [2000, 4000])
+        guard case .success = result else { return XCTFail("expected success") }
+    }
+
+    func test_5xxResponsesExhaustTheRetryCapAtExactlyFiveAttempts() {
+        for _ in 0..<5 { StubURLProtocol.enqueue(.status(500)) }
+
+        let result = client.createOrUpdateDevice(token: "t", platform: "ios")
+
+        XCTAssertEqual(StubURLProtocol.recordedRequests().count, 5)
+        XCTAssertEqual(sleeps, [2000, 4000, 8000, 16000])
+        guard case .failure = result else { return XCTFail("expected failure") }
+    }
+
+    func test_networkErrorIsRetriedPerTheSameBackoffSchedule() {
+        for _ in 0..<5 { StubURLProtocol.enqueue(.networkError()) }
+
+        let result = client.createOrUpdateDevice(token: "t", platform: "ios")
+
+        XCTAssertEqual(StubURLProtocol.recordedRequests().count, 5)
+        XCTAssertEqual(sleeps, [2000, 4000, 8000, 16000])
+        guard case .failure = result else { return XCTFail("expected failure") }
+    }
+
+    func test_aNetworkErrorIsReportedAsDomainAndCodeWithoutTheRequestUrl() {
+        // CORE-12: a URLError description can embed the failing URL, which
+        // carries the app id and device id. The failure message (the text the
+        // core logs) must be "domain#code" only.
+        let failingUrl = "https://notti.example.com/v1/apps/app-1/devices/device-fixture-id"
+        let urlError = URLError(.timedOut, userInfo: [
+            NSURLErrorFailingURLStringErrorKey: failingUrl,
+            NSLocalizedDescriptionKey: "The request to \(failingUrl) timed out."
+        ])
+        for _ in 0..<5 {
+            StubURLProtocol.enqueue(StubURLProtocol.StubResponse(statusCode: nil, body: nil, error: urlError, delayMs: 0))
+        }
+
+        let result = client.patchDevice(deviceId: "device-fixture-id", token: "t", fields: [:])
+
+        guard case .failure(let message) = result else { return XCTFail("expected failure") }
+        XCTAssertEqual(message, "\(NSURLErrorDomain)#\(URLError.Code.timedOut.rawValue)")
+        XCTAssertFalse(message.contains("https://"))
+        XCTAssertFalse(message.contains("app-1"))
+        XCTAssertFalse(message.contains("device-fixture-id"))
+    }
+
+    func test_aSuccessfulResponseBeforeTheRetryCapStopsFurtherRetries() {
+        StubURLProtocol.enqueue(.status(500))
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{}}"#))
+        // A third enqueued response would only be consumed if the client kept retrying.
+        StubURLProtocol.enqueue(.status(500))
+
+        _ = client.createOrUpdateDevice(token: "t", platform: "ios")
+
+        XCTAssertEqual(StubURLProtocol.recordedRequests().count, 2)
+    }
+
+    func test_everyRequestCarriesAnExplicitShortTimeoutInsteadOfTheUrlSessionDefault() {
+        // Inherited from URLSession's 60s default, a black-holing network held
+        // NottiCore's serial work queue for ~5.5 minutes across the retry cap,
+        // stalling every queued login/addTags/setSubscription behind it. Android
+        // uses OkHttp's 10s defaults; iOS must be in the same order of magnitude.
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{}}"#))
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{}}"#))
+
+        _ = client.createOrUpdateDevice(token: "t", platform: "ios")
+        _ = client.patchDevice(deviceId: "device-1", token: "t", fields: [:])
+
+        let recorded = StubURLProtocol.recordedRequests()
+        XCTAssertEqual(recorded.count, 2)
+        for request in recorded {
+            XCTAssertLessThanOrEqual(
+                request.timeoutInterval, 15,
+                "\(request.httpMethod ?? "?") must not inherit URLSession's 60s default"
+            )
+            XCTAssertGreaterThan(request.timeoutInterval, 0)
+        }
+    }
+
+    func test_a2xxWhoseBodyIsNotADeviceObjectIsAFailureAndIsRetried() {
+        // A captive portal / proxy / gateway happily answers 200 with HTML, and a
+        // backend can rename or omit `id`. Reporting that as success handed the
+        // caller a device with an empty id.
+        let garbageBodies = [
+            "<html><body>Sign in to the WiFi</body></html>", // not JSON at all
+            #"{"device_id":"device-1"}"#, // renamed field: no `id`
+            #"{"id":"","tags":{}}"#, // present but empty
+            #"{"id":123}"#, // wrong type
+            "", // empty body
+        ]
+
+        for body in garbageBodies {
+            StubURLProtocol.reset()
+            sleeps = []
+            for _ in 0..<5 { StubURLProtocol.enqueue(.status(200, body: body)) }
+
+            let result = client.createOrUpdateDevice(token: "t", platform: "ios")
+
+            guard case .failure = result else {
+                return XCTFail("a 200 with body '\(body)' must not be reported as success")
+            }
+            XCTAssertEqual(StubURLProtocol.recordedRequests().count, 5, "body '\(body)' must be retried like a 5xx")
+            XCTAssertEqual(sleeps, [2000, 4000, 8000, 16000])
+        }
+    }
+
+    func test_patchAcceptsA2xxAcknowledgementWithNoDeviceObjectWithoutRetrying() {
+        // PATCH updates an existing device: the id is the caller's own input, not
+        // something the response has to hand back. `204 No Content`, an empty 200
+        // and a bare ACK object are all normal REST answers to an update, and
+        // rejecting them cost five retries plus the local persistence of
+        // external_user_id/tags.
+        let acknowledgements: [(Int, String)] = [
+            (204, ""),
+            (200, ""),
+            (200, #"{"ok":true}"#),
+            (202, "OK"),
+        ]
+
+        for (status, body) in acknowledgements {
+            StubURLProtocol.reset()
+            sleeps = []
+            StubURLProtocol.enqueue(.status(status, body: body))
+
+            let result = client.patchDevice(deviceId: "device-1", token: "t", fields: ["external_user_id": "user-42"])
+
+            guard case .success(let response) = result else {
+                return XCTFail("PATCH answered \(status) '\(body)' must be a success")
+            }
+            XCTAssertEqual(response.id, "device-1", "the id stays the one that was patched")
+            XCTAssertEqual(
+                StubURLProtocol.recordedRequests().count, 1,
+                "\(status) '\(body)' must not be retried"
+            )
+            XCTAssertEqual(sleeps, [], "\(status) '\(body)' must not back off")
+        }
+    }
+
+    func test_patchAcknowledgedWithNoBodyReportsBackTheTagsItJustSent() {
+        // NottiCore writes `response.tags` into its local cache after a tag
+        // mutation — an empty ACK must not read as "the device now has no tags".
+        StubURLProtocol.enqueue(.status(204))
+
+        let result = client.patchDevice(deviceId: "device-1", token: "t", fields: ["tags": ["plan": "vip"]])
+
+        guard case .success(let response) = result else { return XCTFail("expected success") }
+        XCTAssertEqual(response.tags, ["plan": "vip"])
+    }
+
+    func test_patchPrefersTheDeviceObjectWhenTheBackendDoesReturnOne() {
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{"plan":"gold"}}"#))
+
+        let result = client.patchDevice(deviceId: "device-1", token: "t", fields: ["tags": ["plan": "vip"]])
+
+        guard case .success(let response) = result else { return XCTFail("expected success") }
+        XCTAssertEqual(response.tags, ["plan": "gold"], "the server's view of the tags wins over the sent one")
+    }
+
+    /// A3 (found in pre-release review): a real device object (valid "id")
+    /// that simply omits "tags" entirely used to be parsed as tags = [:],
+    /// wiping the local cache on a PATCH that never touched tags at all -
+    /// distinct from `test_patchAcknowledgedWithNoBodyReportsBackTheTagsItJustSent`
+    /// above, which has no "id" and never reaches this parse path at all.
+    func test_patchAckWithIdButNoTagsKeyPreservesTheCallersOwnTags() {
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1"}"#))
+
+        let result = client.patchDevice(deviceId: "device-1", token: "t", fields: ["tags": ["plan": "vip"]])
+
+        guard case .success(let response) = result else { return XCTFail("expected success") }
+        XCTAssertEqual(response.tags, ["plan": "vip"])
+    }
+
+    /// Unlike an absent "tags" key above, an explicit "{}" is the server's
+    /// authoritative answer and must be honored, not treated as "no info".
+    func test_patchAckWithExplicitEmptyTagsClearsTheCache() {
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{}}"#))
+
+        let result = client.patchDevice(deviceId: "device-1", token: "t", fields: ["tags": ["plan": "vip"]])
+
+        guard case .success(let response) = result else { return XCTFail("expected success") }
+        XCTAssertEqual(response.tags, [:])
+    }
+
+    func test_patchStillTreatsA4xxAsTerminalAndA5xxAsRetriable() {
+        StubURLProtocol.enqueue(.status(403))
+        guard case .failure = client.patchDevice(deviceId: "device-1", token: "t", fields: [:]) else {
+            return XCTFail("a 403 PATCH is still a failure")
+        }
+        XCTAssertEqual(StubURLProtocol.recordedRequests().count, 1)
+
+        StubURLProtocol.reset()
+        sleeps = []
+        for _ in 0..<5 { StubURLProtocol.enqueue(.status(503)) }
+        guard case .failure = client.patchDevice(deviceId: "device-1", token: "t", fields: [:]) else {
+            return XCTFail("a 503 PATCH is still a failure")
+        }
+        XCTAssertEqual(StubURLProtocol.recordedRequests().count, 5)
+        XCTAssertEqual(sleeps, [2000, 4000, 8000, 16000])
+    }
+
+    func test_aPermanent4xxPatchFailureIsRecognizableAndTransientOnesAreNot() {
+        for status in [401, 403, 404] {
+            StubURLProtocol.reset()
+            StubURLProtocol.enqueue(.status(status))
+            guard case .failure(let message) = client.patchDevice(deviceId: "device-1", token: "t", fields: [:]) else {
+                return XCTFail("HTTP \(status) must fail")
+            }
+            XCTAssertEqual(NottiApiClient.permanentClientErrorStatus(message), status)
+        }
+        for status in [400, 429, 503] {
+            StubURLProtocol.reset()
+            for _ in 0..<5 { StubURLProtocol.enqueue(.status(status)) }
+            guard case .failure(let message) = client.patchDevice(deviceId: "device-1", token: "t", fields: [:]) else {
+                return XCTFail("HTTP \(status) must fail")
+            }
+            XCTAssertNil(NottiApiClient.permanentClientErrorStatus(message), "HTTP \(status) is not a permanent auth/not-found")
+        }
+        XCTAssertNil(NottiApiClient.permanentClientErrorStatus("The Internet connection appears to be offline."))
+    }
+
+    func test_anUnparseable2xxThatLaterTurnsIntoAValidBodySucceeds() {
+        StubURLProtocol.enqueue(.status(200, body: "<html>captive portal</html>"))
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{"plan":"vip"}}"#))
+
+        let result = client.createOrUpdateDevice(token: "t", platform: "ios")
+
+        XCTAssertEqual(StubURLProtocol.recordedRequests().count, 2)
+        guard case .success(let response) = result else { return XCTFail("expected success") }
+        XCTAssertEqual(response.id, "device-1")
+        XCTAssertEqual(response.tags, ["plan": "vip"])
+    }
+
+    func test_reportEventSendsPostWithCorrectPathHeadersAndBody() {
+        StubURLProtocol.enqueue(.status(201))
+
+        let result = client.reportEvent(notificationId: "notif-1", deliveryId: "delivery-1", type: "clicked", token: "apns-token")
+
+        let recorded = StubURLProtocol.recordedRequests()
+        XCTAssertEqual(recorded.count, 1)
+        XCTAssertEqual(recorded[0].httpMethod, "POST")
+        XCTAssertEqual(recorded[0].url?.path, "/v1/apps/app-1/notifications/notif-1/events")
+        XCTAssertEqual(recorded[0].value(forHTTPHeaderField: "Authorization"), "Bearer secret-key")
+
+        let sentBody = try! JSONSerialization.jsonObject(with: bodyData(recorded[0])) as! [String: Any]
+        XCTAssertEqual(sentBody["delivery_id"] as? String, "delivery-1")
+        XCTAssertEqual(sentBody["type"] as? String, "clicked")
+        XCTAssertEqual(sentBody["token"] as? String, "apns-token")
+
+        guard case .success = result else { return XCTFail("expected success") }
+    }
+
+    func test_reportEvent5xxResponsesExhaustTheRetryCapAtExactlyFiveAttempts() {
+        for _ in 0..<5 { StubURLProtocol.enqueue(.status(503)) }
+
+        let result = client.reportEvent(notificationId: "notif-1", deliveryId: "delivery-1", type: "clicked", token: "t")
+
+        XCTAssertEqual(StubURLProtocol.recordedRequests().count, 5)
+        XCTAssertEqual(sleeps, [2000, 4000, 8000, 16000])
+        guard case .failure = result else { return XCTFail("expected failure") }
+    }
+
+    func test_reportEventTreatsA4xxAsTerminalWithoutRetrying() {
+        for status in [403, 404, 422] {
+            StubURLProtocol.reset()
+            sleeps = []
+            StubURLProtocol.enqueue(.status(status))
+
+            let result = client.reportEvent(notificationId: "notif-1", deliveryId: "delivery-1", type: "clicked", token: "t")
+
+            guard case .failure(_, let terminal) = result else {
+                return XCTFail("a \(status) must be a failure")
+            }
+            XCTAssertEqual(StubURLProtocol.recordedRequests().count, 1, "a \(status) must not be retried")
+            XCTAssertEqual(sleeps, [], "a \(status) must not back off")
+            XCTAssertTrue(terminal, "a \(status) must be terminal (event dropped from the queue)")
+        }
+    }
+
+    func test_reportEvent5xxExhaustionIsNonTerminal() {
+        for _ in 0..<5 { StubURLProtocol.enqueue(.status(500)) }
+
+        let result = client.reportEvent(notificationId: "notif-1", deliveryId: "delivery-1", type: "clicked", token: "t")
+
+        // Retry-cap exhaustion on transient errors is NOT terminal: the event
+        // stays queued for the next flush (SDKCTR-11).
+        guard case .failure(_, let terminal) = result else { return XCTFail("expected failure") }
+        XCTAssertFalse(terminal)
+    }
+
+    func test_reportEvent408And429AreTransientRetriedAndNonTerminal() {
+        // Pre-release review (aligned with Android): 408 Request Timeout and 429
+        // Too Many Requests describe a temporary condition, so - unlike every
+        // other 4xx (SDKCTR-11) - they are retried with backoff and never make
+        // the event terminal (it stays in the offline queue).
+        for status in [408, 429] {
+            StubURLProtocol.reset()
+            sleeps = []
+            for _ in 0..<5 { StubURLProtocol.enqueue(.status(status)) }
+
+            let result = client.reportEvent(notificationId: "notif-1", deliveryId: "delivery-1", type: "clicked", token: "t")
+
+            guard case .failure(_, let terminal) = result else { return XCTFail("a \(status) must be a failure") }
+            XCTAssertEqual(StubURLProtocol.recordedRequests().count, 5, "a \(status) must be retried up to the cap")
+            XCTAssertEqual(sleeps, [2000, 4000, 8000, 16000])
+            XCTAssertFalse(terminal, "a \(status) must not drop the event")
+        }
+    }
+
+    func test_patch429ThenSuccessIsRetriedAndSucceeds() {
+        StubURLProtocol.enqueue(.status(429))
+        StubURLProtocol.enqueue(.status(200))
+
+        let result = client.patchDevice(deviceId: "device-1", token: "t", fields: ["subscribed": true])
+
+        guard case .success = result else { return XCTFail("a 429 followed by a 2xx must succeed") }
+        XCTAssertEqual(StubURLProtocol.recordedRequests().count, 2)
+        XCTAssertEqual(sleeps, [2000])
+    }
+
+    func test_reportEventAcceptsAny2xxRegardlessOfBody() {
+        // Fire-and-forget like PATCH: 204 No Content, an empty 200 and non-JSON
+        // bodies are all normal ack shapes for an event report, and none of them
+        // may be retried.
+        let acknowledgements: [(Int, String)] = [
+            (200, ""),
+            (201, ""),
+            (204, #"{"ok":true}"#),
+            (200, "<html>captive portal</html>"),
+        ]
+
+        for (status, body) in acknowledgements {
+            StubURLProtocol.reset()
+            sleeps = []
+            StubURLProtocol.enqueue(.status(status, body: body))
+
+            let result = client.reportEvent(notificationId: "notif-1", deliveryId: "delivery-1", type: "clicked", token: "t")
+
+            guard case .success = result else {
+                return XCTFail("a \(status) with body '\(body)' must be a success")
+            }
+            XCTAssertEqual(StubURLProtocol.recordedRequests().count, 1, "a \(status) must not be retried")
+            XCTAssertEqual(sleeps, [], "a \(status) must not back off")
+        }
+    }
+
+    private func bodyData(_ request: URLRequest) -> Data {
+        if let body = request.httpBody { return body }
+        guard let stream = request.httpBodyStream else { return Data() }
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        let bufferSize = 1024
+        var buffer = [UInt8](repeating: 0, count: bufferSize)
+        while stream.hasBytesAvailable {
+            let read = stream.read(&buffer, maxLength: bufferSize)
+            if read <= 0 { break }
+            data.append(buffer, count: read)
+        }
+        return data
+    }
+}
+
+// swiftlint:enable force_try force_cast line_length trailing_comma
