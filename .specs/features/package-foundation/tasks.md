@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/package-foundation/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: In Progress (T1–T3 done)
+**Status**: In Progress (T1–T4 done)
 
 ---
 
@@ -120,7 +120,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T4: `NottiLogger`
+### T4: `NottiLogger` ✅ (NottiSharedTests 5/5; added a 4th test for `defaultLevel`)
 
 **What**: `NottiLogLevel` and `NottiLogger` (default `.error`, lock-protected `level`/`sink`, `os.Logger` subsystem `app.notti.sdk`, `privacy: .public`) with tests.
 **Where**: `Sources/NottiShared/NottiLogger.swift`, `Tests/NottiSharedTests/NottiLoggerTests.swift`
@@ -136,7 +136,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 - [ ] Tests: message at/above level reaches `sink`; message below is dropped and its autoclosure is not evaluated; `.none` drops everything
 - [ ] `sink` reset in `tearDown` (no cross-test leak)
 - [ ] Gate passes: quick `-only-testing:NottiSharedTests/NottiLoggerTests`
-- [ ] Test count: NottiSharedTests 4 (1 + 3)
+- [ ] Test count: NottiSharedTests 5 (1 + 4)
 
 **Tests**: unit
 **Gate**: quick
@@ -159,7 +159,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 - [ ] Every key string copied verbatim from RN at `52e4b55`
 - [ ] Test asserts the literal values (`notification_id`, `delivery_id`, `notti_image_url`, filter lists)
 - [ ] Gate passes: quick `-only-testing:NottiSharedTests/NottiPayloadKeysTests`
-- [ ] Test count: NottiSharedTests 5
+- [ ] Test count: NottiSharedTests 6
 
 **Tests**: unit
 **Gate**: quick
@@ -297,7 +297,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 - [ ] `xcodebuild build -scheme NottiSDK -destination 'generic/platform=iOS'` passes
 - [ ] `xcodebuild build -scheme NottiSDKExtension -destination 'generic/platform=iOS'` passes
 - [ ] The same two commands pass for `generic/platform=iOS Simulator`
-- [ ] Full gate passes; total tests 8 (NottiSharedTests 5, NottiSDKTests 2, NottiSDKExtensionTests 1)
+- [ ] Full gate passes; total tests 9 (NottiSharedTests 6, NottiSDKTests 2, NottiSDKExtensionTests 1)
 
 **Tests**: none (matrix: packaging = build)
 **Gate**: full

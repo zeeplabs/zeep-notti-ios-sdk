@@ -70,7 +70,7 @@ Sequential order used in Execute: C1 → C2 → C3 → C4 → C5 → C6 → C7 �
 - [ ] Behavior unchanged; only access level and key constants differ from RN
 - [ ] `scripts/check-extension-safety.sh` still passes
 - [ ] Gate passes: quick `-only-testing:NottiSharedTests/NottiNotificationParsingTests`
-- [ ] Test count: NottiSharedTests 11 (5 + 6)
+- [ ] Test count: NottiSharedTests 12 (6 + 6)
 
 **Tests**: unit
 **Gate**: quick
@@ -410,4 +410,4 @@ No `[P]` tasks (TESTING.md: not parallel-safe).
 
 13/13 mapped. Inherited RN IDs are mapped test-by-test in C13.
 
-Expected `NottiSDKTests` total after C13: ≥ 2 (foundation) + 19 + 7 + 12 + 30 + 4 + 123 + 8 + 15 + 2 + 1 = ≥ 223. `NottiSharedTests`: 11.
+Expected `NottiSDKTests` total after C13: ≥ 2 (foundation) + 19 + 7 + 12 + 30 + 4 + 123 + 8 + 15 + 2 + 1 = ≥ 223. `NottiSharedTests`: 12.
