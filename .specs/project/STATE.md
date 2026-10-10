@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-10-09
-**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Design approved 2026-10-09. Tasks drafted 2026-10-09 (package-foundation T1-T12, core-port C1-C13, `.specs/codebase/TESTING.md`), approved 2026-10-09. package-foundation Done (T1–T12; CI proven on PR #1, merged to main 2026-10-09). Next: core-port C1.
+**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Design approved 2026-10-09. Tasks drafted 2026-10-09 (package-foundation T1-T12, core-port T1-T13 (originally C1-C13), `.specs/codebase/TESTING.md`), approved 2026-10-09. package-foundation executed (T1–T12; CI proven on PR #1, merged to main 2026-10-09); Verifier pending (no `validation.md` yet). Next: package-foundation Verifier, then core-port T1.
 
 ---
 
@@ -94,12 +94,15 @@ _none yet._ Candidate lessons inherited from the RN repo (`../zeep-notti-react-n
 - [x] `git init` (branch `main`, 2026-10-09).
 - [x] GitHub remote `origin` = `git@github.com:zeeplabs/zeep-notti-ios-sdk.git` (2026-10-09).
 - [x] Swift 5 language mode for M1; Swift 6 strict concurrency deferred (2026-10-09).
-- [x] RN `sdk-core-v1` "Needs Fix" item (native prerequisite path, SDK-04) carried into core-port: CORE-08, task C9.
+- [x] RN `sdk-core-v1` "Needs Fix" item (native prerequisite path, SDK-04) carried into core-port: CORE-08, task T9.
 
 ---
 
 - [x] Privacy manifest scope: see AD-005.
 - [x] Spike result: CocoaPods honors `-package-name` via `OTHER_SWIFT_FLAGS`. See AD-006.
+
+- [ ] Run the independent Verifier for package-foundation and write `.specs/features/package-foundation/validation.md` (required by the current `tlc-spec-driven`; `validate_state.py` fails without it).
+- [ ] Note: core-port task ids were renamed `C1..C13` → `T1..T13` (2026-10-09) to match the template; older notes and commits may still say `C<n>`.
 
 ## Preferences
 

@@ -35,6 +35,8 @@ All of Notti's iOS behavior (registration, identity, tags, profile fields, sessi
 | Location (country) | Ported, still opt-in and off by default | Parity (SEGTEL-10..15) | y |
 | Logging | RN logs via `NSLog`/`print` (to be confirmed in Design). The port routes through one internal logger with no PII; level control is exposed in `public-api` | LGPD constraint in PROJECT.md | n - Design |
 
+Open questions: none (the two `n - Design` rows were resolved in `design.md`, approved 2026-10-09).
+
 ---
 
 ## User Stories
@@ -135,15 +137,13 @@ Port-specific requirements:
 
 Inherited behavior requirements (verified through CORE-07; detailed mapping is built in Tasks):
 
-| Source | IDs | iOS applicability |
-| --- | --- | --- |
-| sdk-core-v1 | SDK-01..19 | All except Android-only (e.g. SDK-11 POST_NOTIFICATIONS/API 33). Listener/emitter IDs (SDK-17..19) are split: core part here, facade part in `public-api` |
-| ctr-event-reporting | SDKCTR-01..14 | All. Delegate-entry wiring is verified again in `delegate-integration` |
-| opened-event-reporting | SDKOPEN-01..10 | All except SDKOPEN-10 (JS events) → `public-api`; SDKOPEN-11 (docs) → `example-and-release` |
-| segment-telemetry-reporting | SEGTEL-01..15 | All (iOS variants: 24h orphan cap, `notti_session_last_seen_at_ms`, telemetry counted/evicted first in the 32 cap) |
-| device-profile-fields | DPF-01..21 | All. DPF-17..21 email/phone core logic here; JS-surface wording → `public-api` |
+- `sdk-core-v1` (SDK-01..19): All except Android-only (e.g. SDK-11 POST_NOTIFICATIONS/API 33). Listener/emitter IDs (SDK-17..19) are split: core part here, facade part in `public-api`
+- `ctr-event-reporting` (SDKCTR-01..14): All. Delegate-entry wiring is verified again in `delegate-integration`
+- `opened-event-reporting` (SDKOPEN-01..10): All except SDKOPEN-10 (JS events) → `public-api`; SDKOPEN-11 (docs) → `example-and-release`
+- `segment-telemetry-reporting` (SEGTEL-01..15): All (iOS variants: 24h orphan cap, `notti_session_last_seen_at_ms`, telemetry counted/evicted first in the 32 cap)
+- `device-profile-fields` (DPF-01..21): All. DPF-17..21 email/phone core logic here; JS-surface wording → `public-api`
 
-**Coverage:** 13 port requirements + about 78 inherited IDs, 0 mapped to tasks.
+**Coverage:** 13 port requirements, 13 mapped to tasks (see `tasks.md`). About 78 inherited IDs, mapped test-by-test in task T13 (`traceability.md`).
 
 ---
 

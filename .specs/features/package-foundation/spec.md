@@ -36,6 +36,8 @@ The repo is empty. Before any Swift code can be ported (`core-port`), the SDK ne
 | License | MIT | Same as `zeep-notti-react-native/LICENSE` | y (Julio, 2026-10-09) |
 | Test runner | `xcodebuild test` against an iOS Simulator destination (not `swift test` on macOS) | The core imports UIKit/UserNotifications; macOS host tests won't compile | y (technical) |
 
+Open questions: none (the `n` rows were settled in `design.md`, approved 2026-10-09; the facade name stays open for `public-api`).
+
 ---
 
 ## User Stories

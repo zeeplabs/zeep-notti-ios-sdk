@@ -2,7 +2,41 @@
 
 **Design**: `.specs/features/package-foundation/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: Done (T1–T12, 2026-10-09; CI proven on PR #1)
+**Status**: Executed (T1–T12, 2026-10-09; CI proven on PR #1). **Verifier pending**: the current `tlc-spec-driven` requires a `validation.md` written by an independent Verifier (author != verifier) before the feature counts as done. Reformatted afterwards to the current `tlc-spec-driven` template (sections and one-edge-per-line diagrams only; no task content changed).
+
+---
+
+## Execution Protocol (MANDATORY -- do not skip)
+
+Implement these tasks with the `tlc-spec-driven` skill (pinned in `.claude/skills/`): **activate it by name and follow its Execute flow and Critical Rules.** Project rules are in `AGENTS.md`.
+
+**If the skill cannot be activated, STOP and tell the user - do not proceed without it.**
+
+---
+
+## Test Coverage Matrix
+
+> Generated from the approved design and `.specs/codebase/TESTING.md` (greenfield at the time). Guidelines found: `.specs/codebase/TESTING.md`, `.swiftlint.yml`.
+
+| Code Layer | Required Test Type | Coverage Expectation | Location Pattern | Run Command |
+| ---------- | ------------------ | -------------------- | ---------------- | ----------- |
+| `NottiShared` (version, logger, keys) | unit | Every public behavior: semver, level filtering, lazy evaluation, frozen key values | `Tests/NottiSharedTests/*Tests.swift` | `xcodebuild test ... -only-testing:NottiSharedTests/<Class>` |
+| Resources (privacy manifests) | unit | Bundled + every declared type/reason asserted | `Tests/<Target>Tests/PrivacyManifestTests.swift` | same |
+| Packaging (`Package.swift`, podspec) | none (build) | Builds for simulator and device; `pod lib lint` passes | - | build gate + `pod lib lint` |
+| Scripts / CI workflow | none | Verified by a passing and a failing run | - | run the script / CI |
+| Repo hygiene files | none | - | - | - |
+
+`...` = `-scheme NottiSDK-Package -destination "platform=iOS Simulator,name=$NOTTI_SIM" CODE_SIGNING_ALLOWED=NO`.
+
+## Gate Check Commands
+
+> From `.specs/codebase/TESTING.md`.
+
+| Gate Level | When to Use | Command |
+| ---------- | ----------- | ------- |
+| Quick | After tasks with unit tests only | `xcodebuild test ... -only-testing:<Target>/<Class>` |
+| Full | After T11 (whole skeleton) | `xcodebuild test ...` + `docker run --rm -v "$PWD:/w" -w /w ghcr.io/realm/swiftlint:0.65.1 lint --strict` + `scripts/check-version.sh && scripts/check-extension-safety.sh` + `pod lib lint NottiSDK.podspec --platforms=ios` |
+| Build | Packaging-only tasks | `xcodebuild build -scheme NottiSDK-Package -destination "platform=iOS Simulator,name=$NOTTI_SIM" CODE_SIGNING_ALLOWED=NO -quiet` |
 
 ---
 
@@ -32,15 +66,21 @@ T3 ──→ T6 ──→ T7
 ### Phase 4: Packaging and guards
 
 ```
-T1, T5, T7 ──→ T8 ──→ T9
-T3 ─────────────────→ T10
-T8 ─────────────────→ T11
+T1 ──→ T8
+T5 ──→ T8
+T7 ──→ T8
+T8 ──→ T9
+T3 ──→ T10
+T8 ──→ T11
 ```
 
 ### Phase 5: CI
 
 ```
-T2, T9, T10, T11 ──→ T12
+T2 ──→ T12
+T9 ──→ T12
+T10 ──→ T12
+T11 ──→ T12
 ```
 
 Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 → T8 → T9 → T10 → T11 → T12.
