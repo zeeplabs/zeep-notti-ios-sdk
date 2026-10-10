@@ -302,7 +302,7 @@ Notes (T9): the design's `sleeper` init parameter is not a separate argument; th
 
 ---
 
-### T10: `NottiNotificationHandler`
+### T10: `NottiNotificationHandler` ✅ (NottiSDKTests 229 (210 + 19: 15 ported + 4 added); Shared 12, Ext 1, total 242)
 
 **What**: Plain-input handler split from `NottiPushDelegate` (:51-138): `handleWillPresent(userInfo:identifier:)`, `handleResponse(actionIdentifier:userInfo:identifier:)`, `enqueueIfReportable` (requires `notification_id` + `delivery_id`, persists to `runtime.eventStore`, calls `runtime.core?.onNetworkAvailable()`). Rewrite the logic assertions of the 15 `NottiPushDelegateTests` against plain inputs.
 **Where**: `Sources/NottiSDK/Events/NottiNotificationHandler.swift`, `Tests/NottiSDKTests/NottiNotificationHandlerTests.swift`
@@ -312,16 +312,18 @@ Notes (T9): the design's `sleeper` init parameter is not a separate argument; th
 
 **Done when**:
 
-- [ ] Non-remote (`aps` absent) inputs are ignored in both entry points
-- [ ] Body tap: one `opened` + one `clicked` enqueued, one buffered click; custom action: `clicked` only, no buffered click; dismiss: nothing
-- [ ] Cold start: handler on a runtime with no core persists the event; a later `start` + successful registration flushes it (CORE-04)
-- [ ] Each of the 15 RN tests accounted for: ported here, or moved to `delegate-integration` (UNNotification KVC fixtures), with reason
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiNotificationHandlerTests`
-- [ ] Test count: +≥15 (exact number stated in the summary)
+- [x] Non-remote (`aps` absent) inputs are ignored in both entry points
+- [x] Body tap: one `opened` + one `clicked` enqueued, one buffered click; custom action: `clicked` only, no buffered click; dismiss: nothing
+- [x] Cold start: handler on a runtime with no core persists the event; a later `start` + successful registration flushes it (CORE-04)
+- [x] Each of the 15 RN tests accounted for: all 15 ported here against plain inputs (2 renamed: "JS click" wording). Moved to `delegate-integration`: only the KVC fixture builders (`makeNotification`/`makeResponse`, `class_createInstance` center) and the completion-handler plumbing, which no RN test asserted beyond "it was called"
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiNotificationHandlerTests`
+- [x] Test count: +19 (15 ported + received-handler emission (SDK-17), body-tap click emission + dismiss (SDK-18), cold-start flush (CORE-04), opportunistic flush with a registered core)
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(events): add NottiNotificationHandler with plain inputs`
+
+Notes (T10): `handleWillPresent` returns `true` for every input, because RN called the completion handler with `[.banner, .list, .sound, .badge]` for every notification (remote or not); the presentation options themselves are the adapter's job (`delegate-integration`). Payload keys come from `NottiPayloadKeys` (same strings as RN). `eventStore.enqueue`'s result is discarded explicitly (`_ =`): RN's call site discarded it implicitly, which is a compiler warning.
 
 ---
 
