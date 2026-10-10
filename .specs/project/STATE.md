@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-10-09
-**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Design approved 2026-10-09. Tasks drafted 2026-10-09 (package-foundation T1-T12, core-port C1-C13, `.specs/codebase/TESTING.md`), approved 2026-10-09. Next: Execute T1 (CocoaPods `-package-name` spike).
+**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Design approved 2026-10-09. Tasks drafted 2026-10-09 (package-foundation T1-T12, core-port C1-C13, `.specs/codebase/TESTING.md`), approved 2026-10-09. Executing package-foundation: T1 done (AD-006). Next: T2.
 
 ---
 
@@ -42,6 +42,18 @@
 **Trade-off:** Integrators' App Store privacy labels gain two entries compared to RN 0.6.0. The RN manifest should be aligned in M2.
 **Impact:** package-foundation PKG-11; README data-collection section in `example-and-release`.
 
+### AD-006: Cross-target sharing uses `package` access + `-package-name NottiSDK` in the podspec (2026-10-09)
+
+**Decision:** Keep the design's primary option. `NottiShared` declarations use `package` access. The podspec sets `pod_target_xcconfig OTHER_SWIFT_FLAGS = '$(inherited) -package-name NottiSDK'`. The `@_spi(NottiInternal)` fallback is not needed.
+**Reason:** Spike (package-foundation T1, throwaway in the scratchpad, Xcode 27.0, CocoaPods 1.17.0) with subspecs Shared/Core/Extension and a `package` symbol used from Core and Extension:
+- SPM `xcodebuild build -scheme Spike-Package`: BUILD SUCCEEDED.
+- `pod lib lint --platforms=ios` (frameworks): passed, 0 warnings.
+- `pod lib lint --platforms=ios --use-libraries` (static libraries, the RN default): passed.
+- `pod lib lint --platforms=ios --subspec=Extension`: passed.
+- Negative control without the flag: fails with `error: the package access level used on 'SharedVersion' requires a package name; set it with the compiler flag -package-name`. So the flag is what makes it work, not a coincidence.
+**Trade-off:** Relies on an undocumented-for-CocoaPods compiler flag passed through `OTHER_SWIFT_FLAGS`. The CI `pod-lint` job is the regression guard. Not verified on Xcode 26.x locally; CI (`macos-26`) covers it in T12.
+**Impact:** package-foundation T3 onward uses `package`; design.md "Cross-target visibility" stands as written.
+
 ---
 
 ## Active Blockers
@@ -80,14 +92,14 @@ _none yet._ Candidate lessons inherited from the RN repo (`../zeep-notti-react-n
 
 - [x] Pod/package name: `NottiSDK` (Julio, 2026-10-09). NSE product `NottiSDKExtension` confirmed (2026-10-09). License MIT.
 - [x] `git init` (branch `main`, 2026-10-09).
-- [x] GitHub remote `origin` = `git@github.com:zeeplabs/zeep-notti-ios-sdk.git` (2026-10-09). Nothing pushed yet.
+- [x] GitHub remote `origin` = `git@github.com:zeeplabs/zeep-notti-ios-sdk.git` (2026-10-09).
 - [x] Swift 5 language mode for M1; Swift 6 strict concurrency deferred (2026-10-09).
-- [ ] Confirm that the RN `sdk-core-v1` "Needs Fix" item (native prerequisite path with no test) is closed or carried into the core-port spec.
+- [x] RN `sdk-core-v1` "Needs Fix" item (native prerequisite path, SDK-04) carried into core-port: CORE-08, task C9.
 
 ---
 
 - [x] Privacy manifest scope: see AD-005.
-- [ ] Spike result: does CocoaPods honor `-package-name` via `OTHER_SWIFT_FLAGS`? If not, use the `@_spi(NottiInternal)` fallback and record an AD.
+- [x] Spike result: CocoaPods honors `-package-name` via `OTHER_SWIFT_FLAGS`. See AD-006.
 
 ## Preferences
 

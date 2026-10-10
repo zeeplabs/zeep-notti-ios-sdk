@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/package-foundation/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: Approved (2026-10-09)
+**Status**: In Progress (T1 done)
 
 ---
 
@@ -49,7 +49,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ## Task Breakdown
 
-### T1: Spike: CocoaPods honors `-package-name` across subspecs
+### T1: Spike: CocoaPods honors `-package-name` across subspecs ✅ (AD-006)
 
 **What**: In the scratchpad (not in the repo), build a throwaway package + podspec with subspecs `Shared` and `Core`, one `package func` in `Shared` called from `Core`, and run `pod lib lint`. Record the result as AD-006 in `STATE.md`.
 **Where**: scratchpad dir (throwaway); `.specs/project/STATE.md` (AD-006, close the spike todo)
