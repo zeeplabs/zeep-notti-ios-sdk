@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/package-foundation/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: In Progress (T1–T5 done)
+**Status**: In Progress (T1–T6 done)
 
 ---
 
@@ -167,7 +167,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T6: `NottiSDK` privacy manifest
+### T6: `NottiSDK` privacy manifest ✅ (NottiSDKTests 2/2; `NottiSDKResources.bundle` wraps `Bundle.module`)
 
 **What**: `PrivacyInfo.xcprivacy` for `NottiSDK` (RN Core baseline + AD-005: CoarseLocation, ProductInteraction), wired as a `.process` resource, with a test that loads it from `Bundle.module` and asserts its content.
 **Where**: `Sources/NottiSDK/Resources/PrivacyInfo.xcprivacy`, `Package.swift` (resources), `Tests/NottiSDKTests/PrivacyManifestTests.swift`

@@ -14,7 +14,11 @@ let package = Package(
         // Internal, extension-safe code shared by both products. Not a product.
         // Declarations use `package` access (AD-006).
         .target(name: "NottiShared"),
-        .target(name: "NottiSDK", dependencies: ["NottiShared"]),
+        .target(
+            name: "NottiSDK",
+            dependencies: ["NottiShared"],
+            resources: [.process("Resources/PrivacyInfo.xcprivacy")]
+        ),
         .target(name: "NottiSDKExtension", dependencies: ["NottiShared"]),
         .testTarget(name: "NottiSharedTests", dependencies: ["NottiShared"]),
         .testTarget(name: "NottiSDKTests", dependencies: ["NottiSDK", "NottiShared"]),
