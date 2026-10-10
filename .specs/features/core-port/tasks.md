@@ -120,7 +120,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T2: Port `NottiDeviceStore` + golden key test
+### T2: Port `NottiDeviceStore` + golden key test ✅ (NottiSDKTests 21 (2 + 18 ported + 1 golden); Shared 12, Ext 1, total 34. Golden test writes through the store and reads the raw suite (keys are private in RN); a renamed key was verified to fail it)
 
 **What**: Port the store verbatim (`internal`), its 18 tests, and add `NottiDeviceStoreKeysTests`, which asserts the key constants equal a frozen list copied from RN.
 **Where**: `Sources/NottiSDK/Storage/NottiDeviceStore.swift`, `Tests/NottiSDKTests/NottiDeviceStoreTests.swift`, `Tests/NottiSDKTests/NottiDeviceStoreKeysTests.swift`
@@ -130,10 +130,10 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] Every key string and value encoding identical to RN
-- [ ] Golden test covers every key, including `notti_session_last_seen_at_ms` and `notti_profile_field_ack_migrated`
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiDeviceStoreTests -only-testing:NottiSDKTests/NottiDeviceStoreKeysTests`
-- [ ] Test count: +19 (18 ported + 1 golden)
+- [x] Every key string and value encoding identical to RN
+- [x] Golden test covers every key, including `notti_session_last_seen_at_ms` and `notti_profile_field_ack_migrated`
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiDeviceStoreTests -only-testing:NottiSDKTests/NottiDeviceStoreKeysTests`
+- [x] Test count: +19 (18 ported + 1 golden)
 
 **Tests**: unit
 **Gate**: quick
