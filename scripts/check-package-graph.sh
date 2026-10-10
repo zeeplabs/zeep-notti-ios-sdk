@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Fails when the package graph breaks the app/extension split (PKG-01, PKG-02, PKG-06):
-#   SPM:       exactly two products (NottiSDK, NottiSDKExtension); NottiShared is not a
+#   SPM:       iOS 15.0 only and swift-tools-version 5.9; exactly two products (NottiSDK, NottiSDKExtension); NottiShared is not a
 #              product and depends on nothing; NottiSDKExtension depends only on NottiShared.
 #   CocoaPods: allowlist. The root spec may only carry metadata keys (no files, no
 #              platform-scoped attributes); the subspecs are exactly Shared, Core and
@@ -15,10 +15,15 @@ set -euo pipefail
 root="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
 cd "$root"
 
+# Runs a command and prints its stdout. stderr is kept apart so tool warnings never end
+# up in the JSON being parsed; it is shown only when the command fails.
+err_file="$(mktemp)"
+trap 'rm -f "$err_file"' EXIT
 run() {
   local out
-  if ! out="$("$@" 2>&1)"; then
+  if ! out="$("$@" 2>"$err_file")"; then
     echo "error: '$*' failed:" >&2
+    cat "$err_file" >&2
     echo "$out" >&2
     exit 1
   fi
@@ -34,6 +39,12 @@ import json, os, sys
 errors = []
 
 spm = json.loads(os.environ["SPM_JSON"])
+# PKG-01 and edge case "tools version stays 5.9 so Xcode 15+ can resolve it".
+if spm.get("platforms") != [{"platformName": "ios", "version": "15.0", "options": []}]:
+    errors.append(f"SPM platforms must be exactly iOS 15.0, got {spm.get('platforms')!r}")
+if spm.get("toolsVersion", {}).get("_version") != "5.9.0":
+    errors.append(f"SPM swift-tools-version must be 5.9, got {spm.get('toolsVersion')!r}")
+
 products = {p["name"]: p["targets"] for p in spm["products"]}
 if products != {"NottiSDK": ["NottiSDK"], "NottiSDKExtension": ["NottiSDKExtension"]}:
     errors.append(f"SPM products must be exactly NottiSDK and NottiSDKExtension, got {products}")
