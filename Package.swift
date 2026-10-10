@@ -25,7 +25,12 @@ let package = Package(
             resources: [.process("Resources/PrivacyInfo.xcprivacy")]
         ),
         .testTarget(name: "NottiSharedTests", dependencies: ["NottiShared"]),
-        .testTarget(name: "NottiSDKTests", dependencies: ["NottiSDK", "NottiShared"]),
+        .testTarget(
+            name: "NottiSDKTests",
+            dependencies: ["NottiSDK", "NottiShared"],
+            // RN 0.6.0 continuity fixture (core-port CORE-11).
+            resources: [.copy("Fixtures")]
+        ),
         .testTarget(name: "NottiSDKExtensionTests", dependencies: ["NottiSDKExtension", "NottiShared"]),
     ],
     swiftLanguageVersions: [.v5]

@@ -129,9 +129,9 @@ Port-specific requirements:
 | CORE-06 | P1: Parity tests (suite ported, counts, drop list) | Specify | In progress |
 | CORE-07 | P1: Parity tests (every iOS RN ID → test) | Specify | Pending |
 | CORE-08 | P1: Parity tests (close SDK-04/12/13/17 core-layer gaps) | Specify | Pending |
-| CORE-09 | P1: Continuity (same suite/keys/encodings) | Specify | In progress |
-| CORE-10 | P1: Continuity (no re-register on migrated state) | Specify | Pending |
-| CORE-11 | P1: Continuity (fixture test) | Specify | Pending |
+| CORE-09 | P1: Continuity (same suite/keys/encodings) | Execute | Implemented (T2, T3, T12) |
+| CORE-10 | P1: Continuity (no re-register on migrated state) | Execute | Implemented (T12) |
+| CORE-11 | P1: Continuity (fixture test) | Execute | Implemented (T12) |
 | CORE-12 | P2: No PII in logs (single logger, no PII values) | Execute | Implemented (T5, T7, T9, T11) |
 | CORE-13 | P2: No PII in logs (errors-only default) | Execute | Implemented (T11) |
 
