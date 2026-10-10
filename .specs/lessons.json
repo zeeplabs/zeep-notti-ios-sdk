@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 8,
+  "next_id": 11,
   "lessons": [
     {
       "id": "L-001",
@@ -130,6 +130,60 @@
       ],
       "created": "2026-10-10T19:14:45Z",
       "last_seen": "2026-10-10T19:14:45Z"
+    },
+    {
+      "id": "L-008",
+      "key": "surviving_mutant::persistence identifiers used only by production wiring e g the userdefaults suite name of a shared singleton need their own golden assertion per test isolated stores never exercise them",
+      "text": "Persistence identifiers used only by production wiring (e.g. the UserDefaults suite name of a shared singleton) need their own golden assertion; per-test isolated stores never exercise them.",
+      "signal": "surviving_mutant",
+      "scope": "storage",
+      "status": "candidate",
+      "features": [
+        "core-port"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "Sources/NottiSDK/Runtime/NottiRuntime.swift:21 (CORE-09, mutant R1) (storage)"
+      ],
+      "created": "2026-10-10T21:36:49Z",
+      "last_seen": "2026-10-10T21:36:49Z"
+    },
+    {
+      "id": "L-009",
+      "key": "surviving_mutant::a no pii in logs sentinel test must drive every log site that has a pii value in scope including failure paths e g registration failure not one representative flow",
+      "text": "A no-PII-in-logs sentinel test must drive every log site that has a PII value in scope, including failure paths (e.g. registration failure), not one representative flow.",
+      "signal": "surviving_mutant",
+      "scope": "logging",
+      "status": "candidate",
+      "features": [
+        "core-port"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "Sources/NottiSDK/Core/NottiCore.swift:725 (CORE-12, mutant L4) (logging)"
+      ],
+      "created": "2026-10-10T21:36:49Z",
+      "last_seen": "2026-10-10T21:36:49Z"
+    },
+    {
+      "id": "L-010",
+      "key": "surviving_mutant::assert a global s effective initial value read without setting it not only the default constant that tests copy into it before asserting",
+      "text": "Assert a global's effective initial value (read without setting it), not only the default constant that tests copy into it before asserting.",
+      "signal": "surviving_mutant",
+      "scope": "logging",
+      "status": "candidate",
+      "features": [
+        "core-port"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "Sources/NottiShared/NottiLogger.swift:41 (CORE-13, mutant G2) (logging)"
+      ],
+      "created": "2026-10-10T21:36:49Z",
+      "last_seen": "2026-10-10T21:36:49Z"
     }
   ]
 }
