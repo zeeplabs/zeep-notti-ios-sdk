@@ -203,7 +203,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T6: Port `NottiNetworkObserver` without the static
+### T6: Port `NottiNetworkObserver` without the static ✅ (NottiSDKTests 74 (70 + 4); Shared 12, Ext 1, total 87. RN had FakePathMonitor inline; moved to Support/)
 
 **What**: Port the observer minus `static let shared`; the "network available" callback is injected (the runtime wires it in T9). Port its 4 tests and add `FakePathMonitor` to test support if RN had it inline.
 **Where**: `Sources/NottiSDK/Network/NottiNetworkObserver.swift`, `Tests/NottiSDKTests/NottiNetworkObserverTests.swift`, `Tests/NottiSDKTests/Support/FakePathMonitor.swift`
@@ -213,9 +213,9 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] No reference to `NottiImpl` or any global; callback injected
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiNetworkObserverTests`
-- [ ] Test count: +4
+- [x] No reference to `NottiImpl` or any global; callback injected
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiNetworkObserverTests`
+- [x] Test count: +4
 
 **Tests**: unit
 **Gate**: quick
