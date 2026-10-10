@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "promote_threshold": 2,
+  "window_days": 45,
+  "quarantine_threshold": 2,
+  "next_id": 4,
+  "lessons": [
+    {
+      "id": "L-001",
+      "key": "surviving_mutant::prove a ci log grep against a real log from the current toolchain e g xcode 26 logs retries as started iteration 2 of 2 never against strings copied from an older pipeline",
+      "text": "Prove a CI log-grep against a real log from the current toolchain (e.g. Xcode 26+ logs retries as 'started (Iteration 2 of 2)'), never against strings copied from an older pipeline.",
+      "signal": "surviving_mutant",
+      "scope": "ci",
+      "status": "candidate",
+      "features": [
+        "package-foundation"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        ".github/workflows/ci.yml:82 (PKG-09) (ci)"
+      ],
+      "created": "2026-10-10T01:59:45Z",
+      "last_seen": "2026-10-10T01:59:45Z"
+    },
+    {
+      "id": "L-002",
+      "key": "surviving_mutant::guard scripts must fail on missing inputs and distinguish grep exit 1 no match from exit 2 error and be tested on the ci s own os gnu vs bsd",
+      "text": "Guard scripts must fail on missing inputs and distinguish grep exit 1 (no match) from exit 2 (error), and be tested on the CI's own OS (GNU vs BSD).",
+      "signal": "surviving_mutant",
+      "scope": "scripts",
+      "status": "candidate",
+      "features": [
+        "package-foundation"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "scripts/check-extension-safety.sh:15 (PKG-03) (scripts)"
+      ],
+      "created": "2026-10-10T01:59:45Z",
+      "last_seen": "2026-10-10T01:59:45Z"
+    },
+    {
+      "id": "L-003",
+      "key": "spec_precision_gap::when a spec says warnings as errors in ci name the job that enforces it and pass the treat warnings as errors flags there explicitly",
+      "text": "When a spec says 'warnings as errors in CI', name the job that enforces it and pass the treat-warnings-as-errors flags there explicitly.",
+      "signal": "spec_precision_gap",
+      "scope": "ci",
+      "status": "candidate",
+      "features": [
+        "package-foundation"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md PKG-04 (ci)"
+      ],
+      "created": "2026-10-10T01:59:45Z",
+      "last_seen": "2026-10-10T01:59:45Z"
+    }
+  ]
+}
