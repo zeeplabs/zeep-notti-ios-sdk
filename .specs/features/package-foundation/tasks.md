@@ -22,7 +22,7 @@ Implement these tasks with the `tlc-spec-driven` skill (pinned in `.claude/skill
 | ---------- | ------------------ | -------------------- | ---------------- | ----------- |
 | `NottiShared` (version, logger, keys) | unit | Every public behavior: semver, level filtering, lazy evaluation, frozen key values | `Tests/NottiSharedTests/*Tests.swift` | `xcodebuild test ... -only-testing:NottiSharedTests/<Class>` |
 | Resources (privacy manifests) | unit | Bundled + every declared type/reason asserted | `Tests/<Target>Tests/PrivacyManifestTests.swift` | same |
-| Packaging (`Package.swift`, podspec) | none (build) | Builds for simulator and device; `pod lib lint` passes | - | build gate + `pod lib lint` |
+| Packaging (`Package.swift`, podspec) | none (build) + graph check | Builds for simulator and device (strict, extension-API-only for the NSE product); `pod lib lint` passes; `scripts/check-package-graph.sh` passes (dependency edges, subspec globs and resources; added after Verifier rounds 2-3) | - | build gate + `pod lib lint` + `scripts/check-package-graph.sh` |
 | Scripts / CI workflow | none | Verified by a passing and a failing run | - | run the script / CI |
 | Repo hygiene files | none | - | - | - |
 
@@ -35,7 +35,7 @@ Implement these tasks with the `tlc-spec-driven` skill (pinned in `.claude/skill
 | Gate Level | When to Use | Command |
 | ---------- | ----------- | ------- |
 | Quick | After tasks with unit tests only | `xcodebuild test ... -only-testing:<Target>/<Class>` |
-| Full | After T11 (whole skeleton) | `xcodebuild test ...` + `docker run --rm -v "$PWD:/w" -w /w ghcr.io/realm/swiftlint:0.65.1 lint --strict` + `scripts/check-version.sh && scripts/check-extension-safety.sh` + `pod lib lint NottiSDK.podspec --platforms=ios` |
+| Full | After T11 (whole skeleton) | `xcodebuild test ...` + `docker run --rm -v "$PWD:/w" -w /w ghcr.io/realm/swiftlint:0.65.1 lint --strict` + `scripts/check-version.sh && scripts/check-extension-safety.sh && scripts/check-package-graph.sh` + `pod lib lint NottiSDK.podspec --platforms=ios` |
 | Build | Packaging-only tasks | `xcodebuild build -scheme NottiSDK-Package -destination "platform=iOS Simulator,name=$NOTTI_SIM" CODE_SIGNING_ALLOWED=NO -quiet` |
 
 ---
