@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-10-09
-**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Design approved 2026-10-09. Next: Tasks.
+**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Design approved 2026-10-09. Tasks drafted 2026-10-09 (package-foundation T1-T12, core-port C1-C13, `.specs/codebase/TESTING.md`), approved 2026-10-09. Next: Execute T1 (CocoaPods `-package-name` spike).
 
 ---
 
