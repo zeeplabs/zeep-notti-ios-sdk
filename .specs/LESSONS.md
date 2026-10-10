@@ -56,6 +56,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: Package.swift:6 (PKG-01) (ci)
 - last seen: 2026-10-10T19:14:45Z
 
+### L-008 - Persistence identifiers used only by production wiring (e.g. the UserDefaults suite name of a shared singleton) need their own golden assertion; per-test isolated stores never exercise them.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `storage` · harmful: 0
+- features: core-port
+- evidence: Sources/NottiSDK/Runtime/NottiRuntime.swift:21 (CORE-09, mutant R1) (storage)
+- last seen: 2026-10-10T21:36:49Z
+
+### L-009 - A no-PII-in-logs sentinel test must drive every log site that has a PII value in scope, including failure paths (e.g. registration failure), not one representative flow.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `logging` · harmful: 0
+- features: core-port
+- evidence: Sources/NottiSDK/Core/NottiCore.swift:725 (CORE-12, mutant L4) (logging)
+- last seen: 2026-10-10T21:36:49Z
+
+### L-010 - Assert a global's effective initial value (read without setting it), not only the default constant that tests copy into it before asserting.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `logging` · harmful: 0
+- features: core-port
+- evidence: Sources/NottiShared/NottiLogger.swift:41 (CORE-13, mutant G2) (logging)
+- last seen: 2026-10-10T21:36:49Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
