@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-10-09
-**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Now: Design.
+**Current Work:** `package-foundation` + `core-port` specs written (Specify), approved 2026-10-09. Design approved 2026-10-09. Next: Tasks.
 
 ---
 
@@ -34,6 +34,13 @@
 **Reason:** One-line integration for native apps. The RN SDK today requires manual AppDelegate forwarding and taking over `UNUserNotificationCenter.delegate`, which conflicts with other push SDKs.
 **Trade-off:** Swizzling is ObjC-runtime work in Swift, fragile across iOS versions and hard to unit test. It must forward to host originals and guard against double-swizzle (OneSignal `SwizzlingForwarder` pattern).
 **Impact:** Its own feature (`delegate-integration`) with a dedicated test strategy. Manual calls made while swizzling is active must be ignored with a warning, to avoid double-processing.
+
+### AD-005: Privacy manifest declares more than RN 0.6.0 (2026-10-09)
+
+**Decision:** The `NottiSDK` privacy manifest declares Coarse Location (opt-in country) and Product Interaction (session telemetry), in addition to RN's Email, Phone and UserDefaults `CA92.1`.
+**Reason:** These are data the SDK actually collects and links to the device record. Under-declaring them is an App Store review and LGPD transparency risk.
+**Trade-off:** Integrators' App Store privacy labels gain two entries compared to RN 0.6.0. The RN manifest should be aligned in M2.
+**Impact:** package-foundation PKG-11; README data-collection section in `example-and-release`.
 
 ---
 
@@ -78,6 +85,9 @@ _none yet._ Candidate lessons inherited from the RN repo (`../zeep-notti-react-n
 - [ ] Confirm that the RN `sdk-core-v1` "Needs Fix" item (native prerequisite path with no test) is closed or carried into the core-port spec.
 
 ---
+
+- [x] Privacy manifest scope: see AD-005.
+- [ ] Spike result: does CocoaPods honor `-package-name` via `OTHER_SWIFT_FLAGS`? If not, use the `@_spi(NottiInternal)` fallback and record an AD.
 
 ## Preferences
 

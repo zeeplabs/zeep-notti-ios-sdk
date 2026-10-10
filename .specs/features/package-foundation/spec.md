@@ -97,7 +97,7 @@ The repo is empty. Before any Swift code can be ported (`core-port`), the SDK ne
 
 **Acceptance Criteria**:
 
-1. WHEN `NottiSDK` is consumed via SPM or CocoaPods THEN its bundled privacy manifest SHALL declare at least what RN's Core manifest declares today: `NSPrivacyTracking = false`, UserDefaults accessed API (reason `CA92.1`), and collected data types Email and Phone (not linked to tracking).
+1. WHEN `NottiSDK` is consumed via SPM or CocoaPods THEN its bundled privacy manifest SHALL declare at least what RN's Core manifest declares today: `NSPrivacyTracking = false`, UserDefaults accessed API (reason `CA92.1`), and collected data types Email and Phone (not linked to tracking), plus Coarse Location and Product Interaction (AD-005).
 2. WHEN `NottiSDKExtension` is consumed THEN its privacy manifest SHALL declare at least what RN's NSE manifest declares today (FileTimestamp accessed API).
 3. WHEN a later feature adds a required-reason API or a new collected data type THEN that feature's spec SHALL update the manifest. (This is a process rule; it is verified in each later feature's validation.)
 
