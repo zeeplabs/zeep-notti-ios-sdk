@@ -141,7 +141,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T3: Port `NottiEventStore`
+### T3: Port `NottiEventStore` ✅ (NottiSDKTests 28 (21 + 6 ported + 1 corrupt-queue); Shared 12, Ext 1, total 41. The warn fires per read while the corrupt value is stored (RN overwrites it on the next enqueue))
 
 **What**: Port the store verbatim and its 6 tests; add a `.warn` log when `notti_pending_events` fails to decode (the queue is still dropped, as in RN), plus 1 test for it.
 **Where**: `Sources/NottiSDK/Storage/NottiEventStore.swift`, `Tests/NottiSDKTests/NottiEventStoreTests.swift`
@@ -151,10 +151,10 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] `PendingEvent` Codable field names unchanged
-- [ ] New test: corrupt data → empty queue, no crash, one `.warn` reaches `NottiLogger.sink`
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiEventStoreTests`
-- [ ] Test count: +7 (6 + 1)
+- [x] `PendingEvent` Codable field names unchanged
+- [x] New test: corrupt data → empty queue, no crash, one `.warn` reaches `NottiLogger.sink`
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiEventStoreTests`
+- [x] Test count: +7 (6 + 1)
 
 **Tests**: unit
 **Gate**: quick
