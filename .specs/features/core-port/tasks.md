@@ -162,7 +162,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T4: Port `NottiEventBuffer` without the static
+### T4: Port `NottiEventBuffer` without the static ✅ (NottiSDKTests 40 (28 + 12); Shared 12, Ext 1, total 53)
 
 **What**: Port the buffer verbatim minus `static let shared`; port its 12 tests to instances.
 **Where**: `Sources/NottiSDK/Events/NottiEventBuffer.swift`, `Tests/NottiSDKTests/NottiEventBufferTests.swift`
@@ -172,9 +172,9 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] No `shared` member; no other diff against RN except access level
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiEventBufferTests`
-- [ ] Test count: +12
+- [x] No `shared` member; no other diff against RN except access level
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiEventBufferTests`
+- [x] Test count: +12
 
 **Tests**: unit
 **Gate**: quick

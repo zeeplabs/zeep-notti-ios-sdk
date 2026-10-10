@@ -123,7 +123,7 @@ Port-specific requirements:
 | --- | --- | --- | --- |
 | CORE-01 | P1: Core without RN (components ported, no RN symbols) | Specify | In progress |
 | CORE-02 | P1: Core without RN (all deps injectable) | Specify | In progress |
-| CORE-03 | P1: Core without RN (container replaces statics) | Specify | Pending |
+| CORE-03 | P1: Core without RN (container replaces statics) | Specify | In progress |
 | CORE-04 | P1: Core without RN (pre-init events persisted) | Specify | Pending |
 | CORE-05 | P1: Core without RN (native sdk_version) | Specify | Pending |
 | CORE-06 | P1: Parity tests (suite ported, counts, drop list) | Specify | In progress |
