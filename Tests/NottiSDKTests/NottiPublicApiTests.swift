@@ -1,3 +1,5 @@
+import UIKit
+import UserNotifications
 import XCTest
 @testable import NottiSDK
 @testable import NottiShared
@@ -27,6 +29,7 @@ final class NottiPublicApiTests: XCTestCase {
     private var sessions: [URLSession] = []
     private var savedLevel: NottiLogLevel = .error
     private var permissionAnswer = true
+    private var swizzlingActive = false
 
     override func setUp() {
         super.setUp()
@@ -35,6 +38,7 @@ final class NottiPublicApiTests: XCTestCase {
         defaults = UserDefaults(suiteName: suiteName)
         savedLevel = NottiLogger.level
         permissionAnswer = true
+        swizzlingActive = false
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [StubURLProtocol.self]
         let session = URLSession(configuration: config)
@@ -52,7 +56,11 @@ final class NottiPublicApiTests: XCTestCase {
             sdkVersion: "",
             startObservers: false
         )
-        facade = NottiFacade(runtime: runtime, dispatcher: { $0() })
+        facade = NottiFacade(
+            runtime: runtime,
+            dispatcher: { $0() },
+            isSwizzlingActive: { [weak self] in self?.swizzlingActive ?? false }
+        )
         NottiFacade.setSharedForTesting(facade)
     }
 
@@ -261,6 +269,139 @@ final class NottiPublicApiTests: XCTestCase {
 
         XCTAssertEqual(Notti.Notifications.takeInitialClick()?.data, ["id": "n-2"])
         XCTAssertNil(Notti.Notifications.takeInitialClick())
+    }
+
+    // MARK: - Manual forwarding (DEL-08, DEL-09)
+
+    private func makeNotification(userInfo: [AnyHashable: Any], identifier: String = "req-1") -> UNNotification {
+        let content = UNMutableNotificationContent()
+        content.userInfo = userInfo
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
+        guard let notification = (UNNotification.self as NSObject.Type).init() as? UNNotification else {
+            fatalError("could not allocate UNNotification")
+        }
+        notification.setValue(request, forKey: "request")
+        notification.setValue(Date(), forKey: "date")
+        return notification
+    }
+
+    private func makeResponse(
+        userInfo: [AnyHashable: Any],
+        action: String = UNNotificationDefaultActionIdentifier
+    ) -> UNNotificationResponse {
+        guard let response = (UNNotificationResponse.self as NSObject.Type).init() as? UNNotificationResponse else {
+            fatalError("could not allocate UNNotificationResponse")
+        }
+        response.setValue(makeNotification(userInfo: userInfo), forKey: "notification")
+        response.setValue(action, forKey: "actionIdentifier")
+        return response
+    }
+
+    private func nottiUserInfo(notificationId: String = "n-1", deliveryId: String = "d-1") -> [AnyHashable: Any] {
+        ["aps": ["alert": ["title": "Title fixture", "body": "Body fixture"]], "notification_id": notificationId, "delivery_id": deliveryId]
+    }
+
+    private var silentUserInfo: [AnyHashable: Any] {
+        ["aps": ["content-available": 1], "notification_id": "n-s", "delivery_id": "d-s"]
+    }
+
+    private var storedTypes: [String] { runtime.eventStore.all().map(\.type) }
+
+    private func captureLogs(_ body: () -> Void) -> [(NottiLogLevel, String)] {
+        let lock = NSLock()
+        var captured: [(NottiLogLevel, String)] = []
+        NottiLogger.level = .verbose
+        NottiLogger.sink = { level, message in lock.withLock { captured.append((level, message)) } }
+        defer { NottiLogger.sink = nil }
+        body()
+        return lock.withLock { captured }
+    }
+
+    func test_manualDidRegisterReachesTheAdapterAndRegistersTheHexToken() {
+        initializePublic()
+        StubURLProtocol.reset()
+        StubURLProtocol.enqueue(.echoDevice())
+
+        Notti.Notifications.didRegisterForRemoteNotifications(deviceToken: Data([0xAB, 0x01, 0xFF]))
+        drain()
+
+        XCTAssertEqual(bodies("POST").first?["token"] as? String, "ab01ff")
+    }
+
+    func test_manualDidFailLogsDomainAndCodeOnly() {
+        let logs = captureLogs {
+            Notti.Notifications.didFailToRegisterForRemoteNotifications(
+                error: NSError(domain: "fixture.apns", code: 3000, userInfo: [NSLocalizedDescriptionKey: "https://notti.example.invalid/secret"])
+            )
+        }
+
+        XCTAssertEqual(logs.filter { $0.0 == .error }.map(\.1), ["Notti: failed to register for remote notifications - fixture.apns#3000"])
+        XCTAssertFalse(logs.contains { $0.1.contains("example.invalid") })
+    }
+
+    func test_manualDidReceiveRemoteNotificationReportsASilentPushAndReturnsNoData() {
+        XCTAssertEqual(Notti.Notifications.didReceiveRemoteNotification(silentUserInfo), .noData)
+        XCTAssertEqual(storedTypes, ["received"])
+    }
+
+    func test_manualWillPresentReportsANottiPushAndReturnsTheD2Options() {
+        let options = Notti.Notifications.willPresent(makeNotification(userInfo: nottiUserInfo()))
+
+        XCTAssertEqual(options, [.banner, .list, .sound, .badge])
+        XCTAssertEqual(storedTypes, ["received"])
+    }
+
+    func test_manualWillPresentOfANonNottiNotificationReturnsNoOptionsAndReportsNothing() {
+        let options = Notti.Notifications.willPresent(makeNotification(userInfo: ["custom": "fixture"]))
+
+        XCTAssertEqual(options, [])
+        XCTAssertTrue(storedTypes.isEmpty)
+    }
+
+    func test_manualDidReceiveOfABodyTapQueuesOneOpenedAndOneClicked() {
+        Notti.Notifications.didReceive(makeResponse(userInfo: nottiUserInfo()))
+
+        XCTAssertEqual(storedTypes, ["opened", "clicked"])
+    }
+
+    func test_manualDidReceiveBeforeInitializeIsBufferedLikeTheSwizzledPath() {
+        XCTAssertNil(facade.activeConfig)
+
+        Notti.Notifications.didReceive(makeResponse(userInfo: nottiUserInfo()))
+
+        XCTAssertEqual(storedTypes, ["opened", "clicked"], "queued with no core")
+        XCTAssertEqual(Notti.Notifications.takeInitialClick()?.title, "Title fixture")
+        XCTAssertNil(Notti.Notifications.takeInitialClick(), "once")
+    }
+
+    func test_whileSwizzlingIsActiveEveryManualCallIsIgnoredWithOneWarnAndNoValues() {
+        swizzlingActive = true
+        let userInfo = nottiUserInfo(notificationId: "n-sentinel", deliveryId: "d-sentinel")
+        let calls: [() -> Void] = [
+            { Notti.Notifications.didRegisterForRemoteNotifications(deviceToken: Data([0xDE, 0xAD])) },
+            { Notti.Notifications.didFailToRegisterForRemoteNotifications(error: NSError(domain: "fixture.sentinel", code: 77)) },
+            { _ = Notti.Notifications.didReceiveRemoteNotification(self.silentUserInfo) },
+            { _ = Notti.Notifications.willPresent(self.makeNotification(userInfo: userInfo)) },
+            { Notti.Notifications.didReceive(self.makeResponse(userInfo: userInfo)) }
+        ]
+
+        let logs = captureLogs {
+            for call in calls {
+                let before = StubURLProtocol.recordedRequests().count
+                call()
+                XCTAssertEqual(StubURLProtocol.recordedRequests().count, before)
+            }
+        }
+
+        XCTAssertEqual(logs.filter { $0.0 == .warn }.count, 5, "one warn per ignored call")
+        XCTAssertEqual(logs.count, 5, "nothing else is logged")
+        XCTAssertTrue(storedTypes.isEmpty, "nothing reported")
+        XCTAssertNil(runtime.eventBuffer.takeInitialClick())
+        for (_, message) in logs {
+            for sentinel in ["dead", "sentinel", "Title fixture", "Body fixture", "77", "d-s", "n-s"] {
+                XCTAssertFalse(message.contains(sentinel), "log leaked \(sentinel)")
+            }
+        }
     }
 
     // MARK: - F1: the production facade reads the real `notti_prefs` suite

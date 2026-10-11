@@ -33,6 +33,11 @@ Sources/NottiSDK/Public/Notti.swift: public static var logLevel: LogLevel {
 Sources/NottiSDK/Public/Notti.swift: public struct Options {
 Sources/NottiSDK/Public/Notti.swift: public typealias LogLevel = NottiLogLevelObjC
 Sources/NottiSDK/Public/Notti.swift: public var baseUrl: String?
+Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func didFailToRegisterForRemoteNotifications(error: Error) {
+Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func didReceive(_ response: UNNotificationResponse) {
+Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
+Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func didRegisterForRemoteNotifications(deviceToken: Data) {
+Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func willPresent(_ notification: UNNotification) -> UNNotificationPresentationOptions {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public final class NottiNotificationsObjC: NSObject {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public final class NottiObjC: NSObject {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public final class NottiUserObjC: NSObject {
