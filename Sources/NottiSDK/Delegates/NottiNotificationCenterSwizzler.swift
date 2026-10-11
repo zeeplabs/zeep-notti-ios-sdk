@@ -46,6 +46,10 @@ final class NottiNotificationCenterSwizzler {
     /// Returns false when an install failed (logged at `.error` by the swizzler).
     @discardableResult
     func swizzle(delegateClass cls: AnyClass) -> Bool {
+        // The SDK's own fallback delegate already reports through the adapter; swizzling it would observe twice.
+        if (cls as? NottiNotificationCenterDelegate.Type) != nil {
+            return true
+        }
         let present = swizzleWillPresent(cls)
         let response = swizzleDidReceive(cls)
         return present && response
