@@ -96,8 +96,30 @@ final class NottiRichMediaJob: NSObject, URLSessionDownloadDelegate {
         guard !isFinished else { return }
         lock.lock(); sawFile = true; lock.unlock()
 
+        let fileManager = FileManager.default
+        // The system deletes `location` after this returns; removing it on a drop keeps NSE-09 true even
+        // for a caller that hands over a file of its own.
+        func drop(_ reason: NottiRichMediaDropReason) {
+            try? fileManager.removeItem(at: location)
+            finish(.dropped(reason))
+        }
+
         if let http = downloadTask.response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-            finish(.dropped(.httpStatus(http.statusCode)))
+            drop(.httpStatus(http.statusCode))
+            return
+        }
+        // Second barrier for NSE-04: the final URL, after any redirect, must still be https.
+        if let finalURL = downloadTask.response?.url, finalURL.scheme?.lowercased() != "https" {
+            drop(.redirectNotHTTPS)
+            return
+        }
+        // Second barrier for NSE-06: the size of the file on disk. `fileSizeKey` avoids `attributesOfItem` (D9).
+        guard let size = try? location.resourceValues(forKeys: [.fileSizeKey]).fileSize else {
+            drop(.noFile)
+            return
+        }
+        if Int64(size) > environment.limits.maxBytes {
+            drop(.oversize)
             return
         }
 
@@ -105,7 +127,6 @@ final class NottiRichMediaJob: NSObject, URLSessionDownloadDelegate {
             mimeType: downloadTask.response?.mimeType,
             url: downloadTask.originalRequest?.url ?? location
         )
-        let fileManager = FileManager.default
         try? fileManager.createDirectory(at: environment.directory, withIntermediateDirectories: true)
         let destination = environment.directory
             .appendingPathComponent(UUID().uuidString)
