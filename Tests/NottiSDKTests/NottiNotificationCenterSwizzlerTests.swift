@@ -370,4 +370,126 @@ final class NottiNotificationCenterSwizzlerTests: XCTestCase {
         XCTAssertEqual(storedTypes, ["received", "received"], "one observation per callback on each class")
         XCTAssertEqual(calls, ["original:willPresent", "original:willPresent"])
     }
+
+    // MARK: - Fallback delegate (T7)
+
+    private final class FakeCenter: NottiNotificationCenterHost {
+        weak var delegate: UNUserNotificationCenterDelegate?
+    }
+
+    private final class FakeHostDelegate: NSObject, UNUserNotificationCenterDelegate {}
+
+    private func makeAssigner(
+        enabled: Bool = true,
+        center: FakeCenter,
+        notificationCenter: NotificationCenter
+    ) -> NottiFallbackDelegateAssigner {
+        NottiFallbackDelegateAssigner(
+            isEnabled: enabled,
+            center: center,
+            notificationCenter: notificationCenter,
+            adapter: adapter
+        )
+    }
+
+    func test_aCenterWithANilDelegateGetsTheFallbackAfterTheLaunchNotification() {
+        let center = FakeCenter()
+        let notifications = NotificationCenter()
+        let assigner = makeAssigner(center: center, notificationCenter: notifications)
+        assigner.start()
+
+        XCTAssertNil(center.delegate, "nothing is assigned before the end of launch")
+        notifications.post(name: UIApplication.didFinishLaunchingNotification, object: nil)
+
+        XCTAssertTrue(center.delegate is NottiNotificationCenterDelegate)
+        XCTAssertTrue(center.delegate === assigner.assignedFallback)
+    }
+
+    func test_aDelegateSetBeforeTheLaunchNotificationIsLeftUntouched() {
+        let center = FakeCenter()
+        let host = FakeHostDelegate()
+        let notifications = NotificationCenter()
+        let assigner = makeAssigner(center: center, notificationCenter: notifications)
+        assigner.start()
+
+        center.delegate = host // the host sets it inside didFinishLaunching
+        notifications.post(name: UIApplication.didFinishLaunchingNotification, object: nil)
+
+        XCTAssertTrue(center.delegate === host)
+        XCTAssertNil(assigner.assignedFallback)
+    }
+
+    func test_optOutNeverAssignsTheFallback() {
+        let center = FakeCenter()
+        let notifications = NotificationCenter()
+        let assigner = makeAssigner(enabled: false, center: center, notificationCenter: notifications)
+        assigner.start()
+
+        notifications.post(name: UIApplication.didFinishLaunchingNotification, object: nil)
+
+        XCTAssertNil(center.delegate)
+        XCTAssertNil(assigner.assignedFallback)
+    }
+
+    func test_startingTwiceAndPostingTwiceAssignsOnceAndNeverOverridesALaterHostDelegate() {
+        let center = FakeCenter()
+        let host = FakeHostDelegate()
+        let notifications = NotificationCenter()
+        let assigner = makeAssigner(center: center, notificationCenter: notifications)
+        assigner.start()
+        assigner.start()
+
+        notifications.post(name: UIApplication.didFinishLaunchingNotification, object: nil)
+        let first = center.delegate
+        center.delegate = host
+        notifications.post(name: UIApplication.didFinishLaunchingNotification, object: nil)
+
+        XCTAssertTrue(first is NottiNotificationCenterDelegate)
+        XCTAssertTrue(center.delegate === host)
+    }
+
+    /// An allocated, never-used `UNUserNotificationCenter`: `.current()` can fail in a test process without an app bundle.
+    private func makeUnusedCenter() -> UNUserNotificationCenter {
+        guard let object = class_createInstance(UNUserNotificationCenter.self, 0) else {
+            fatalError("could not allocate UNUserNotificationCenter")
+        }
+        return unsafeDowncast(object as AnyObject, to: UNUserNotificationCenter.self)
+    }
+
+    func test_theFallbackReportsThroughTheAdapterAndCompletesOnce() {
+        let fallback = NottiNotificationCenterDelegate(adapter: adapter)
+        let center = makeUnusedCenter()
+
+        var presented: [UNNotificationPresentationOptions] = []
+        let nottiPush = makeNotification(userInfo: nottiUserInfo())
+        fallback.userNotificationCenter(center, willPresent: nottiPush) { presented.append($0) }
+        fallback.userNotificationCenter(
+            center,
+            willPresent: makeNotification(userInfo: ["notification_id": "n-9", "delivery_id": "d-9"])
+        ) { presented.append($0) }
+        XCTAssertEqual(presented, [[.banner, .list, .sound, .badge], []], "D2 options, one completion per call")
+        XCTAssertEqual(storedTypes, ["received"], "the local notification is not reported")
+
+        var completions = 0
+        let response = makeResponse(
+            userInfo: nottiUserInfo(notificationId: "n-2", deliveryId: "d-2"),
+            actionIdentifier: UNNotificationDefaultActionIdentifier
+        )
+        fallback.userNotificationCenter(center, didReceive: response) { completions += 1 }
+        XCTAssertEqual(completions, 1)
+        XCTAssertEqual(storedTypes, ["received", "opened", "clicked"])
+    }
+
+    func test_theSwizzlerNeverSwizzlesTheFallbackSoACallbackIsObservedOnce() {
+        let sdk = makeSwizzler()
+        XCTAssertTrue(sdk.swizzle(delegateClass: NottiNotificationCenterDelegate.self))
+        XCTAssertFalse(swizzler.isSwizzled(NottiNotificationCenterDelegate.self, presentSel))
+        XCTAssertFalse(swizzler.isSwizzled(NottiNotificationCenterDelegate.self, responseSel))
+
+        let fallback = NottiNotificationCenterDelegate(adapter: adapter)
+        let notification = makeNotification(userInfo: nottiUserInfo())
+        fallback.userNotificationCenter(makeUnusedCenter(), willPresent: notification) { _ in }
+
+        XCTAssertEqual(storedTypes, ["received"])
+    }
 }
