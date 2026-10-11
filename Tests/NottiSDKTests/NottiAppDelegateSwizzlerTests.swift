@@ -183,6 +183,44 @@ final class NottiAppDelegateSwizzlerTests: XCTestCase {
         logLock.withLock { logs }
     }
 
+    // MARK: - Order (DEL-03): the adapter first, then the host's original
+
+    /// A fresh adapter resolves its runtime on first use, so the provider call marks the moment the SDK
+    /// handles the callback. Each callback gets its own adapter and class.
+    private func adapterRecordingFirstUse() -> NottiPushAdapter {
+        NottiPushAdapter(runtimeProvider: { [weak self] in
+            self?.calls.append("adapter")
+            return self?.runtime ?? NottiRuntime.shared
+        })
+    }
+
+    func test_theAdapterHandlesTheTokenCallbackBeforeTheHostOriginal() {
+        let cls = makeDelegateClass(.token)
+        XCTAssertTrue(NottiAppDelegateSwizzler(swizzler: swizzler, adapter: adapterRecordingFirstUse()).swizzle(delegateClass: cls))
+
+        sendToken(makeInstance(cls), Data([0x01]))
+
+        XCTAssertEqual(calls, ["adapter", "original:token"])
+    }
+
+    func test_theAdapterHandlesTheFailureCallbackBeforeTheHostOriginal() {
+        let cls = makeDelegateClass(.failure)
+        XCTAssertTrue(NottiAppDelegateSwizzler(swizzler: swizzler, adapter: adapterRecordingFirstUse()).swizzle(delegateClass: cls))
+
+        sendFailure(makeInstance(cls), NSError(domain: "fixture.apns", code: 1))
+
+        XCTAssertEqual(calls, ["adapter", "original:failure"])
+    }
+
+    func test_theAdapterHandlesTheFetchCallbackBeforeTheHostOriginal() {
+        let cls = makeDelegateClass(.fetch)
+        XCTAssertTrue(NottiAppDelegateSwizzler(swizzler: swizzler, adapter: adapterRecordingFirstUse()).swizzle(delegateClass: cls))
+
+        _ = sendFetch(makeInstance(cls), silentUserInfo())
+
+        XCTAssertEqual(calls, ["adapter", "original:fetch"])
+    }
+
     // MARK: - All three implemented
 
     func test_delegateWithAllThreeMethodsReachesTheAdapterOnceAndEachOriginalOnce() {
