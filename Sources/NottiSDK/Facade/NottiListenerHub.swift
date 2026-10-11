@@ -9,18 +9,21 @@ typealias NottiMainDispatcher = (@escaping () -> Void) -> Void
 /// A listener stays registered until `remove()` is called: there is no
 /// auto-removal on `deinit`, so a host may drop the subscription and keep
 /// listening (RN `EventSubscription` parity). `remove()` is idempotent, thread
-/// safe, and releases the handler.
-public final class NottiSubscription {
+/// safe, and releases the handler. It inherits `NSObject` so Objective-C hosts
+/// can hold it and call `-remove`.
+@objc(NottiSubscription)
+public final class NottiSubscription: NSObject {
     private let lock = NSLock()
     private var onRemove: (() -> Void)?
 
     init(onRemove: @escaping () -> Void) {
         self.onRemove = onRemove
+        super.init()
     }
 
     /// Stops delivery to the handler this subscription was returned for.
     /// Calling it again is a no-op.
-    public func remove() {
+    @objc public func remove() {
         let action: (() -> Void)? = lock.withLock {
             let current = onRemove
             onRemove = nil
