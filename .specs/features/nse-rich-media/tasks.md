@@ -399,10 +399,10 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Every path above is covered in one parameterized sweep, and a deliberately logged URL makes it fail (checked once by hand, noted in the commit body)
-- [ ] The sweep asserts the log level of a drop is `.error` and the category is `nse`
-- [ ] Gate check passes: quick
-- [ ] One `test_` method per path (no sub-test loops), so a failure names the path; test count: at least 11 new
+- [x] Every path above is covered in one parameterized sweep, and a deliberately logged URL makes it fail (checked once by hand, noted in the commit body)
+- [x] The sweep asserts the log level of a drop is `.error` and the category is `nse`
+- [x] Gate check passes: quick
+- [x] One `test_` method per path (no sub-test loops), so a failure names the path; test count: at least 11 new
 
 **Tests**: unit
 **Gate**: quick
