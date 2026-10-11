@@ -38,14 +38,14 @@
 | Async API | `requestPermission() async -> Bool` plus a completion-handler variant. The `Bool` is the OS dialog result, not the PATCH result | RN `Promise<boolean>` semantics. Julio, 2026-10-10 | y |
 | Before `initialize` | Calls that need a registered device are dropped and logged at `.warn`/`.error` as the core does today. `requestPermission` completes with `false` without showing the prompt. Email/phone are persisted and converge on the next registration (DPF-19) | Preserves core-port behavior, no new rules | y (inherited) |
 | Failure model | Nothing in the facade throws or crashes. Invalid input is logged and ignored | Core contract (invalid `baseUrl` disables the SDK instead of throwing) | y (inherited) |
-| Log level default | `.error` | CORE-13. The roadmap line "off by default in release" is read as "no verbose output by default", not as `.none` | n - Julio to confirm wording |
+| Log level default | `.error` | CORE-13. The roadmap line "off by default in release" is read as "no verbose output by default", not as `.none` | y (Julio went on to Design without objecting, 2026-10-11) |
 | ObjC shape | Swift `enum`/`struct` namespaces are not visible to Objective-C, so the `@objc` layer is a separate set of `NSObject` classes. Class names and prefix are decided in Design | Language constraint | n - Design |
-| `getDeviceId()` before `initialize` | Returns `nil`, because the core does not exist yet, even if a device id is persisted | Matches how the core exposes it today. RN behavior with a persisted id before initialize is not verified | n - verify against RN in Design. If RN returns the persisted id, the facade must too (AD-002) |
+| `getDeviceId()` before `initialize` | Returns the persisted device id, or `nil` if the device never registered | RN builds its core eagerly, so it returns the persisted id (`NottiImpl.swift:377`). The native runtime has no core before `start`, so Design adds `NottiRuntime.ensureCore()` | y (verified in Design, 2026-10-11) |
 | Initial click | One-shot: returns the latest click and consumes it | Core `takeInitialClick()` and RN parity | y (inherited) |
-| Replay for listeners | The `received` core handler replays buffered events when it is first registered, so only the first listener receives that replay. `clicked` has no replay. Later listeners get new events only | Core buffer semantics (SDKOPEN, core-port). Documented, not changed | n - Design confirms against `NottiEventBuffer` |
-| Naming of public types | `Notti` (namespace), `Notti.User`, `Notti.Notifications`, `NottiLogLevel`, `NottiSubscription`, `NottiNotificationPayload` | ROADMAP wording. Final names are frozen in Design | n - Design |
+| Replay for listeners | The `received` core handler replays buffered events when it is first registered, so only the first listener receives that replay. `clicked` has no replay. Later listeners get new events only | Core buffer semantics (`NottiEventBuffer.setHandler`), confirmed in Design | y (verified in Design, 2026-10-11) |
+| Naming of public types | `Notti` (namespace), `Notti.User`, `Notti.Notifications`, `Notti.LogLevel`, `NottiSubscription`, `NottiNotificationPayload`. ObjC names in `design.md`, with a spike and a fallback | ROADMAP wording. `NottiLogLevel` clashes with the `package` type inside the module | y for Swift names. ObjC names pending the spike |
 
-Open questions: the four `n` rows above. Two need an answer from Julio (log level wording) or the backend/RN code (`getDeviceId`, replay); the other two are Design decisions. None blocks moving to Design.
+Open questions: none for Design. The Objective-C class names stay open until the first task's spike (`design.md`), and the default host needs backend confirmation before v0.1.0.
 
 ---
 
@@ -60,11 +60,11 @@ Open questions: the four `n` rows above. Two need an answer from Julio (log leve
 **Acceptance Criteria**:
 
 1. WHEN the host calls `Notti.initialize(appId:clientKey:options:)` THEN the facade SHALL start the shared `NottiRuntime` with those values and with `baseUrl` taken from `options.baseUrl`, or `https://app.zeepnotti.app` if it is omitted or `nil` (API-01).
-2. WHEN `initialize` receives an empty `appId`, `clientKey` or an invalid `baseUrl` THEN the facade SHALL NOT throw or crash, SHALL leave the SDK disabled, and SHALL log through `NottiLogger` without any of the three values (API-01).
+2. WHEN `initialize` receives an empty `appId`, `clientKey` or an invalid `baseUrl` THEN the facade SHALL NOT throw or crash, SHALL log through `NottiLogger` without any of the three values, and SHALL leave the SDK as it was: an uninitialized SDK stays uninitialized, and a running core is NOT replaced (API-01).
 3. WHEN `initialize` is called again with the same normalized `appId`, `clientKey` and `baseUrl` THEN the facade SHALL NOT rebuild the core and SHALL NOT trigger a second registration. WHEN any of them differs THEN it SHALL stop the old core and start a new one (API-02).
 4. WHEN the facade is used in production THEN it SHALL go through `NottiRuntime.shared`, and a test SHALL prove that this runtime reads and writes the `notti_prefs` suite (closes STATE F1) (API-03).
 5. WHEN the host calls `Notti.login(_:)` THEN the facade SHALL call `core.login`. WHEN it calls `Notti.logout()` THEN it SHALL call `core.logout`. Persistence, pending-mutation queueing and server-side clearing of email/phone SHALL be exactly the core's (API-04).
-6. WHEN the host calls `Notti.deviceId` THEN it SHALL receive the current id synchronously or `nil` (API-05).
+6. WHEN the host reads `Notti.deviceId` THEN it SHALL receive the persisted id synchronously, also before `initialize`, or `nil` if the device never registered (API-05).
 7. WHEN the device id changes THEN every registered device-id observer SHALL be called once with the new id, on the main thread. A re-registration with the same id SHALL NOT call them (API-05, API-12).
 
 **Independent Test**: A facade test initializes an isolated runtime with a stubbed HTTP client, asserts one registration request, calls `initialize` again with the same and then different values and asserts 0 and 1 additional registrations, then `login` and asserts the PATCH.
@@ -80,7 +80,7 @@ Open questions: the four `n` rows above. Two need an answer from Julio (log leve
 **Acceptance Criteria**:
 
 1. WHEN the host calls `Notti.User.addTag(_:value:)`, `addTags(_:)`, `removeTag(_:)` or `removeTags(_:)` THEN the facade SHALL map them to `core.mutateTags(add:remove:)`, keeping the core's merge-at-send behavior. `addTags` SHALL accept `[String: String]` only, so no sanitizing of other types is needed in Swift, and the `@objc` variant SHALL pass through `NottiRuntime.sanitizeTags` (API-06).
-2. WHEN the host calls `setEmail`, `clearEmail`, `setPhone` or `clearPhone` THEN the facade SHALL call the matching core method. Persist-before-guard, coalescing and explicit-null clear SHALL stay as in the core (API-07).
+2. WHEN the host calls `setEmail`, `clearEmail`, `setPhone` or `clearPhone`, also before `initialize`, THEN the facade SHALL call the matching core method on a core that exists even before `start`, so the value is persisted and converges at the next registration. Persist-before-guard, coalescing and explicit-null clear SHALL stay as in the core (API-07).
 3. WHEN the host calls `Notti.User.setSubscription(_:)` THEN the facade SHALL call `core.setSubscription`, including the `last_unsubscribed_at` rule on a true-to-false transition (API-08).
 4. WHEN the host calls `Notti.setLocationSharingEnabled(_:)` THEN the facade SHALL call the core on the caller's thread so that the preference is written synchronously (LGPD B1). Default SHALL remain `false`, and the SDK SHALL NOT request location permission (API-08).
 5. WHEN any profile call happens before `initialize` THEN the behavior SHALL be the core's (dropped or persisted-and-converged as listed in Assumptions), with no new exception (API-04, API-06..08).
@@ -98,7 +98,7 @@ Open questions: the four `n` rows above. Two need an answer from Julio (log leve
 **Acceptance Criteria**:
 
 1. WHEN the host calls `await Notti.Notifications.requestPermission()` THEN it SHALL return the result of the OS dialog. WHEN called before `initialize` THEN it SHALL return `false` without showing the prompt. The completion-handler variant SHALL behave the same (API-09).
-2. WHEN the host calls `Notti.Notifications.addListener(_:handler:)` for `received`, `clicked` or `deviceIdChanged` THEN it SHALL receive a `NottiSubscription`. WHEN `remove()` is called THEN that handler SHALL NOT be called again, and calling it twice SHALL be safe (API-10).
+2. WHEN the host calls `Notti.Notifications.addReceivedListener`, `Notti.Notifications.addClickedListener` or `Notti.addDeviceIdChangedListener` THEN it SHALL receive a `NottiSubscription`. WHEN `remove()` is called THEN that handler SHALL NOT be called again, and calling it twice SHALL be safe (API-10).
 3. WHEN several listeners exist for one event THEN every one SHALL receive each event, in registration order, on the main thread. WHEN the last listener of a type is removed THEN the facade SHALL clear the core handler so that later events are buffered again by the core (API-10, API-12).
 4. WHEN a listener is added or removed from inside a callback THEN the facade SHALL NOT deadlock or crash, and the change SHALL apply from the next event (API-10).
 5. WHEN a notification event arrives before any listener exists THEN the core buffer SHALL hold it and the first `received` listener SHALL receive the replay, as the core does today (API-10).
