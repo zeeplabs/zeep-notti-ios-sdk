@@ -24,6 +24,8 @@ final class NottiRichMediaJob: NSObject, URLSessionDownloadDelegate {
     private var sawFile = false
     private var session: URLSession?
     private var task: URLSessionTask?
+    private var deadlineItem: DispatchWorkItem?
+    private let timerQueue = DispatchQueue(label: "app.notti.sdk.nse.media.deadline")
 
     /// `content` is the mutable copy the helper hands back; it stays untouched until an attachment is added.
     init(
@@ -46,10 +48,14 @@ final class NottiRichMediaJob: NSObject, URLSessionDownloadDelegate {
             configuration: environment.makeConfiguration(), delegate: self, delegateQueue: delegateQueue
         )
         let task = session.downloadTask(with: url)
+        // One deadline for the whole download (NSE-10). A response that keeps sending bytes does not move it.
+        let item = DispatchWorkItem { [weak self] in self?.finish(.dropped(.deadline)) }
         lock.lock()
         self.session = session
         self.task = task
+        self.deadlineItem = item
         lock.unlock()
+        timerQueue.asyncAfter(deadline: .now() + environment.limits.deadline, execute: item)
         task.resume()
     }
 
@@ -66,10 +72,13 @@ final class NottiRichMediaJob: NSObject, URLSessionDownloadDelegate {
         finished = true
         let session = self.session
         let task = self.task
+        let deadlineItem = self.deadlineItem
         self.session = nil
         self.task = nil
+        self.deadlineItem = nil
         lock.unlock()
 
+        deadlineItem?.cancel()
         task?.cancel()
         session?.invalidateAndCancel()
 
