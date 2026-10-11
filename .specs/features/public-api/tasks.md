@@ -3,7 +3,7 @@
 **Design**: `.specs/features/public-api/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
 **Depends on feature**: `core-port` done (runtime, core, event buffer, logger, 252 tests)
-**Status**: Execute done (2026-10-11). Verifier round 1 FAIL (G1, G2, G3), fixes committed, round 2 pending
+**Status**: Execute done (2026-10-11). Verifier round 1 FAIL (G1, G2, G3), fixes committed, round 2 PASS. **Status: Done** (2026-10-11, 356 tests: Shared 14, SDK 337, ObjC 4, Ext 1)
 
 ---
 
@@ -419,7 +419,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 - [x] `validate_tasks.py`, `validate_spec.py` and `validate_state.py` exit 0
 - [x] Full gate green: tests, SwiftLint 0, four scripts, `pod lib lint` (all and Extension), strict device builds; test count at least 252 plus the minimums above
 - [x] `STATE.md` Current Work says Execute done and Verifier pending
-- [ ] Independent Verifier PASS (`validation.md`, written by the Verifier, not by the executor). Left open on purpose: `validate_state.py` treats a feature with every box ticked as complete and then requires `validation.md`
+- [x] Independent Verifier PASS (`validation.md`, round 2, 2026-10-11; written by the Verifier, not by the executor)
 
 **Tests**: none
 **Gate**: full

@@ -1,7 +1,7 @@
 # Public API Design
 
 **Spec**: `.specs/features/public-api/spec.md`
-**Status**: Implemented (Execute done 2026-10-11, Verifier pending). Deviations found while implementing are applied below and listed in `traceability.md` section 3
+**Status**: Implemented and Verified (Execute done 2026-10-11, Verifier round 2 PASS). Deviations found while implementing are applied below and listed in `traceability.md` section 3
 
 ---
 

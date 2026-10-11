@@ -2,7 +2,7 @@
 
 **Spec**: `.specs/features/public-api/spec.md` (API-01..API-15)
 **Design**: `.specs/features/public-api/design.md`, tasks in `tasks.md`
-**Status**: Written in T14 (2026-10-11). Independent Verifier pending.
+**Status**: Written in T14 (2026-10-11). Verified: independent Verifier round 2 PASS (2026-10-11, `validation.md`).
 
 Test references use `Class.test_name`. Classes: `RT` = `NottiRuntimeTests`, `LH` = `NottiListenerHubTests`, `NP` = `NottiNotificationPayloadTests`, `FI` = `NottiFacadeInitializeTests`, `FP` = `NottiFacadeProfileTests`, `FM` = `NottiFacadePermissionTests`, `FL` = `NottiFacadeListenerTests`, `FG` = `NottiFacadeLogLevelTests`, `PA` = `NottiPublicApiTests`, `OB` = `NottiObjCBridgeTests`, `PR` = `NottiLoggingPrivacyTests`, `OC` = `NottiObjCTests` (Objective-C, target `NottiSDKObjCTests`).
 
@@ -67,9 +67,9 @@ A test may appear under several IDs. A row lists the tests that assert that spec
 | Bundle | Count |
 | --- | --- |
 | `NottiSharedTests` | 14 |
-| `NottiSDKTests` | 332 |
+| `NottiSDKTests` | 337 |
 | `NottiSDKObjCTests` | 4 |
 | `NottiSDKExtensionTests` | 1 |
-| Total | 351 (baseline before public-api: 252) |
+| Total | 356 (baseline before public-api: 252) |
 
 Not asserted by a unit test, by design: the real `DispatchQueue.main` default of `NottiFacade` (tests inject a dispatcher; the ObjC permission test checks `NSThread.isMainThread`), and `NottiPlatformProviders.live()` closures (device only, `example-and-release`).

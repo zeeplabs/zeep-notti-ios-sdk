@@ -98,6 +98,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: Notti.swift:16 (API-15 AC2, mutant E1) (scripts)
 - last seen: 2026-10-11T14:43:17Z
 
+### L-015 - Forwarding tests must assert the delivery count, not just the first value, or a listener that fires twice survives.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `tests` · harmful: 0
+- features: public-api
+- evidence: B33 NottiObjCBridgeTests.swift:157 (tests)
+- last seen: 2026-10-11T15:10:58Z
+
+### L-016 - A bare 'core exists' assertion is a weak oracle; assert the effect (sent, persisted or dropped) of the call.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `tests` · harmful: 0
+- features: public-api
+- evidence: N15 pre-initialize test (tests)
+- last seen: 2026-10-11T15:10:58Z
+
+### L-017 - Mutate a textual guard with Swift grammar variants (indirect, lone public, trailing comment, non-type declarations), not only with the obvious omission.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `scripts` · harmful: 0
+- features: public-api
+- evidence: check-public-surface.sh r2 N9-N13 (scripts)
+- last seen: 2026-10-11T15:10:58Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
