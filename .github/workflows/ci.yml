@@ -46,6 +46,10 @@ jobs:
       - name: Public API surface (API-15)
         run: scripts/check-public-surface.sh
 
+      # The SDK passes a tapped push's `data` to the host and never opens a link itself (DEL-18).
+      - name: No URL opening (DEL-18)
+        run: scripts/check-no-url-open.sh
+
   test:
     runs-on: macos-26
     steps:
@@ -101,6 +105,11 @@ jobs:
           xcodebuild build -scheme NottiSDK -destination 'generic/platform=iOS' "${strict[@]}" -quiet
           xcodebuild build -scheme NottiSDKExtension -destination 'generic/platform=iOS' "${strict[@]}" APPLICATION_EXTENSION_API_ONLY=YES -quiet
 
+      # Builds scripts/hook-consumer in Release for the simulator, runs it and requires that the ObjC
+      # `+load` hook ran once and found the Swift installer (DEL-01). Boots $NOTTI_SIM if needed.
+      - name: Launch hook is linked and runs (DEL-01)
+        run: scripts/check-hook-linked.sh spm
+
   pod-lint:
     runs-on: macos-26
     steps:
@@ -122,3 +131,7 @@ jobs:
 
       - name: pod lib lint (Extension only)
         run: pod lib lint NottiSDK.podspec --platforms=ios --subspec=Extension
+
+      # Lints the Core subspec keeping the build, then checks the class is in the pod product (DEL-01).
+      - name: Launch hook is in the pod product (DEL-01)
+        run: scripts/check-hook-linked.sh pod
