@@ -292,7 +292,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T9: Log level mapping
+### T9: Log level mapping ✅ (NottiFacadeLogLevelTests 5; full run: SDK 310, Shared 14, Ext 1, total 325; SwiftLint 0; guard scripts and `pod lib lint` green. SPEC_DEVIATION: the public level enum is the top-level `@objc(NottiLogLevel) public enum NottiLogLevelObjC` (T1 spike: a nested `@objc` enum is not exported to ObjC); the `Notti.LogLevel` typealias is added with the `Notti` namespace in T10 (this task may not touch Sources/NottiSDK/Public/))
 
 **What**: Public `Notti.LogLevel` (`none`, `error`, `warn`, `info`, `debug`, `verbose`) and facade `logLevel` get/set mapped to `NottiLogger.level`, with a two-way mapping that fails to compile on a new `NottiLogLevel` case.
 **Where**: `Sources/NottiSDK/Facade/NottiFacade.swift`, `Tests/NottiSDKTests/NottiFacadeLogLevelTests.swift`
@@ -302,11 +302,11 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] Every level round-trips, and a message at a level above the setting is not emitted
-- [ ] The level seen before any set is `.error` (initial effective level, per lesson L-010: read through the facade, not the constant)
-- [ ] The test restores the level in `tearDown`
-- [ ] Test count: SDK +4 minimum (297)
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiFacadeLogLevelTests`
+- [x] Every level round-trips, and a message at a level above the setting is not emitted
+- [x] The level seen before any set is `.error` (initial effective level, per lesson L-010: read through the facade, not the constant)
+- [x] The test restores the level in `tearDown`
+- [x] Test count: SDK +4 minimum (297)
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiFacadeLogLevelTests`
 
 **Tests**: unit
 **Gate**: quick
