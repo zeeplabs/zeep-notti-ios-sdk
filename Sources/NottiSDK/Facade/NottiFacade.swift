@@ -208,4 +208,12 @@ final class NottiFacade {
     func takeInitialClick() -> NottiNotificationPayload? {
         runtime.eventBuffer.takeInitialClick().map { NottiNotificationPayload(eventPayload: $0) }
     }
+
+    // MARK: - Log level (API-14)
+
+    /// Maps to `NottiLogger.level`. Starts at `.error` (CORE-13).
+    var logLevel: NottiLogLevelObjC {
+        get { NottiLogLevelObjC(NottiLogger.level) }
+        set { NottiLogger.level = newValue.coreLevel }
+    }
 }
