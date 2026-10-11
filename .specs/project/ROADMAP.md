@@ -31,11 +31,12 @@
 - `@objc` interop surface usable by ObjC hosts and the future RN bridge
 - Debug log level (off by default in release, no PII)
 
-**delegate-integration** - PLANNED
+**delegate-integration** - Execute done (2026-10-11; T1-T14 on branch `feat/delegate-integration`; 465 tests); Verifier pending
 
 - Swizzle `UIApplicationDelegate` APNs callbacks and the `UNUserNotificationCenterDelegate` (`willPresent`, `didReceive`), forwarding to the host's originals, with a double-swizzle guard
 - Info.plist opt-out key; manual forwarding API (`didRegisterForRemoteNotifications`, `willPresent`, `didReceive`) for opted-out or multi-SDK hosts
 - Cold-start click capture before `initialize`
+- Silent-push `received` reporting; deep-link passthrough (no URL opening); ObjC launch hook target `NottiSDKBootstrap`, proved by CI scripts
 
 **nse-rich-media** - PLANNED
 
