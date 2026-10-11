@@ -1,3 +1,6 @@
+import ObjectiveC
+import UIKit
+import UserNotifications
 import XCTest
 @testable import NottiSDK
 @testable import NottiShared
@@ -339,5 +342,129 @@ final class NottiLoggingPrivacyTests: XCTestCase {
 
         XCTAssertEqual(captured.map(\.level), [.error])
         XCTAssertEqual(captured.map(\.message), ["Notti: failed to register for remote notifications - fixture.apns#3000"])
+    }
+
+    // MARK: - Delegate integration (DEL-13)
+
+    private final class FakeCenterHost: NottiNotificationCenterHost {
+        weak var delegate: UNUserNotificationCenterDelegate?
+    }
+
+    private final class FakeHostDelegate: NSObject, UNUserNotificationCenterDelegate {}
+
+    private let delegateUserInfo: [AnyHashable: Any] = [
+        "aps": ["alert": ["title": "sentinel-title", "body": "sentinel-body"]],
+        "notification_id": "sentinel-notification-id",
+        "delivery_id": "sentinel-delivery-id",
+        "link": "https://sentinel-link.example.invalid/sentinel-data-value"
+    ]
+    private let delegateSilent: [AnyHashable: Any] = ["aps": ["content-available": 1], "delivery_id": "sentinel-delivery-id"]
+
+    /// The installer with a non-Boolean key value: it warns, and the value itself must stay out of the line.
+    /// The launch notification then makes it assign the fallback delegate to the fake center.
+    private func exerciseInstaller(adapter: NottiPushAdapter) -> (NottiDelegateInstaller, FakeCenterHost) {
+        let center = FakeCenterHost()
+        let notifications = NotificationCenter()
+        let installer = NottiDelegateInstaller(environment: NottiDelegateInstaller.Environment(
+            configuration: {
+                NottiSwizzlingConfiguration(infoDictionary: [NottiSwizzlingConfiguration.infoPlistKey: "sentinel-bad-value"])
+            },
+            applicationClass: DelegateFixtures.makeEmptyDelegateClass(),
+            centerClass: DelegateFixtures.makeEmptyDelegateClass(),
+            existingApplicationDelegate: { nil },
+            center: center,
+            notificationCenter: notifications,
+            isLaunchFinished: { false },
+            adapter: adapter,
+            state: NottiSwizzlingState()
+        ))
+        installer.performInstall(fromLaunchHook: true)
+        notifications.post(name: UIApplication.didFinishLaunchingNotification, object: nil)
+        return (installer, center)
+    }
+
+    /// Swizzled UN delegate and app delegate callbacks, then the SwiftUI warning.
+    private func exerciseSwizzledDelegates(adapter: NottiPushAdapter, method: NottiMethodSwizzler) {
+        typealias Fixtures = DelegateFixtures
+        let centerSwizzler = NottiNotificationCenterSwizzler(swizzler: method, adapter: adapter)
+        let appSwizzler = NottiAppDelegateSwizzler(swizzler: method, adapter: adapter, isSwiftUIInternalDelegate: { _ in false })
+        let unClass = Fixtures.makeEmptyDelegateClass()
+        XCTAssertTrue(centerSwizzler.swizzle(delegateClass: unClass))
+        let unDelegate = Fixtures.makeInstance(unClass)
+        Fixtures.sendWillPresent(unDelegate, delegateUserInfo)
+        Fixtures.sendDidReceive(unDelegate, delegateUserInfo)
+        let appClass = Fixtures.makeEmptyDelegateClass()
+        XCTAssertTrue(appSwizzler.swizzle(delegateClass: appClass))
+        let appDelegate = Fixtures.makeInstance(appClass)
+        Fixtures.sendToken(appDelegate, tokenBytes)
+        Fixtures.sendFailure(
+            appDelegate,
+            NSError(domain: "fixture.apns", code: 3000, userInfo: [NSLocalizedDescriptionKey: "sentinel-error-description"])
+        )
+        Fixtures.sendFetch(appDelegate, delegateSilent)
+
+        let swiftUISwizzler = NottiAppDelegateSwizzler(
+            swizzler: NottiMethodSwizzler(),
+            adapter: adapter,
+            isSwiftUIInternalDelegate: { _ in true }
+        )
+        XCTAssertTrue(swiftUISwizzler.swizzle(delegateClass: Fixtures.makeEmptyDelegateClass()))
+    }
+
+    /// The fallback delegate, called directly.
+    private func exerciseFallback(adapter: NottiPushAdapter) {
+        let fallback = NottiNotificationCenterDelegate(adapter: adapter)
+        let unusedCenter = unsafeDowncast(
+            class_createInstance(UNUserNotificationCenter.self, 0) as AnyObject,
+            to: UNUserNotificationCenter.self
+        )
+        fallback.userNotificationCenter(unusedCenter, willPresent: DelegateFixtures.notification(userInfo: delegateUserInfo)) { _ in }
+        fallback.userNotificationCenter(unusedCenter, didReceive: DelegateFixtures.response(userInfo: delegateUserInfo)) {}
+    }
+
+    /// Every delegate path at `.verbose` with values that must never be logged: the token, title, body, a `data`
+    /// value, both ids and an error description. Covers the installer (invalid key value), the swizzlers, the
+    /// fallback delegate, the silent path, the SwiftUI warning, the install-failure line and the manual guard.
+    func test_delegatePathsAtVerboseLogNoSentinelValue() {
+        NottiLogger.level = .verbose
+        let runtime = makeRuntime(
+            providers: NottiPlatformProviders(tokenProvider: { _ in }, permissionRequester: { $0(true) })
+        )
+        var swizzlingActive = false
+        let adapter = NottiPushAdapter(runtime: runtime, isSwizzlingActive: { swizzlingActive })
+        let method = NottiMethodSwizzler()
+
+        let (installer, _) = exerciseInstaller(adapter: adapter)
+        exerciseSwizzledDelegates(adapter: adapter, method: method)
+        exerciseFallback(adapter: adapter)
+        // The install-failure line: an absent selector with no type encoding cannot be added.
+        let absent = NSSelectorFromString("absent:")
+        XCTAssertFalse(method.swizzle(DelegateFixtures.makeEmptyDelegateClass(), absent, typeEncoding: "") { _ in 0 })
+
+        // Manual guard while swizzling is active: one warning per call.
+        swizzlingActive = true
+        adapter.manualDidRegister(deviceToken: tokenBytes)
+        adapter.manualDidFail(
+            error: NSError(domain: "fixture.apns", code: 1, userInfo: [NSLocalizedDescriptionKey: "sentinel-error-description"])
+        )
+        _ = adapter.manualWillPresent(userInfo: delegateUserInfo, identifier: "sentinel-request-id")
+        adapter.manualDidReceive(
+            actionIdentifier: UNNotificationDefaultActionIdentifier,
+            userInfo: delegateUserInfo,
+            identifier: "sentinel-request-id"
+        )
+        _ = adapter.manualDidReceiveRemoteNotification(userInfo: delegateSilent)
+
+        let lines = captured
+        XCTAssertGreaterThanOrEqual(lines.filter { $0.level == .warn }.count, 7, "installer, SwiftUI and five manual-guard warnings")
+        XCTAssertTrue(lines.contains { $0.level == .error && $0.message.contains("fixture.apns#3000") })
+        XCTAssertTrue(lines.contains { $0.level == .error && $0.message.contains("could not install delegate hook") })
+        let sentinels = ["sentinel", tokenHex, tokenHex.uppercased(), "Hello", "Title", "Body", "n-1", "d-1", "example.invalid"]
+        for logLine in lines {
+            for sentinel in sentinels {
+                XCTAssertFalse(logLine.message.contains(sentinel), "sentinel '\(sentinel)' leaked in: \(logLine.message)")
+            }
+        }
+        withExtendedLifetime(installer) {}
     }
 }
