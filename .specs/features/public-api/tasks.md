@@ -267,7 +267,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T8: `NottiFacade` listeners and initial click
+### T8: `NottiFacade` listeners and initial click ✅ (NottiFacadeListenerTests 13; SDK 305, Shared 14, Ext 1, total 320)
 
 **What**: Wire three `NottiListenerHub`s: `received` and `clicked` over `eventBuffer.setHandler`, `deviceIdChanged` over `runtime.onDeviceIdChanged`; payloads become `NottiNotificationPayload`. Add `takeInitialClick()`.
 **Where**: `Sources/NottiSDK/Facade/NottiFacade.swift`, `Tests/NottiSDKTests/NottiFacadeListenerTests.swift`
@@ -277,14 +277,14 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] Two `received` listeners both get a live event once, in order, on the dispatcher; the first one also gets the buffered replay and the second does not
-- [ ] Removing the last listener detaches the buffer handler, so a later event is buffered and replayed to the next first listener
-- [ ] `clicked` is never replayed to listeners; the cold-start click is available once through `takeInitialClick()` and `nil` the second time
-- [ ] A listener registered before `initialize` receives events
-- [ ] `deviceIdChanged` fires once per real change and not on a re-registration with the same id
-- [ ] A removed `deviceIdChanged` listener is not called again
-- [ ] Test count: SDK +12 minimum (293)
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiFacadeListenerTests`
+- [x] Two `received` listeners both get a live event once, in order, on the dispatcher; the first one also gets the buffered replay and the second does not
+- [x] Removing the last listener detaches the buffer handler, so a later event is buffered and replayed to the next first listener
+- [x] `clicked` is never replayed to listeners; the cold-start click is available once through `takeInitialClick()` and `nil` the second time
+- [x] A listener registered before `initialize` receives events
+- [x] `deviceIdChanged` fires once per real change and not on a re-registration with the same id
+- [x] A removed `deviceIdChanged` listener is not called again
+- [x] Test count: SDK +12 minimum (293)
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiFacadeListenerTests`
 
 **Tests**: unit
 **Gate**: quick
