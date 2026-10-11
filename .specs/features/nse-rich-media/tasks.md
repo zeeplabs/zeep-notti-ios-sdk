@@ -441,10 +441,10 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] The target compiles and both selectors run; removing the `@objc` names makes it fail to compile (checked once by hand)
-- [ ] `scripts/check-package-graph.sh` and `pod lib lint` (all and Extension only) stay green, the pod has no new test target
-- [ ] Gate check passes: quick plus the package-graph script
-- [ ] Test count: at least 2 new
+- [x] The target compiles and both selectors run; removing the `@objc` names makes it fail to compile (checked once by hand)
+- [x] `scripts/check-package-graph.sh` and `pod lib lint` (all and Extension only) stay green, the pod has no new test target
+- [x] Gate check passes: quick plus the package-graph script
+- [x] Test count: at least 2 new
 
 **Tests**: unit (ObjC)
 **Gate**: quick
