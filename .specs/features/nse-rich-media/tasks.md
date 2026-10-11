@@ -282,13 +282,13 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] A stub whose final URL is `http` gives no attachment and no file left
-- [ ] A file over 10 MiB (no `Content-Length`) is deleted after download and not attached
-- [ ] A directory that cannot be written gives `move_failed` and one handler call
-- [ ] Bytes that `UNNotificationAttachment` rejects give `attachment_rejected` and the moved file is deleted
-- [ ] `directory` is empty after every drop and holds only the attachment's file after success
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 6 new
+- [x] A stub whose final URL is `http` gives no attachment and no file left
+- [x] A file over 10 MiB (no `Content-Length`) is deleted after download and not attached
+- [x] A directory that cannot be written gives `move_failed` and one handler call
+- [x] Bytes that `UNNotificationAttachment` rejects give `attachment_rejected` and the moved file is deleted
+- [x] `directory` is empty after every drop and holds only the attachment's file after success
+- [x] Gate check passes: quick
+- [x] Test count: at least 6 new
 
 **Tests**: unit
 **Gate**: quick

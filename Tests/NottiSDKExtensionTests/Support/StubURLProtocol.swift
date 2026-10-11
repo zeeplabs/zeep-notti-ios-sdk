@@ -22,6 +22,8 @@ final class StubURLProtocol: URLProtocol {
         var responds = true
         /// Answers with a redirect to this URL instead of a body.
         var redirectTo: URL?
+        /// URL carried by the response itself, to model a final URL that differs from the request's.
+        var responseURL: URL?
         var error: Error?
 
         static func body(_ data: Data, mimeType: String? = nil, status: Int = 200) -> Behavior {
@@ -117,7 +119,7 @@ final class StubURLProtocol: URLProtocol {
         }
 
         let response = HTTPURLResponse(
-            url: url, statusCode: behavior.status, httpVersion: "HTTP/1.1", headerFields: headers
+            url: behavior.responseURL ?? url, statusCode: behavior.status, httpVersion: "HTTP/1.1", headerFields: headers
         )!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         serve(behavior, index: 0)
