@@ -197,7 +197,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T5: `NottiFacade` initialize and idempotency
+### T5: `NottiFacade` initialize and idempotency ✅ (NottiFacadeInitializeTests 9; SDK 271, Shared 14, Ext 1, total 286. The `http://` case is build-dependent: Debug (tests) accepts it per NottiApiClient A5, so the test asserts the Debug rule under `#if DEBUG` and the rejection otherwise)
 
 **What**: Create `NottiFacade` (`init(runtime:dispatcher:)`) with `initialize(appId:clientKey:baseUrl:)`: default host `https://app.zeepnotti.app` when `baseUrl` is nil, normalization through `NottiApiClient.validatedBaseUrl`, invalid args logged at `.error` without values and ignored (a running core is untouched), same normalized config is a no-op, a different one calls `runtime.start`. Decision and `start` under the facade lock.
 **Where**: `Sources/NottiSDK/Facade/NottiFacade.swift`, `Tests/NottiSDKTests/NottiFacadeInitializeTests.swift`
@@ -207,13 +207,13 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] First `initialize` yields exactly one registration request; a second one with the same values yields none; with a different `appId` yields one more
-- [ ] Equal-after-normalization values (`https://x.example.invalid/` vs `https://x.example.invalid`) count as the same
-- [ ] Empty `appId`, empty `clientKey`, `http://` (release rule) and a scheme-less host each log one `.error` with no argument values and leave the running core in place
-- [ ] A nil `baseUrl` sends the request to the default host (asserted on the stubbed request URL)
-- [ ] Two racing different inits end with one consistent core and no leaked observer
-- [ ] Test count: SDK +9 minimum (263)
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiFacadeInitializeTests`
+- [x] First `initialize` yields exactly one registration request; a second one with the same values yields none; with a different `appId` yields one more
+- [x] Equal-after-normalization values (`https://x.example.invalid/` vs `https://x.example.invalid`) count as the same
+- [x] Empty `appId`, empty `clientKey`, `http://` (release rule) and a scheme-less host each log one `.error` with no argument values and leave the running core in place
+- [x] A nil `baseUrl` sends the request to the default host (asserted on the stubbed request URL)
+- [x] Two racing different inits end with one consistent core and no leaked observer
+- [x] Test count: SDK +9 minimum (263)
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiFacadeInitializeTests`
 
 **Tests**: unit
 **Gate**: quick
