@@ -462,9 +462,9 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Changing any of the values in code makes a test fail (each checked once by a temporary edit, noted in the commit body)
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 4 new
+- [x] Changing any of the values in code makes a test fail (each checked once by a temporary edit, noted in the commit body)
+- [x] Gate check passes: quick
+- [x] Test count: at least 4 new
 
 **Tests**: unit
 **Gate**: quick
