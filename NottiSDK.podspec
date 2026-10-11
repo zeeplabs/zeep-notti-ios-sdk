@@ -31,7 +31,9 @@ Pod::Spec.new do |s|
   # App target SDK. Default subspec.
   s.subspec 'Core' do |ss|
     ss.dependency 'NottiSDK/Shared'
-    ss.source_files = 'Sources/NottiSDK/**/*.swift'
+    # Plus the Objective-C launch hook (`+load`). CocoaPods links static pods with -ObjC, so its class is kept.
+    ss.source_files = 'Sources/NottiSDK/**/*.swift', 'Sources/NottiSDKBootstrap/**/*.{h,m}'
+    ss.public_header_files = 'Sources/NottiSDKBootstrap/include/*.h'
     ss.resource_bundles = { 'NottiSDK_Privacy' => ['Sources/NottiSDK/Resources/PrivacyInfo.xcprivacy'] }
   end
 

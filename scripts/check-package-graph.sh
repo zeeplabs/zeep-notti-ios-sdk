@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Fails when the package graph breaks the app/extension split (PKG-01, PKG-02, PKG-06):
 #   SPM:       iOS 15.0 only and swift-tools-version 5.9; exactly two products (NottiSDK, NottiSDKExtension); NottiShared is not a
-#              product and depends on nothing; NottiSDKExtension depends only on NottiShared.
+#              product and depends on nothing; NottiSDKExtension depends only on NottiShared; NottiSDKBootstrap (the ObjC launch hook)
+#              depends on nothing, is a dependency of NottiSDK only, and is not reachable from NottiShared or NottiSDKExtension.
 #   CocoaPods: allowlist. The root spec may only carry metadata keys (no files, no
 #              platform-scoped attributes); the subspecs are exactly Shared, Core and
 #              Extension, each equal to its expected shape (own Sources/ folder, own
-#              resources, Extension -> NottiSDK/Shared only), with nothing nested (PKG-07).
+#              resources, Extension -> NottiSDK/Shared only), with nothing nested (PKG-07). Core also carries the bootstrap
+#              ObjC sources and header glob; Shared and Extension never do.
 #              Any new key fails on purpose: update this script in the same change.
 #
 # Needs `swift`, `pod` and `python3` (runs on the macOS CI job).
@@ -60,7 +62,9 @@ def target_deps(target):
 targets = {t["name"]: t for t in spm["targets"] if t["type"] == "regular"}
 expected = {
     "NottiShared": [],
+    "NottiSDKBootstrap": [],
     "NottiSDKExtension": ["byName:NottiShared"],
+    "NottiSDK": ["byName:NottiSDKBootstrap", "byName:NottiShared"],
 }
 for name, want in expected.items():
     if name not in targets:
@@ -69,6 +73,26 @@ for name, want in expected.items():
     got = target_deps(targets[name])
     if got != want:
         errors.append(f"SPM target {name} must depend on {want or 'nothing'}, got {got}")
+
+# DEL-01, DEL-12: the launch hook is app-only. Nothing reachable from NottiShared or NottiSDKExtension
+# (transitively) may be the bootstrap target, and no product other than NottiSDK may contain it.
+def reachable(start):
+    seen, stack = set(), [start]
+    while stack:
+        name = stack.pop()
+        if name in seen or name not in targets:
+            continue
+        seen.add(name)
+        for dep in target_deps(targets[name]):
+            stack.append(dep.split(":", 1)[1])
+    return seen
+
+for name in ("NottiShared", "NottiSDKExtension"):
+    if name in targets and "NottiSDKBootstrap" in reachable(name):
+        errors.append(f"SPM target {name} must never reach NottiSDKBootstrap")
+dependents = sorted(n for n, t in targets.items() if "byName:NottiSDKBootstrap" in target_deps(t))
+if dependents != ["NottiSDK"]:
+    errors.append(f"only NottiSDK may depend on NottiSDKBootstrap (test targets are not checked), got {dependents}")
 
 pod = json.loads(os.environ["POD_JSON"])
 
@@ -94,7 +118,8 @@ expected_subspecs = [
     {
         "name": "Core",
         "dependencies": {"NottiSDK/Shared": []},
-        "source_files": "Sources/NottiSDK/**/*.swift",
+        "source_files": ["Sources/NottiSDK/**/*.swift", "Sources/NottiSDKBootstrap/**/*.{h,m}"],
+        "public_header_files": "Sources/NottiSDKBootstrap/include/*.h",
         "resource_bundles": {"NottiSDK_Privacy": ["Sources/NottiSDK/Resources/PrivacyInfo.xcprivacy"]},
     },
     {

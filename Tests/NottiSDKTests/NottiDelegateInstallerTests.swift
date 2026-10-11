@@ -4,6 +4,9 @@ import UserNotifications
 import XCTest
 @testable import NottiSDK
 @testable import NottiShared
+#if canImport(NottiSDKBootstrap)
+import NottiSDKBootstrap
+#endif
 
 /// The installer over fakes: a fake application class, a fake center class and a fake center host. Neither
 /// `UIApplication` nor `UNUserNotificationCenter` is swizzled here (the process-wide hook is tested in T9).
@@ -403,5 +406,20 @@ final class NottiDelegateInstallerTests: XCTestCase {
         facade.initialize(appId: "app-fixture", clientKey: "", baseUrl: nil)
 
         XCTAssertEqual(installs, 3)
+    }
+
+    // MARK: - Launch hook (T9)
+
+    #if canImport(NottiSDKBootstrap)
+    func test_theLaunchHookRanOnceInThisProcessAndFoundTheSwiftInstaller() {
+        XCTAssertEqual(NottiBootstrap.loadCount, 1, "+load runs once per process")
+        XCTAssertEqual(NottiBootstrap.installCount, 1, "+load found NottiDelegateInstaller and sent install")
+    }
+    #endif
+
+    func test_theInstallerClassIsReachableByTheNameTheHookUses() {
+        let cls: AnyObject? = NSClassFromString("NottiDelegateInstaller")
+        XCTAssertNotNil(cls)
+        XCTAssertTrue((cls as? NSObject.Type)?.responds(to: NSSelectorFromString("install")) ?? false)
     }
 }

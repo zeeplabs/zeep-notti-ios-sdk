@@ -14,9 +14,12 @@ let package = Package(
         // Internal, extension-safe code shared by both products. Not a product.
         // Declarations use `package` access (AD-006).
         .target(name: "NottiShared"),
+        // Objective-C launch hook (`+load` -> `NottiDelegateInstaller`). A dependency of `NottiSDK` only: the
+        // extension product and `NottiShared` must never reach it (`scripts/check-package-graph.sh`).
+        .target(name: "NottiSDKBootstrap"),
         .target(
             name: "NottiSDK",
-            dependencies: ["NottiShared"],
+            dependencies: ["NottiShared", "NottiSDKBootstrap"],
             resources: [.process("Resources/PrivacyInfo.xcprivacy")]
         ),
         .target(
@@ -27,7 +30,7 @@ let package = Package(
         .testTarget(name: "NottiSharedTests", dependencies: ["NottiShared"]),
         .testTarget(
             name: "NottiSDKTests",
-            dependencies: ["NottiSDK", "NottiShared"],
+            dependencies: ["NottiSDK", "NottiShared", "NottiSDKBootstrap"],
             // RN 0.6.0 continuity fixture (core-port CORE-11).
             resources: [.copy("Fixtures")]
         ),
