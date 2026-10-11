@@ -136,7 +136,7 @@ Log codes, fixed strings, no URL: `invalid_url`, `redirect_not_https`, `http_<st
 | D7 | `NottiLogger` only, `.error`, codes instead of messages | AGENTS.md privacy rules | NSE-13 |
 | D8 | `.ephemeral` configuration, no cache | The NSE container should not keep media or cookies on disk | NSE-09 |
 | D9 | Size via `fileSizeKey`, not `attributesOfItem` | Avoids the file-timestamp API where possible. `PrivacyInfo.xcprivacy` is left as is (C617.1 declared), a harmless over-declaration; whether Apple still classes any remaining call as file-timestamp is [Incerto] | PKG-13 |
-| D10 | Correlation key = full `userInfo` equality | Spike result 1. A second, identical push in the same process would be cancelled together, which is acceptable (a push carries a unique `delivery_id`) | NSE-11 |
+| D10 | Correlation key = full `userInfo` equality, or a shared non-empty `delivery_id` | Spike result 1. A second, identical push in the same process would be cancelled together, which is acceptable (a push carries a unique `delivery_id`) | NSE-11 |
 
 ---
 
@@ -198,7 +198,7 @@ Mutants for the Verifier: remove the deadline, remove `expire` cancellation, dro
 ## Risks
 
 - **Spike was macOS, not iOS.** [Provável] Each result is re-proved by a simulator test; a failing one reopens the design (most likely D10 or D4).
-- **Correlation by `userInfo` equality.** If the host mutates `userInfo` on its best-attempt copy, the match fails and expiry falls back to calling the handler directly, which leaves the job to finish alone (handler could then be called twice). Mitigation: the registry also matches on `delivery_id` when both sides have it (decided in T6; add a test where only a non-`aps` key changed).
+- **Correlation by `userInfo` equality.** If the host mutates `userInfo` on its best-attempt copy, the match fails and expiry falls back to calling the handler directly, which leaves the job to finish alone (handler could then be called twice). Mitigation: the registry also matches on `delivery_id` when both sides have it (task T10, with a test where only a non-`aps` key changed).
 - **Orphan files.** A process killed mid-download leaves a file in `directory`. The OS purges the temp area; no cleanup sweep (it would need file dates). Known limit.
 - **iOS attachment limits.** The OS rejects audio over ~5 MB and video over ~50 MB; the 10 MiB cap means an MP3 between 5 and 10 MiB falls back to plain content. That is the intended fallback.
 - **Session retain cycle.** A session keeps its delegate until invalidated. `finish` must always invalidate; a test asserts the job is released after each path.
