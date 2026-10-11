@@ -38,7 +38,7 @@
 - Cold-start click capture before `initialize`
 - Silent-push `received` reporting; deep-link passthrough (no URL opening); ObjC launch hook target `NottiSDKBootstrap`, proved by CI scripts
 
-**nse-rich-media** - PLANNED
+**nse-rich-media** - Execute done (2026-10-11; T1-T16 on branch `feat/nse-rich-media`; 584 tests); Verifier pending
 
 - NSE product: `didReceive` / `serviceExtensionTimeWillExpire` helpers, `notti_image_url` attachment (https, 10MB cap, jpg/png/gif/mp4/mp3)
 - async download within the NSE budget; deliver best attempt on expiry
