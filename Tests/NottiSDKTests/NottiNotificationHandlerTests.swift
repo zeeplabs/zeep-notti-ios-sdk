@@ -330,4 +330,107 @@ final class NottiNotificationHandlerTests: XCTestCase {
         XCTAssertEqual(eventRequests().compactMap { $0.body["type"] as? String }, ["received"])
         XCTAssertTrue(runtime.eventStore.all().isEmpty)
     }
+
+    // MARK: - Silent push (delegate-integration DEL-15, DEL-17)
+
+    private func makeSilentUserInfo(notificationId: String?, deliveryId: String?) -> [AnyHashable: Any] {
+        var userInfo: [AnyHashable: Any] = ["aps": ["content-available": 1]]
+        if let notificationId = notificationId { userInfo["notification_id"] = notificationId }
+        if let deliveryId = deliveryId { userInfo["delivery_id"] = deliveryId }
+        return userInfo
+    }
+
+    func test_silentPushEmitsOneReceivedAndQueuesOneReport() {
+        var payloads: [[String: Any]] = []
+        runtime.eventBuffer.setHandler(.received) { payloads.append($0) }
+
+        var userInfo = makeSilentUserInfo(notificationId: "n-1", deliveryId: "d-1")
+        userInfo["promo"] = "fixture"
+        handler.handleSilentPush(userInfo: userInfo)
+
+        XCTAssertEqual(payloads.count, 1)
+        XCTAssertEqual(
+            payloads.first?["data"] as? [String: String],
+            ["notification_id": "n-1", "delivery_id": "d-1", "promo": "fixture"]
+        )
+        let events = runtime.eventStore.all()
+        XCTAssertEqual(events.map(\.type), ["received"])
+        XCTAssertEqual(events.first?.notificationId, "n-1")
+        XCTAssertEqual(events.first?.deliveryId, "d-1")
+    }
+
+    func test_visiblePushWithContentAvailableIsNotReportedBySilentPath() {
+        var payloads: [[String: Any]] = []
+        runtime.eventBuffer.setHandler(.received) { payloads.append($0) }
+
+        var userInfo = makeRemoteUserInfo(notificationId: "n-1", deliveryId: "d-1")
+        userInfo["aps"] = ["alert": ["title": "Hello", "body": "World"], "content-available": 1]
+        handler.handleSilentPush(userInfo: userInfo)
+
+        XCTAssertTrue(payloads.isEmpty)
+        XCTAssertTrue(runtime.eventStore.all().isEmpty)
+    }
+
+    func test_pushWithAStringAlertIsNotSilent() {
+        var payloads: [[String: Any]] = []
+        runtime.eventBuffer.setHandler(.received) { payloads.append($0) }
+
+        var userInfo = makeRemoteUserInfo(notificationId: "n-1", deliveryId: "d-1")
+        userInfo["aps"] = ["alert": "World", "content-available": 1]
+        handler.handleSilentPush(userInfo: userInfo)
+
+        XCTAssertTrue(payloads.isEmpty)
+        XCTAssertTrue(runtime.eventStore.all().isEmpty)
+    }
+
+    func test_payloadWithoutApsEmitsNothingAndQueuesNothing() {
+        var payloads: [[String: Any]] = []
+        runtime.eventBuffer.setHandler(.received) { payloads.append($0) }
+
+        handler.handleSilentPush(userInfo: ["notification_id": "n-1", "delivery_id": "d-1"])
+
+        XCTAssertTrue(payloads.isEmpty)
+        XCTAssertTrue(runtime.eventStore.all().isEmpty)
+    }
+
+    func test_twoSilentPushesWithTheSameDeliveryIdReachAListenerOnce() {
+        var payloads: [[String: Any]] = []
+        runtime.eventBuffer.setHandler(.received) { payloads.append($0) }
+
+        let userInfo = makeSilentUserInfo(notificationId: "n-1", deliveryId: "d-1")
+        handler.handleSilentPush(userInfo: userInfo)
+        handler.handleSilentPush(userInfo: userInfo)
+
+        XCTAssertEqual(payloads.count, 1)
+    }
+
+    func test_silentPushesWithDifferentDeliveryIdsEachReachTheListener() {
+        var payloads: [[String: Any]] = []
+        runtime.eventBuffer.setHandler(.received) { payloads.append($0) }
+
+        handler.handleSilentPush(userInfo: makeSilentUserInfo(notificationId: "n-1", deliveryId: "d-1"))
+        handler.handleSilentPush(userInfo: makeSilentUserInfo(notificationId: "n-1", deliveryId: "d-2"))
+
+        XCTAssertEqual(payloads.count, 2)
+    }
+
+    func test_silentPushWithAnEmptyOrMissingIdQueuesNoReport() {
+        let cases: [(String?, String?)] = [("", "d-1"), ("n-1", ""), (nil, "d-1"), ("n-1", nil)]
+        for (notificationId, deliveryId) in cases {
+            handler.handleSilentPush(userInfo: makeSilentUserInfo(notificationId: notificationId, deliveryId: deliveryId))
+        }
+
+        XCTAssertTrue(runtime.eventStore.all().isEmpty)
+    }
+
+    func test_silentPushHandledBeforeStartIsBufferedWithoutACore() {
+        XCTAssertNil(runtime.core)
+        handler.handleSilentPush(userInfo: makeSilentUserInfo(notificationId: "n-1", deliveryId: "d-1"))
+
+        var payloads: [[String: Any]] = []
+        runtime.eventBuffer.setHandler(.received) { payloads.append($0) }
+
+        XCTAssertEqual(payloads.count, 1)
+        XCTAssertEqual(runtime.eventStore.all().map(\.type), ["received"])
+    }
 }
