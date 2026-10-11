@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 12,
+  "next_id": 15,
   "lessons": [
     {
       "id": "L-001",
@@ -202,6 +202,60 @@
       ],
       "created": "2026-10-10T22:15:59Z",
       "last_seen": "2026-10-10T22:15:59Z"
+    },
+    {
+      "id": "L-012",
+      "key": "surviving_mutant::a pre initialize test must make each method the first call on a fresh runtime because an earlier call creates the core and hides a dropped ensurecore",
+      "text": "A pre-initialize test must make each method the FIRST call on a fresh runtime, because an earlier call creates the core and hides a dropped ensureCore().",
+      "signal": "surviving_mutant",
+      "scope": "facade",
+      "status": "candidate",
+      "features": [
+        "public-api"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "NottiFacade.swift:132-140 (API-07, mutants U15-U17) (facade)"
+      ],
+      "created": "2026-10-11T14:43:17Z",
+      "last_seen": "2026-10-11T14:43:17Z"
+    },
+    {
+      "id": "L-013",
+      "key": "surviving_mutant::a shell level reaches the facade test must emit one event type at a time with a distinct payload per event never every event with one payload",
+      "text": "A shell-level 'reaches the facade' test must emit one event type at a time with a distinct payload per event, never every event with one payload.",
+      "signal": "surviving_mutant",
+      "scope": "events",
+      "status": "candidate",
+      "features": [
+        "public-api"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "Notti.swift:154 (API-10, mutant S06) (events)"
+      ],
+      "created": "2026-10-11T14:43:17Z",
+      "last_seen": "2026-10-11T14:43:17Z"
+    },
+    {
+      "id": "L-014",
+      "key": "surviving_mutant::an attribute the spec requires on a public symbol needs a guard that reads the attribute itself not only the declaration line",
+      "text": "An attribute the spec requires on a public symbol needs a guard that reads the attribute itself, not only the declaration line.",
+      "signal": "surviving_mutant",
+      "scope": "scripts",
+      "status": "candidate",
+      "features": [
+        "public-api"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "Notti.swift:16 (API-15 AC2, mutant E1) (scripts)"
+      ],
+      "created": "2026-10-11T14:43:17Z",
+      "last_seen": "2026-10-11T14:43:17Z"
     }
   ]
 }
