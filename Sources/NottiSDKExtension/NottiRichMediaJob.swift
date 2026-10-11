@@ -17,7 +17,8 @@ final class NottiRichMediaJob: NSObject, URLSessionDownloadDelegate {
     }
 
     /// Snapshot of the notification's `userInfo`, used to match an expiry call to this job (D10).
-    let userInfo: NSDictionary
+    /// Immutable after `init` and only read, so crossing threads is safe.
+    nonisolated(unsafe) let userInfo: NSDictionary
 
     private let content: UNMutableNotificationContent
     private let gate: NottiHandlerGate
