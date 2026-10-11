@@ -306,12 +306,12 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] A redirect to `http` ends with one handler call before any body byte is served, even when the stub ignores the refusal
-- [ ] A redirect chain that ends on `https` still attaches
-- [ ] A stub that declares 11 MiB is cancelled with fewer than 2 MiB served (the stub counts served bytes)
-- [ ] A stub with no length that sends more than 10 MiB is cancelled once the cap is crossed
-- [ ] Gate check passes: **full**
-- [ ] Test count: at least 5 new
+- [x] A redirect to `http` ends with one handler call before any body byte is served, even when the stub ignores the refusal
+- [x] A redirect chain that ends on `https` still attaches
+- [x] A stub that declares 11 MiB is cancelled with fewer than 2 MiB served (the stub counts served bytes)
+- [x] A stub with no length that sends more than 10 MiB is cancelled once the cap is crossed
+- [x] Gate check passes: **full**
+- [x] Test count: at least 5 new
 
 **Tests**: unit
 **Gate**: full
