@@ -2,7 +2,7 @@
 
 **Spec**: `.specs/features/nse-rich-media/spec.md` (NSE-01..NSE-18)
 **Design**: `.specs/features/nse-rich-media/design.md`, tasks in `tasks.md`
-**Status**: Written in T16 (2026-10-11). Implemented, Verifier pending (no `validation.md` yet).
+**Status**: Written in T16 (2026-10-11). Verified (round 2 PASS), see `validation.md`.
 
 Test references use `Class.test_name` with these abbreviations, all in `Tests/NottiSDKExtensionTests` unless noted: `UR` = `NottiRichMediaURLTests`, `FT` = `NottiMediaFileTypeTests`, `GT` = `NottiHandlerGateTests`, `DR` = `NottiRichMediaDropReasonTests`, `SP` = `NottiRichMediaSpikeTests`, `JB` = `NottiRichMediaJobTests`, `JD` = `NottiRichMediaJobDropTests`, `JE` = `NottiRichMediaJobEarlyAbortTests`, `JL` = `NottiRichMediaJobDeadlineTests`, `JX` = `NottiRichMediaJobExpiryTests`, `RG` = `NottiRichMediaRegistryTests`, `FA` = `NottiNotificationServiceExtensionTests`, `PV` = `NottiRichMediaPrivacyTests`, `CT` = `NottiRichMediaContractTests`, `OC` = `NottiExtensionObjCTests` (Objective-C, target `NottiSDKExtensionObjCTests`).
 
