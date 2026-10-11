@@ -167,7 +167,7 @@ public enum Notti {
 @available(iOSApplicationExtension, unavailable)
 extension NottiFacade {
     private static let sharedLock = NSLock()
-    private static let production = NottiFacade(runtime: .shared)
+    private static let production = NottiFacade(runtime: .shared, installDelegates: { NottiDelegateInstaller.ensureInstalled() })
     private static var override: NottiFacade?
 
     /// The facade behind the public `Notti` API, built on `NottiRuntime.shared`.

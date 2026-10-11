@@ -25,6 +25,7 @@ final class NottiFacade {
 
     private let runtime: NottiRuntime
     private let dispatcher: NottiMainDispatcher
+    private let installDelegates: () -> Void
 
     // One hub per event type, multiplexed over the core's single handler.
     private let receivedHub: NottiListenerHub<NottiNotificationPayload>
@@ -36,12 +37,17 @@ final class NottiFacade {
     private let lock = NSLock()
     private var _activeConfig: Config?
 
+    /// - Parameter installDelegates: runs at the start of every `initialize`: the idempotent safety net for
+    ///   the delegate integration if the launch hook did not run. Production passes
+    ///   `NottiDelegateInstaller.ensureInstalled`; tests keep the no-op and never touch the real `UIApplication`.
     init(
         runtime: NottiRuntime,
-        dispatcher: @escaping NottiMainDispatcher = { DispatchQueue.main.async(execute: $0) }
+        dispatcher: @escaping NottiMainDispatcher = { DispatchQueue.main.async(execute: $0) },
+        installDelegates: @escaping () -> Void = {}
     ) {
         self.runtime = runtime
         self.dispatcher = dispatcher
+        self.installDelegates = installDelegates
         let buffer = runtime.eventBuffer
         receivedHub = Self.makeNotificationHub(buffer: buffer, event: .received, dispatcher: dispatcher)
         clickedHub = Self.makeNotificationHub(buffer: buffer, event: .clicked, dispatcher: dispatcher)
@@ -81,6 +87,7 @@ final class NottiFacade {
     ///   registration);
     /// - a different one stops the old core and starts a new one.
     func initialize(appId: String, clientKey: String, baseUrl: String?) {
+        installDelegates()
         guard
             !appId.isEmpty,
             !clientKey.isEmpty,
