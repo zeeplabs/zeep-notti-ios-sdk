@@ -337,7 +337,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T11: No PII at `.verbose` through the facade
+### T11: No PII at `.verbose` through the facade ✅ (NottiLoggingPrivacyTests 6 (4 + 2 facade flows); SDK 326, Shared 14, Ext 1, total 341; mutant `NottiLogger.log(.debug, "... \(externalUserId)")` in `NottiFacade.login` fails both new tests, reverted. The sweep also covers appId, clientKey, baseUrl and the invalid-initialize arguments)
 
 **What**: Extend the sentinel test so a flow driven only through the facade (initialize, login, setEmail, setPhone, tags, location, event flush, a failing registration) runs at `.verbose` and no sentinel appears in the sink.
 **Where**: `Tests/NottiSDKTests/NottiLoggingPrivacyTests.swift`
@@ -347,10 +347,10 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] Sentinels for email, phone, token, external user id, country and a tag value never appear in any emitted line
-- [ ] A throwaway mutant that interpolates the external id in a facade log line is killed (verified and reverted)
-- [ ] Test count: SDK +1 minimum (302)
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiLoggingPrivacyTests`
+- [x] Sentinels for email, phone, token, external user id, country and a tag value never appear in any emitted line
+- [x] A throwaway mutant that interpolates the external id in a facade log line is killed (verified and reverted)
+- [x] Test count: SDK +1 minimum (302)
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiLoggingPrivacyTests`
 
 **Tests**: unit
 **Gate**: quick
