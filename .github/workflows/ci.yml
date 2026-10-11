@@ -50,6 +50,10 @@ jobs:
       - name: No URL opening (DEL-18)
         run: scripts/check-no-url-open.sh
 
+      # `+load` does no logging, preference or file I/O, network or runtime access (DEL-14).
+      - name: Launch hook purity (DEL-14)
+        run: scripts/check-launch-hook-purity.sh
+
   test:
     runs-on: macos-26
     steps:

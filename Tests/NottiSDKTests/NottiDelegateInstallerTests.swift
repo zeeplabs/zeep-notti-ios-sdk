@@ -228,6 +228,18 @@ final class NottiDelegateInstallerTests: XCTestCase {
 
     // MARK: - Enabled
 
+    /// DEL-14, Verifier r1 G3 (I12): the enabled, valid launch path is silent above `.debug`. The only lines
+    /// the installer may write are the opt-out `.info`, an install failure `.error` and a non-Boolean `.warn`.
+    func test_theEnabledValidLaunchHookPathLogsNothingAboveDebug() {
+        let fakes = makeInstaller()
+
+        fakes.installer.performInstall(fromLaunchHook: true)
+        fakes.installer.performInstall(fromLaunchHook: true)
+
+        XCTAssertTrue(state.isActive, "the install ran")
+        XCTAssertTrue(logs.filter { $0.0 < .debug }.isEmpty, "logged above .debug: \(logs.filter { $0.0 < .debug })")
+    }
+
     func test_enabledInstallReplacesBothSettersOnceAndASecondInstallChangesNothing() {
         let fakes = makeInstaller()
         let appBefore = imp(fakes.appClass)
