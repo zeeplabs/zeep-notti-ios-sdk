@@ -382,7 +382,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T13: Public surface guard
+### T13: Public surface guard ✅ (58 declarations in `PUBLIC_SURFACE.txt`; mutations run and reverted: added `public func` (rc 1, diff shown), removed listed symbol by dropping `public` (rc 1), `public` in `NottiShared` (rc 1), parameter type change on a multi-line declaration (rc 1); also passes on `ubuntu:24.04` with mawk. SPEC_DEVIATION: entries are `path: declaration` (path prefixed, line numbers dropped) and multi-line parameter lists are joined into one entry, so a moved symbol or a changed parameter type is a diff; the script also has `--update` and scans `Sources/NottiSDKExtension` (empty today))
 
 **What**: Add `scripts/check-public-surface.sh`, the committed `.specs/codebase/PUBLIC_SURFACE.txt`, and a CI step in the `checks` job. The script lists `public`/`open` declarations in `Sources/NottiSDK`, diffs them against the file, fails on any `public` in `Sources/NottiShared`, and prints the diff on failure.
 **Where**: `scripts/check-public-surface.sh`
@@ -392,12 +392,12 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] Passes on the tree as committed
-- [ ] Fails, with the diff, after adding a throwaway `public func` (verified and reverted)
-- [ ] Fails after removing a listed public symbol, and after a `public` appears in `NottiShared`
-- [ ] Runs on the Linux `checks` job (GNU tools only, no `swift` needed) and the CI step is added in the same commit
-- [ ] `AGENTS.md` mentions the script in the commands and rules (rule: new public API updates the surface file)
-- [ ] Gate passes: the script on a clean tree, plus the three existing scripts
+- [x] Passes on the tree as committed
+- [x] Fails, with the diff, after adding a throwaway `public func` (verified and reverted)
+- [x] Fails after removing a listed public symbol, and after a `public` appears in `NottiShared`
+- [x] Runs on the Linux `checks` job (GNU tools only, no `swift` needed) and the CI step is added in the same commit
+- [x] `AGENTS.md` mentions the script in the commands and rules (rule: new public API updates the surface file)
+- [x] Gate passes: the script on a clean tree, plus the three existing scripts
 
 **Tests**: none (scripts, per the coverage matrix: run against a passing and a failing tree)
 **Gate**: build

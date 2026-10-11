@@ -42,6 +42,10 @@ jobs:
       - name: Extension safety (PKG-03)
         run: scripts/check-extension-safety.sh
 
+      # Textual (grep/awk/sort/diff), so it needs no Swift toolchain (API-15).
+      - name: Public API surface (API-15)
+        run: scripts/check-public-surface.sh
+
   test:
     runs-on: macos-26
     steps:
