@@ -19,16 +19,36 @@ final class NottiPushAdapter {
     /// Presentation options the SDK passes for a Notti push when the host has no `willPresent` (RN parity).
     static let nottiPresentationOptions: UNNotificationPresentationOptions = [.banner, .list, .sound, .badge]
 
-    private let runtime: NottiRuntime
-    private let handler: NottiNotificationHandler
+    private let runtimeProvider: () -> NottiRuntime
     private let isSwizzlingActive: () -> Bool
+    private let lock = NSLock()
+    private var resolved: (runtime: NottiRuntime, handler: NottiNotificationHandler)?
 
-    /// - Parameter isSwizzlingActive: read by the manual entry points. The installer passes its state
-    ///   (`delegate-integration` T8); tests pass a flag.
-    init(runtime: NottiRuntime, isSwizzlingActive: @escaping () -> Bool = { false }) {
-        self.runtime = runtime
-        self.handler = NottiNotificationHandler(runtime: runtime)
+    /// - Parameters:
+    ///   - runtimeProvider: called on first use, never at construction. The installer builds the adapter at
+    ///     process launch (`+load`), where touching `NottiRuntime.shared` would open UserDefaults and start
+    ///     observers (DEL-14).
+    ///   - isSwizzlingActive: read by the manual entry points (`NottiSwizzlingState` in production).
+    init(runtimeProvider: @escaping () -> NottiRuntime, isSwizzlingActive: @escaping () -> Bool = { false }) {
+        self.runtimeProvider = runtimeProvider
         self.isSwizzlingActive = isSwizzlingActive
+    }
+
+    convenience init(runtime: NottiRuntime, isSwizzlingActive: @escaping () -> Bool = { false }) {
+        self.init(runtimeProvider: { runtime }, isSwizzlingActive: isSwizzlingActive)
+    }
+
+    private var runtime: NottiRuntime { resolve().runtime }
+    private var handler: NottiNotificationHandler { resolve().handler }
+
+    private func resolve() -> (runtime: NottiRuntime, handler: NottiNotificationHandler) {
+        lock.withLock {
+            if let resolved { return resolved }
+            let runtime = runtimeProvider()
+            let value = (runtime: runtime, handler: NottiNotificationHandler(runtime: runtime))
+            resolved = value
+            return value
+        }
     }
 
     // MARK: - Swizzled and fallback path

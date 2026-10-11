@@ -108,13 +108,21 @@ final class NottiFallbackDelegateAssigner {
         }
     }
 
+    /// Evaluates now, for an install that runs after the end of launch (the launch notification already
+    /// fired, so `start()` would wait forever). A no-op when swizzling is off, when the host has a delegate
+    /// or when the fallback was already assigned.
+    func evaluateNow() {
+        guard isEnabled else { return }
+        assignIfNeeded()
+    }
+
     private func assignIfNeeded() {
         lock.withLock {
             if let observer {
                 notificationCenter.removeObserver(observer)
                 self.observer = nil
             }
-            guard center.delegate == nil else { return }
+            guard fallback == nil, center.delegate == nil else { return }
             let delegate = NottiNotificationCenterDelegate(adapter: adapter)
             fallback = delegate
             center.delegate = delegate
