@@ -176,7 +176,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T4: `NottiNotificationPayload`
+### T4: `NottiNotificationPayload` ✅ (NottiNotificationPayloadTests 9; SDK 262, Shared 14, Ext 1, total 277. SPEC_DEVIATION: `NottiPayloadKeys` has no title/body/data constants (`toEventPayload()` hardcodes them), so the payload keeps private key constants; the handler round-trip tests catch drift. Public init omitted on purpose (smaller surface))
 
 **What**: Public `NottiNotificationPayload` (`title: String?`, `body: String?`, `data: [String: String]`, `Equatable`, `Sendable`) with an internal initializer from the core's `[String: Any]` using `NottiPayloadKeys`. Missing `data` gives `[:]`; non-string `data` values are dropped.
 **Where**: `Sources/NottiSDK/Facade/NottiNotificationPayload.swift`, `Tests/NottiSDKTests/NottiNotificationPayloadTests.swift`
@@ -186,10 +186,10 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] Full payload, title-only, body-only, no `data`, and mixed-type `data` each map as specified
-- [ ] A payload built by `NottiNotificationHandler` (not hand-made) round-trips, so the key names cannot drift
-- [ ] Test count: SDK +5 minimum (254)
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiNotificationPayloadTests`
+- [x] Full payload, title-only, body-only, no `data`, and mixed-type `data` each map as specified
+- [x] A payload built by `NottiNotificationHandler` (not hand-made) round-trips, so the key names cannot drift
+- [x] Test count: SDK +5 minimum (254)
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiNotificationPayloadTests`
 
 **Tests**: unit
 **Gate**: quick
