@@ -66,3 +66,6 @@ Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func takeInitialClic
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func willPresent(_ notification: UNNotification) -> UNNotificationPresentationOptions {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static var deviceId: String? {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static var logLevel: NottiLogLevelObjC {
+Sources/NottiSDKExtension/NottiNotificationServiceExtension.swift: public final class NottiNotificationServiceExtension: NSObject {
+Sources/NottiSDKExtension/NottiNotificationServiceExtension.swift: public static func didReceive( _ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void ) {
+Sources/NottiSDKExtension/NottiNotificationServiceExtension.swift: public static func serviceExtensionTimeWillExpire( for content: UNNotificationContent?, contentHandler: @escaping (UNNotificationContent) -> Void ) {

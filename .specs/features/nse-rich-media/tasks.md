@@ -375,13 +375,13 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Port of the 9 RN tests by intent: missing key, `file://`, `http://`, non-2xx, success, expiry with and without content, plus the 3 file-type cases already in T2
-- [ ] A missing key starts no request and logs nothing; an invalid value logs one line without the value
-- [ ] Un-copyable content calls `contentHandler(request.content)` once
-- [ ] Expiry through the facade cancels the right job, and with no match calls the host's handler directly
-- [ ] `scripts/check-public-surface.sh` passes after `--update` and the diff lists only the new class and two methods
-- [ ] Gate check passes: quick plus the public-surface and extension-safety scripts
-- [ ] Test count: at least 9 new
+- [x] Port of the 9 RN tests by intent: missing key, `file://`, `http://`, non-2xx, success, expiry with and without content, plus the 3 file-type cases already in T2
+- [x] A missing key starts no request and logs nothing; an invalid value logs one line without the value
+- [x] Un-copyable content calls `contentHandler(request.content)` once
+- [x] Expiry through the facade cancels the right job, and with no match calls the host's handler directly
+- [x] `scripts/check-public-surface.sh` passes after `--update` and the diff lists only the new class and two methods
+- [x] Gate check passes: quick plus the public-surface and extension-safety scripts
+- [x] Test count: at least 9 new
 
 **Tests**: unit
 **Gate**: quick
