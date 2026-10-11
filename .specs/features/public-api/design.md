@@ -211,6 +211,27 @@ No new persisted keys. No change to the `notti_prefs` suite (CORE-09 stays).
 
 ---
 
+## Spike results (T1, 2026-10-11)
+
+Scratch copy of the package (outside the repo), Xcode 27.0, iPhone 17 Pro simulator, Swift 5 mode. Nothing from the spike is in the repo.
+
+**(a) `@objc(Notti) final class NottiObjC: NSObject` next to `public enum Notti`: works.** Both compile in the `NottiSDK` module (`xcodebuild build -scheme NottiSDK`: BUILD SUCCEEDED). The generated `NottiSDK-Swift.h` contains `SWIFT_CLASS_NAMED("NottiObjC") ... @interface Notti : NSObject`. From Swift, `Notti.hello()` resolves to the enum; from ObjC, `[Notti hello]` resolves to the class. Both asserted in a test run.
+
+**(b) `@objc enum` nested in the non-`@objc` `public enum Notti`: compiles, but is silently not exported to ObjC.** `Notti.LogLevel` declared as `@objc public enum LogLevel: Int` inside the namespace builds without error or warning, yet `NottiSDK-Swift.h` has no `SWIFT_ENUM` for it and an ObjC file fails with `use of undeclared identifier 'NottiLogLevel'` (also with the nested default name). Minimal alternative that keeps the Swift name: a top-level `@objc(NottiLogLevel) public enum NottiLogLevelObjC: Int` plus `extension Notti { public typealias LogLevel = NottiLogLevelObjC }` (or the typealias inside the enum). Verified: Swift test `let l: Notti.LogLevel = .error` passes, and ObjC sees `NottiLogLevelNone`/`NottiLogLevelError` through `NSInteger` casts and a settable property. Cost: one extra top-level public type (`NottiLogLevelObjC`), listed in `PUBLIC_SURFACE.txt`. Note for T9/T10: declare the level enum at the top level with `@objc(NottiLogLevel)` and expose `Notti.LogLevel` as a typealias, not as a nested enum.
+
+**(c) SPM ObjC test target importing `NottiSDK`: works.** `.testTarget(name: "NottiSDKObjCTests", dependencies: ["NottiSDK"])` with `Tests/NottiSDKObjCTests/*.m` using `@import XCTest; @import NottiSDK;` compiled and ran under `xcodebuild test -scheme NottiSDK-Package -only-testing:NottiSDKObjCTests` (TEST SUCCEEDED, 2 ObjC tests executed). No `include/` directory or umbrella header was needed. `scripts/check-package-graph.sh` and `scripts/check-extension-safety.sh` still pass with the new target in the manifest.
+
+### Decision
+
+| Item | Choice |
+| --- | --- |
+| ObjC class names | Original: `Notti`, `NottiUser`, `NottiNotifications` (via `@objc(...)` on `NottiObjC` and so on). The fallback `NottiSDKClient`/`NottiSDKUser`/`NottiSDKNotifications` is NOT needed. Julio is still asked to confirm the original names, since they are public (T12) |
+| ObjC log level | Top-level `@objc(NottiLogLevel) public enum NottiLogLevelObjC: Int` + `Notti.LogLevel` typealias (the nested `@objc` enum is not exported) |
+| Compile check | SPM ObjC test target `NottiSDKObjCTests` (first choice holds); the pod-lint fallback is not needed |
+| Fallback | Only if a later Xcode drops this behavior: ObjC file in a CocoaPods test spec |
+
+---
+
 ## Spec deltas found in Design (already applied to `spec.md`, 2026-10-11)
 
 | Spec item | Change | Reason |
