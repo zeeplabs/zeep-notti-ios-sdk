@@ -420,10 +420,10 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] The script passes on the tree and fails on a fixture tree containing each banned token (run once per token, listed in the commit body)
-- [ ] A banned word inside a comment passes
-- [ ] The CI `checks` job runs it as a named step; `AGENTS.md` and `TESTING.md` mention it
-- [ ] Gate check passes: **full**
+- [x] The script passes on the tree and fails on a fixture tree containing each banned token (run once per token, listed in the commit body)
+- [x] A banned word inside a comment passes
+- [x] The CI `checks` job runs it as a named step; `AGENTS.md` and `TESTING.md` mention it
+- [x] Gate check passes: **full**
 
 **Tests**: none
 **Gate**: full

@@ -18,7 +18,7 @@ Sources/NottiSDK/          app-only
 Sources/NottiSDKExtension/ Notification Service Extension, extension-safe, never depends on NottiSDK
 Tests/<Target>Tests/       XCTest, run through the SPM scheme NottiSDK-Package (`NottiSDKObjCTests` is Objective-C)
 scripts/                   check-version.sh, check-extension-safety.sh, check-package-graph.sh, check-public-surface.sh,
-                           check-no-url-open.sh, check-launch-hook-purity.sh, check-hook-linked.sh (+ hook-consumer/, the scratch app it builds)
+                           check-no-url-open.sh, check-launch-hook-purity.sh, check-nse-logging.sh, check-hook-linked.sh (+ hook-consumer/, the scratch app it builds)
 ```
 
 ## Commands
@@ -33,7 +33,7 @@ xcodebuild test -scheme NottiSDK-Package -destination "platform=iOS Simulator,na
 # lint (SwiftLint is pinned; not installed locally)
 docker run --rm -v "$PWD:/w" -w /w ghcr.io/realm/swiftlint:0.65.1 lint --strict
 # guards and packaging
-scripts/check-version.sh && scripts/check-extension-safety.sh && scripts/check-package-graph.sh && scripts/check-public-surface.sh && scripts/check-no-url-open.sh && scripts/check-launch-hook-purity.sh
+scripts/check-version.sh && scripts/check-extension-safety.sh && scripts/check-package-graph.sh && scripts/check-public-surface.sh && scripts/check-no-url-open.sh && scripts/check-launch-hook-purity.sh && scripts/check-nse-logging.sh
 # launch hook proofs (need Xcode; NOTTI_SIM picks the simulator, default "iPhone 17")
 scripts/check-hook-linked.sh spm   # Release build of scripts/hook-consumer, run in the simulator, loadCount == installCount == 1
 scripts/check-hook-linked.sh pod   # pod lib lint --no-clean, then nm for NottiBootstrap (about 2 min)
@@ -71,6 +71,7 @@ Do not add `dpearson2699/swift-ios-skills` (PolyForm Perimeter license) to this 
 - Default log level is `.error`.
 - A feature that adds a required-reason API or a new collected data type updates the matching `PrivacyInfo.xcprivacy` in the same change (PKG-13).
 - Test fixtures use synthetic values only (`example.invalid`, `fixture`).
+- `Sources/NottiSDKExtension` logs only through `NottiLogger` (category `nse`). `scripts/check-nse-logging.sh` bans `NSLog`, `print(`, `debugPrint`, `dump(`, `os_log` and `localizedDescription` there (comments ignored; a media URL can carry ids or tokens, and URLSession errors embed it).
 
 ### Extension safety
 
