@@ -179,8 +179,19 @@ final class NottiRuntime {
             _core = nil
             return current
         }
-        previous?.invalidate()
+        guard let previous else { return }
+        previous.invalidate()
+        // Mutations already queued on the old core capture it weakly, so releasing
+        // it here would silently drop them (a `setEmail` made before `initialize`
+        // would be lost when `start` replaces the ensured core). Hold it until its
+        // queue has drained; the bounded wait only pins one utility thread.
+        DispatchQueue.global(qos: .utility).async {
+            _ = previous.waitForPendingWork(timeout: Self.retireTimeout)
+        }
     }
+
+    /// How long a replaced core is kept alive to finish the work already queued on it.
+    private static let retireTimeout: TimeInterval = 60
 
     private func makeCore() -> NottiCore {
         NottiCore(

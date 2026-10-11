@@ -396,6 +396,21 @@ final class NottiRuntimeTests: XCTestCase {
         XCTAssertEqual(NottiDeviceStore(defaults: defaults).getEmail(), "user@example.invalid")
         XCTAssertTrue(StubURLProtocol.recordedRequests().isEmpty)
     }
+
+    /// A mutation queued on the ensured core must survive `start` replacing that
+    /// core (the old core is held until its queue drains).
+    func test_aMutationQueuedOnTheEnsuredCoreSurvivesStartReplacingIt() {
+        StubURLProtocol.enqueue(.echoDevice()) // registration
+        StubURLProtocol.enqueue(.echoDevice()) // email resync
+        let runtime = makeRuntime(sdkVersion: "")
+
+        runtime.ensureCore().setEmail("user@example.invalid") // not drained
+        runtime.start(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        drain(runtime.core)
+
+        XCTAssertEqual(NottiDeviceStore(defaults: defaults).getEmail(), "user@example.invalid")
+        XCTAssertTrue(bodies("PATCH").contains { $0["email"] as? String == "user@example.invalid" })
+    }
 }
 
 private final class LockedCounter {

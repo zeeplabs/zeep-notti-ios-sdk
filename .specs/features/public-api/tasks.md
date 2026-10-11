@@ -221,7 +221,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T6: `NottiFacade` identity and profile forwards
+### T6: `NottiFacade` identity and profile forwards ✅ (NottiFacadeProfileTests 14 + 1 new NottiRuntimeTests (19); SDK 286, Shared 14, Ext 1, total 301. SPEC_DEVIATION: the pre-initialize `setEmail` was lost when `start` replaced the ensured core (queued core blocks capture `self` weakly and the old core was released); `NottiRuntime.invalidateCurrentCore` now keeps the replaced core alive until its queue drains (bounded 60 s wait on a utility thread), verified: the new runtime test fails without it. No core file changed)
 
 **What**: Add `login`, `logout`, `addTags`, `removeTags`, `setEmail`, `clearEmail`, `setPhone`, `clearPhone`, `setSubscription`, `setLocationSharingEnabled`, `deviceId`. All go through `runtime.ensureCore()` and forward one-to-one. `setLocationSharingEnabled` runs on the caller's thread.
 **Where**: `Sources/NottiSDK/Facade/NottiFacade.swift`, `Tests/NottiSDKTests/NottiFacadeProfileTests.swift`
@@ -231,12 +231,12 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] Each method, on an initialized facade, produces the exact PATCH field (`external_user_id`, `tags` add and remove, `email`/`phone` with explicit null on clear, `subscribed` with `last_unsubscribed_at` on true to false)
-- [ ] Before `initialize`: `setEmail` and `setPhone` are persisted and sent on the next registration; `login`, tags and subscription send nothing and do not crash
-- [ ] `deviceId` returns a persisted id before `initialize`, `nil` for a never-registered device
-- [ ] `setLocationSharingEnabled(false)` writes the preference before the call returns (read back synchronously)
-- [ ] Test count: SDK +13 minimum (276)
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiFacadeProfileTests`
+- [x] Each method, on an initialized facade, produces the exact PATCH field (`external_user_id`, `tags` add and remove, `email`/`phone` with explicit null on clear, `subscribed` with `last_unsubscribed_at` on true to false)
+- [x] Before `initialize`: `setEmail` and `setPhone` are persisted and sent on the next registration; `login`, tags and subscription send nothing and do not crash
+- [x] `deviceId` returns a persisted id before `initialize`, `nil` for a never-registered device
+- [x] `setLocationSharingEnabled(false)` writes the preference before the call returns (read back synchronously)
+- [x] Test count: SDK +13 minimum (276)
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiFacadeProfileTests`
 
 **Tests**: unit
 **Gate**: quick

@@ -69,4 +69,57 @@ final class NottiFacade {
         _activeConfig = config
         runtime.start(appId: config.appId, clientKey: config.clientKey, baseUrl: config.baseUrl)
     }
+
+    // MARK: - Identity and profile (API-04 ... API-08)
+    //
+    // One-line forwards. They go through `ensureCore()` so email and phone are
+    // persisted even before `initialize` (DPF-19); the core itself drops what
+    // needs a registered device (login, tags, subscription).
+
+    /// The persisted device id, also before `initialize`; nil for a device that never registered.
+    var deviceId: String? {
+        runtime.ensureCore().getDeviceId()
+    }
+
+    func login(_ externalUserId: String) {
+        runtime.ensureCore().login(externalUserId)
+    }
+
+    func logout() {
+        runtime.ensureCore().logout()
+    }
+
+    func addTags(_ tags: [String: String]) {
+        runtime.ensureCore().mutateTags(add: tags, remove: nil)
+    }
+
+    func removeTags(_ keys: [String]) {
+        runtime.ensureCore().mutateTags(add: nil, remove: keys)
+    }
+
+    func setEmail(_ email: String) {
+        runtime.ensureCore().setEmail(email)
+    }
+
+    func clearEmail() {
+        runtime.ensureCore().clearEmail()
+    }
+
+    func setPhone(_ phone: String) {
+        runtime.ensureCore().setPhone(phone)
+    }
+
+    func clearPhone() {
+        runtime.ensureCore().clearPhone()
+    }
+
+    func setSubscription(_ enabled: Bool) {
+        runtime.ensureCore().setSubscription(enabled)
+    }
+
+    /// Runs on the caller's thread: the core writes the preference synchronously
+    /// (LGPD B1), so an opt-out survives a process kill right after the call.
+    func setLocationSharingEnabled(_ enabled: Bool) {
+        runtime.ensureCore().setLocationSharingEnabled(enabled)
+    }
 }
