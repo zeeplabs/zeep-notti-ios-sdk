@@ -19,6 +19,13 @@ final class NottiRichMediaJobEarlyAbortTests: NottiRichMediaJobTestCase {
         XCTAssertEqual(directoryContents(), [], file: file, line: line)
     }
 
+    /// Goals: only https is ever fetched, after redirects too. The refused target must not even be requested.
+    private func assertNoHttpRequest(file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertEqual(
+            StubURLProtocol.requestedURLs.filter { $0.scheme?.lowercased() != "https" }, [], file: file, line: line
+        )
+    }
+
     func test_aRedirectToHttpEndsBeforeAnyBodyByteIsServedEvenWhenTheStubIgnoresTheRefusal() {
         StubURLProtocol.register(.redirect(to: httpTarget), for: mediaURL)
         // A target that would happily serve a body if it were ever contacted.
@@ -33,6 +40,7 @@ final class NottiRichMediaJobEarlyAbortTests: NottiRichMediaJobTestCase {
 
         assertDropped(recorder, log: "redirect_not_https")
         XCTAssertEqual(StubURLProtocol.servedBytes(for: httpTarget), 0)
+        assertNoHttpRequest()
     }
 
     func test_aRedirectToHttpWhoseTargetNeverRespondsStillEndsAtOnce() {
@@ -44,6 +52,7 @@ final class NottiRichMediaJobEarlyAbortTests: NottiRichMediaJobTestCase {
         settle()
 
         assertDropped(recorder, log: "redirect_not_https")
+        assertNoHttpRequest()
     }
 
     func test_aRedirectChainThatEndsOnHttpsStillAttaches() {
