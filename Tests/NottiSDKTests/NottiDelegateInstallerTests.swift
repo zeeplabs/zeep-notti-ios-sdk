@@ -415,6 +415,13 @@ final class NottiDelegateInstallerTests: XCTestCase {
         XCTAssertEqual(NottiBootstrap.loadCount, 1, "+load runs once per process")
         XCTAssertEqual(NottiBootstrap.installCount, 1, "+load found NottiDelegateInstaller and sent install")
     }
+
+    /// `+load` runs in the test process too, so the real `UIApplication` and `UNUserNotificationCenter` setters
+    /// are swizzled for the whole run. It only observes; the other suites stay green with it on (they inject
+    /// their own state and classes), and this test records that the real install succeeded.
+    func test_theLaunchHookInstalledTheRealSwizzlesInThisProcess() {
+        XCTAssertTrue(NottiSwizzlingState.shared.isActive)
+    }
     #endif
 
     func test_theInstallerClassIsReachableByTheNameTheHookUses() {
