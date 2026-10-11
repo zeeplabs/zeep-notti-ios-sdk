@@ -220,6 +220,108 @@ final class NottiLoggingPrivacyTests: XCTestCase {
         }
     }
 
+    // MARK: - Through the public facade (API-14, API-15)
+
+    /// Every value the host passes to the SDK, plus the configuration fixtures,
+    /// must stay out of the log (CORE-12 extended to the facade layer).
+    private var facadeSentinels: [String] {
+        [
+            sentinelEmail, sentinelPhone, sentinelExternalId, sentinelTagValue,
+            tokenHex, tokenHex.uppercased(), sentinelCountry,
+            "app-fixture", "key-fixture", "notti.example.invalid",
+            "sentinel-invalid-app", "sentinel-invalid-key", "sentinel-invalid-host"
+        ]
+    }
+
+    private func assertNoFacadeSentinelInLogs(file: StaticString = #filePath, line: UInt = #line) {
+        let lines = captured
+        XCTAssertFalse(lines.isEmpty, "the sink captured nothing", file: file, line: line)
+        for logLine in lines {
+            for sentinel in facadeSentinels {
+                XCTAssertFalse(
+                    logLine.message.contains(sentinel),
+                    "PII sentinel '\(sentinel)' leaked in: \(logLine.message)",
+                    file: file,
+                    line: line
+                )
+            }
+        }
+    }
+
+    /// Drives only `NottiFacade` (what `Notti` forwards to): pre-initialize
+    /// email/phone, invalid then valid initialize, login, tags, location, a
+    /// notification event with live listeners, the APNs token and a permission
+    /// request. Registration succeeds, every later request fails. At `.verbose`.
+    func test_facadeFlowWithFailuresAtVerboseLogsNoSentinelValue() {
+        NottiLogger.level = .verbose
+        NottiDeviceStore(defaults: defaults).setLocationSharingEnabled(true)
+        let country = sentinelCountry
+        let runtime = makeRuntime(providers: NottiPlatformProviders(
+            tokenProvider: { _ in },
+            permissionRequester: { $0(true) },
+            hasLocationPermission: { true },
+            countryProvider: { $0(country) },
+            appStateProvider: { $0(true) }
+        ))
+        let facade = NottiFacade(runtime: runtime, dispatcher: { $0() })
+        let handler = NottiNotificationHandler(runtime: runtime)
+        let received = facade.addReceivedListener { _ in }
+        let clicked = facade.addClickedListener { _ in }
+
+        facade.setEmail(sentinelEmail)
+        facade.setPhone(sentinelPhone)
+        facade.login(sentinelExternalId) // dropped before initialize (warn)
+        facade.initialize(appId: "sentinel-invalid-app", clientKey: "sentinel-invalid-key", baseUrl: "ftp://sentinel-invalid-host")
+        facade.initialize(appId: "app-fixture", clientKey: "key-fixture", baseUrl: "https://notti.example.invalid")
+        let core = runtime.core
+        facade.login(sentinelExternalId)
+        facade.addTags(["segment": sentinelTagValue])
+        facade.setLocationSharingEnabled(true)
+        handler.handleWillPresent(
+            userInfo: ["aps": ["alert": "fixture"], "notification_id": "n-fixture", "delivery_id": "d-fixture"],
+            identifier: "req-fixture"
+        )
+        drain(core)
+
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-fixture","tags":{}}"#)) // registration only
+        runtime.onApnsToken(tokenBytes)
+        facade.requestPermission { _ in }
+        drain(core)
+        received.remove()
+        clicked.remove()
+
+        let requests = StubURLProtocol.recordedRequests()
+        XCTAssertEqual(requests.filter { $0.httpMethod == "POST" && $0.url?.path.hasSuffix("/devices") == true }.count, 1)
+        XCTAssertGreaterThan(requests.filter { $0.httpMethod == "PATCH" }.count, 0)
+        // The facade's own invalid-initialize line is part of what is swept.
+        XCTAssertEqual(captured.filter { $0.message.hasPrefix("Notti.initialize ignored") }.map(\.level), [.error])
+        assertNoFacadeSentinelInLogs()
+    }
+
+    /// Same facade-only flow when the registration itself fails (terminal 4xx).
+    func test_facadeFlowWithFailedRegistrationAtVerboseLogsNoSentinelValue() {
+        NottiLogger.level = .verbose
+        let runtime = makeRuntime(providers: NottiPlatformProviders(
+            tokenProvider: { _ in },
+            permissionRequester: { $0(true) }
+        ))
+        let facade = NottiFacade(runtime: runtime, dispatcher: { $0() })
+
+        facade.initialize(appId: "app-fixture", clientKey: "key-fixture", baseUrl: "https://notti.example.invalid")
+        let core = runtime.core
+        facade.login(sentinelExternalId)
+        facade.setEmail(sentinelEmail)
+        facade.setPhone(sentinelPhone)
+        facade.addTags(["segment": sentinelTagValue])
+        drain(core)
+        StubURLProtocol.enqueue(.status(400))
+        runtime.onApnsToken(tokenBytes)
+        drain(core)
+
+        assertRegistrationFailureLogged("Notti.initialize: device registration failed: HTTP 400")
+        assertNoFacadeSentinelInLogs()
+    }
+
     /// CORE-13: at the default level only errors reach the sink, even when the
     /// flow produces warnings and debug lines.
     func test_defaultLevelIsErrorAndNothingBelowItIsEmitted() {
