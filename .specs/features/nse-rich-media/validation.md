@@ -1,4 +1,4 @@
-# Validation: nse-rich-media - FAIL (round 1)
+# Validation: nse-rich-media - PASS (round 2)
 
 **Date**: 2026-10-11
 **Spec**: `.specs/features/nse-rich-media/spec.md` (NSE-01..NSE-18, Goals, Success Criteria; the only source for blocking)
@@ -6,7 +6,9 @@
 **Verifier**: independent, author of none of the code, tests or docs. Every mutant was applied, run and reverted with `git checkout -- <file>`; `git status --short` was empty after each one (the harness records it). Throwaway probe tests were added to `Tests/NottiSDKExtensionTests`, run, and deleted. At the end of this report `git status --short` shows only the new `validation.md`.
 **Environment**: Xcode 27.0 (27A266a), simulator `iPhone 17 Pro`, SwiftLint 0.65.1 (Docker), CocoaPods 1.17.0. Tests through the watchdog `run.sh`, one `xcodebuild` at a time.
 
-## Verdict: FAIL (round 1), no production defect found
+## Verdict (round 2): PASS. B1, B2 and B3 are closed (see the Round 2 section at the end); no new blocker. Round 1 below was FAIL.
+
+## Round 1 history: FAIL (round 1), no production defect found
 
 The production code satisfied every AC and every Goal in all my probes. Three realistic one-line regressions of production code pass the whole 584-test suite, and each violates a literal sentence of the spec (B1, B2, B3 below). The fix for all three is **tests only** (no change under `Sources/`); I give the exact probe for each.
 
