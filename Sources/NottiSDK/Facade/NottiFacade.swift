@@ -9,6 +9,7 @@ import NottiShared
 ///
 /// The public shell forwards to `NottiFacade.shared`. Tests build isolated
 /// instances over an isolated `NottiRuntime` and never touch `shared`.
+@available(iOSApplicationExtension, unavailable)
 final class NottiFacade {
 
     /// Host used when the integrator passes no `baseUrl` (RN `SAAS_BASE_URL`,
@@ -27,6 +28,10 @@ final class NottiFacade {
     private let dispatcher: NottiMainDispatcher
     private let installDelegates: () -> Void
 
+    /// Behind the manual forwarding API (`Notti.Notifications.didReceive(_:)` and the others), the same
+    /// entry points the swizzled path uses. Ignores a call while swizzling is active (DEL-09).
+    let pushAdapter: NottiPushAdapter
+
     // One hub per event type, multiplexed over the core's single handler.
     private let receivedHub: NottiListenerHub<NottiNotificationPayload>
     private let clickedHub: NottiListenerHub<NottiNotificationPayload>
@@ -40,14 +45,17 @@ final class NottiFacade {
     /// - Parameter installDelegates: runs at the start of every `initialize`: the idempotent safety net for
     ///   the delegate integration if the launch hook did not run. Production passes
     ///   `NottiDelegateInstaller.ensureInstalled`; tests keep the no-op and never touch the real `UIApplication`.
+    /// - Parameter isSwizzlingActive: read by the manual forwarding API; production passes `NottiSwizzlingState`.
     init(
         runtime: NottiRuntime,
         dispatcher: @escaping NottiMainDispatcher = { DispatchQueue.main.async(execute: $0) },
-        installDelegates: @escaping () -> Void = {}
+        installDelegates: @escaping () -> Void = {},
+        isSwizzlingActive: @escaping () -> Bool = { false }
     ) {
         self.runtime = runtime
         self.dispatcher = dispatcher
         self.installDelegates = installDelegates
+        self.pushAdapter = NottiPushAdapter(runtime: runtime, isSwizzlingActive: isSwizzlingActive)
         let buffer = runtime.eventBuffer
         receivedHub = Self.makeNotificationHub(buffer: buffer, event: .received, dispatcher: dispatcher)
         clickedHub = Self.makeNotificationHub(buffer: buffer, event: .clicked, dispatcher: dispatcher)
