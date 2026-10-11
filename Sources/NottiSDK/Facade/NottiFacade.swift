@@ -26,6 +26,11 @@ final class NottiFacade {
     private let runtime: NottiRuntime
     private let dispatcher: NottiMainDispatcher
 
+    // One hub per event type, multiplexed over the core's single handler.
+    private let receivedHub: NottiListenerHub<NottiNotificationPayload>
+    private let clickedHub: NottiListenerHub<NottiNotificationPayload>
+    private let deviceIdHub: NottiListenerHub<String>
+
     /// Guards `activeConfig` and makes "decide + `runtime.start`" one step, so two
     /// racing different `initialize` calls end with one consistent core.
     private let lock = NSLock()
@@ -37,6 +42,28 @@ final class NottiFacade {
     ) {
         self.runtime = runtime
         self.dispatcher = dispatcher
+        let buffer = runtime.eventBuffer
+        receivedHub = Self.makeNotificationHub(buffer: buffer, event: .received, dispatcher: dispatcher)
+        clickedHub = Self.makeNotificationHub(buffer: buffer, event: .clicked, dispatcher: dispatcher)
+        deviceIdHub = NottiListenerHub<String>(
+            attach: { handler in runtime.onDeviceIdChanged = handler },
+            detach: { runtime.onDeviceIdChanged = nil },
+            dispatcher: dispatcher
+        )
+    }
+
+    private static func makeNotificationHub(
+        buffer: NottiEventBuffer,
+        event: NottiNotificationEvent,
+        dispatcher: @escaping NottiMainDispatcher
+    ) -> NottiListenerHub<NottiNotificationPayload> {
+        NottiListenerHub<NottiNotificationPayload>(
+            attach: { handler in
+                buffer.setHandler(event) { handler(NottiNotificationPayload(eventPayload: $0)) }
+            },
+            detach: { buffer.setHandler(event, nil) },
+            dispatcher: dispatcher
+        )
     }
 
     /// The configuration `initialize` last accepted, or nil.
@@ -156,5 +183,29 @@ final class NottiFacade {
                 return true
             }
         }
+    }
+
+    // MARK: - Listeners and initial click (API-05, API-10 ... API-12)
+
+    /// Works before `initialize` too: the event buffer lives in the runtime. The
+    /// first listener also receives the events buffered so far.
+    func addReceivedListener(_ handler: @escaping (NottiNotificationPayload) -> Void) -> NottiSubscription {
+        receivedHub.add(handler)
+    }
+
+    /// Live clicks only. A cold-start click is never replayed here: it waits for
+    /// `takeInitialClick()`.
+    func addClickedListener(_ handler: @escaping (NottiNotificationPayload) -> Void) -> NottiSubscription {
+        clickedHub.add(handler)
+    }
+
+    /// Called once per real device-id change, not on a re-registration with the same id.
+    func addDeviceIdChangedListener(_ handler: @escaping (String) -> Void) -> NottiSubscription {
+        deviceIdHub.add(handler)
+    }
+
+    /// The click that launched the app, once; nil afterwards.
+    func takeInitialClick() -> NottiNotificationPayload? {
+        runtime.eventBuffer.takeInitialClick().map { NottiNotificationPayload(eventPayload: $0) }
     }
 }
