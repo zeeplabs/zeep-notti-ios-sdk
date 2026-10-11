@@ -156,7 +156,7 @@ This repo's lessons live in `.specs/LESSONS.md` (managed by `lessons.py`; L-001.
 - [ ] (public-api Verifier r1/r2 N3, N9-N13, tooling) `check-public-surface.sh` blind spots: lone `public` on its own line, `public indirect enum`, attribute inside a trailing comment, top-level `public func`/`let` (not a type), `@available(..., unavailable, message:)` false fail, silent allowlist edits. None affects a type that exists today.
 - [ ] (public-api Verifier r1 N4, tests) The ObjC test target and the F1 test write to the simulator's real `notti_prefs` suite and undo it afterwards; consider an injectable suite for the ObjC target.
 - [ ] (public-api, post-M1) Decide whether `NottiObjC`, `NottiUserObjC` and `NottiNotificationsObjC` should be hidden from Swift (they are visible today).
-- [ ] (public-api, before v0.1.0) Backend team to confirm that `https://app.zeepnotti.app` is still the production host (the facade default comes from the RN TS constant).
+- [x] (public-api) Default host `https://app.zeepnotti.app` confirmed as the production host by Julio (2026-10-11); the facade default comes from the RN TS constant.
 
 ## Preferences
 
