@@ -92,12 +92,16 @@
 // UNNotificationResponse have no public initializer, so the fixtures are allocated and filled by KVC.
 // The shared runtime is used: while swizzling is active the calls are ignored (no network, no event).
 - (UNNotification *)fixtureNotification {
-    UNMutableNotificationContent *content = [UNMutableNotificationContent new];
-    content.userInfo = @{
+    return [self fixtureNotificationWithUserInfo:@{
         @"aps": @{@"alert": @{@"title": @"Title fixture", @"body": @"Body fixture"}},
         @"notification_id": @"n-objc-fixture",
         @"delivery_id": @"d-objc-fixture"
-    };
+    }];
+}
+
+- (UNNotification *)fixtureNotificationWithUserInfo:(NSDictionary *)userInfo {
+    UNMutableNotificationContent *content = [UNMutableNotificationContent new];
+    content.userInfo = userInfo;
     UNNotificationRequest *request = [UNNotificationRequest requestWithIdentifier:@"req-objc-fixture"
                                                                           content:content
                                                                           trigger:nil];
@@ -123,6 +127,15 @@
     [response setValue:notification forKey:@"notification"];
     [response setValue:UNNotificationDefaultActionIdentifier forKey:@"actionIdentifier"];
     [NottiNotifications didReceiveNotificationResponse:response];
+}
+
+// A notification that is not a Notti push (no `aps`, no `notification_id`) gets no presentation options.
+- (void)testManualWillPresentOfANonNottiNotificationReturnsNoOptions {
+    UNNotification *local = [self fixtureNotificationWithUserInfo:@{@"custom": @"fixture"}];
+
+    UNNotificationPresentationOptions options = [NottiNotifications willPresentNotification:local];
+
+    XCTAssertEqual(options, (UNNotificationPresentationOptions)0);
 }
 
 @end
