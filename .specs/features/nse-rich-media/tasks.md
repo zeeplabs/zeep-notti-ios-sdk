@@ -173,11 +173,11 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Each of the five MIME types maps to its extension, also in mixed case
-- [ ] An unknown MIME falls back to an allowlisted URL extension, then to `jpg`
-- [ ] A URL extension outside the allowlist (including a path-like string) never reaches the result
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 8 new
+- [x] Each of the five MIME types maps to its extension, also in mixed case
+- [x] An unknown MIME falls back to an allowlisted URL extension, then to `jpg`
+- [x] A URL extension outside the allowlist (including a path-like string) never reaches the result
+- [x] Gate check passes: quick
+- [x] Test count: at least 8 new
 
 **Tests**: unit
 **Gate**: quick
