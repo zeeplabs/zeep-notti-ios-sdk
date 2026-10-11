@@ -37,6 +37,8 @@ let package = Package(
         .testTarget(name: "NottiSDKExtensionTests", dependencies: ["NottiSDKExtension", "NottiShared"]),
         // Objective-C compile check (public-api API-13): fails if the `@objc` surface stops compiling.
         .testTarget(name: "NottiSDKObjCTests", dependencies: ["NottiSDK"]),
+        // Objective-C compile check of the extension entry points (nse-rich-media NSE-16). Adds no product.
+        .testTarget(name: "NottiSDKExtensionObjCTests", dependencies: ["NottiSDKExtension"]),
     ],
     swiftLanguageVersions: [.v5]
 )
