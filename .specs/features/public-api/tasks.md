@@ -3,7 +3,7 @@
 **Design**: `.specs/features/public-api/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
 **Depends on feature**: `core-port` done (runtime, core, event buffer, logger, 252 tests)
-**Status**: Execute done (2026-10-11), Verifier pending
+**Status**: Execute done (2026-10-11). Verifier round 1 FAIL (G1, G2, G3), fixes committed, round 2 pending
 
 ---
 

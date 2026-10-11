@@ -80,6 +80,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: Sources/NottiSDK/Events/NottiNotificationHandler.swift:92 (SDKCTR-04, mutant H8) (events)
 - last seen: 2026-10-10T22:15:59Z
 
+### L-012 - A pre-initialize test must make each method the FIRST call on a fresh runtime, because an earlier call creates the core and hides a dropped ensureCore().
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `facade` · harmful: 0
+- features: public-api
+- evidence: NottiFacade.swift:132-140 (API-07, mutants U15-U17) (facade)
+- last seen: 2026-10-11T14:43:17Z
+
+### L-013 - A shell-level 'reaches the facade' test must emit one event type at a time with a distinct payload per event, never every event with one payload.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `events` · harmful: 0
+- features: public-api
+- evidence: Notti.swift:154 (API-10, mutant S06) (events)
+- last seen: 2026-10-11T14:43:17Z
+
+### L-014 - An attribute the spec requires on a public symbol needs a guard that reads the attribute itself, not only the declaration line.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `scripts` · harmful: 0
+- features: public-api
+- evidence: Notti.swift:16 (API-15 AC2, mutant E1) (scripts)
+- last seen: 2026-10-11T14:43:17Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
