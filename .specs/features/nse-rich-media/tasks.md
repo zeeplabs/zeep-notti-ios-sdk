@@ -195,11 +195,11 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Two sequential `fire` calls call the handler once and return `true`, then `false`
-- [ ] 50 concurrent `fire` calls call the handler exactly once
-- [ ] The handler is called outside the lock (a handler that calls `fire` again does not deadlock)
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 3 new
+- [x] Two sequential `fire` calls call the handler once and return `true`, then `false`
+- [x] 50 concurrent `fire` calls call the handler exactly once
+- [x] The handler is called outside the lock (a handler that calls `fire` again does not deadlock)
+- [x] Gate check passes: quick
+- [x] Test count: at least 3 new
 
 **Tests**: unit
 **Gate**: quick
