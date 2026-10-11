@@ -358,7 +358,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T12: Objective-C layer and compile check
+### T12: Objective-C layer and compile check ✅ (NottiObjCBridgeTests 6 + NottiSDKObjCTests 4 ObjC; SDK 332, Shared 14, Ext 1, ObjC 4, total 351; deleting the `clearPhone` entry point fails the ObjC compile (`no known class method for selector 'clearPhone'`), reverted; CI needs no change: `xcodebuild test -scheme NottiSDK-Package` runs the 4th bundle. SPEC_DEVIATION: `NottiSubscription` now inherits `NSObject` with `@objc(NottiSubscription)` and `@objc remove()` so ObjC hosts can hold it (T3 file touched); ObjC listeners receive an `NSDictionary` (`title`/`body` only when present, `data` always) because `NottiNotificationPayload` is a Swift struct; the ObjC classes are also visible to Swift as `NottiObjC`, `NottiUserObjC`, `NottiNotificationsObjC`)
 
 **What**: Add the three `@objc` classes with the names chosen in T1 (completion blocks, `NSDictionary` payloads, tags through `sanitizeTags`) and the compile check chosen in T1 (SPM ObjC test target, or the fallback).
 **Where**: `Sources/NottiSDK/Public/ObjC/NottiObjC.swift`
@@ -368,13 +368,13 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] Every P1 capability is callable from Objective-C, and the compile check fails if one entry point is removed (verified by deleting one and reverting)
-- [ ] Non-string tag values are dropped through the ObjC path (test)
-- [ ] The ObjC layer adds no behavior beyond bridging types
-- [ ] `pod lib lint NottiSDK.podspec --platforms=ios` and the Extension subspec lint still pass
-- [ ] If the fallback compile check was used, `STATE.md` has a todo for the full ObjC host check in `example-and-release`
-- [ ] Test count: +3 minimum in the ObjC check
-- [ ] Gate passes: full
+- [x] Every P1 capability is callable from Objective-C, and the compile check fails if one entry point is removed (verified by deleting one and reverting)
+- [x] Non-string tag values are dropped through the ObjC path (test)
+- [x] The ObjC layer adds no behavior beyond bridging types
+- [x] `pod lib lint NottiSDK.podspec --platforms=ios` and the Extension subspec lint still pass
+- [x] Fallback compile check not used (SPM ObjC test target works), so no todo is needed
+- [x] Test count: +3 minimum in the ObjC check
+- [x] Gate passes: full
 
 **Tests**: unit (ObjC compile check)
 **Gate**: full

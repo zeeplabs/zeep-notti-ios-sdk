@@ -32,6 +32,8 @@ let package = Package(
             resources: [.copy("Fixtures")]
         ),
         .testTarget(name: "NottiSDKExtensionTests", dependencies: ["NottiSDKExtension", "NottiShared"]),
+        // Objective-C compile check (public-api API-13): fails if the `@objc` surface stops compiling.
+        .testTarget(name: "NottiSDKObjCTests", dependencies: ["NottiSDK"]),
     ],
     swiftLanguageVersions: [.v5]
 )
