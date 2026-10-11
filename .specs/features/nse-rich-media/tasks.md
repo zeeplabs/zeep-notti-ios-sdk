@@ -217,11 +217,11 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Default limits asserted as literals (`10485760`, `20`)
-- [ ] Each reason's code is asserted as a literal string; an error reason carries only `domain#code`
-- [ ] No code can contain a URL: the error-carrying cases take `NSError` domain and code only
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 4 new
+- [x] Default limits asserted as literals (`10485760`, `20`)
+- [x] Each reason's code is asserted as a literal string; an error reason carries only `domain#code`
+- [x] No code can contain a URL: the error-carrying cases take `NSError` domain and code only
+- [x] Gate check passes: quick
+- [x] Test count: at least 4 new
 
 **Tests**: unit
 **Gate**: quick
