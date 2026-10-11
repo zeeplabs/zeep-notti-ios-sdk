@@ -92,7 +92,10 @@ final class NottiRuntime {
         _core?.invalidate()
     }
 
-    /// The live core, or nil before `start` / after `stop`.
+    /// The live core, or nil before `start` / `ensureCore` and after `stop`.
+    ///
+    /// Since `ensureCore()` exists, a non-nil core no longer implies "initialized":
+    /// it may be an uninitialized core that only holds persisted state.
     var core: NottiCore? {
         lock.withLock { _core }
     }
@@ -113,6 +116,22 @@ final class NottiRuntime {
         let core = makeCore()
         lock.withLock { _core = core }
         core.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkVersion: sdkVersion)
+    }
+
+    /// Returns the live core, or builds an uninitialized one and stores it as the
+    /// current core. Lets the facade call `getDeviceId`, `setEmail` and `setPhone`
+    /// before `initialize`, as RN's eagerly built core does (DPF-19). An
+    /// uninitialized core registers no observers and sends nothing. `start` still
+    /// invalidates whichever core is current and installs a new one.
+    func ensureCore() -> NottiCore {
+        lifecycleLock.lock()
+        defer { lifecycleLock.unlock() }
+        return lock.withLock {
+            if let existing = _core { return existing }
+            let created = makeCore()
+            _core = created
+            return created
+        }
     }
 
     /// Invalidates and drops the live core. Persisted state is left alone.
