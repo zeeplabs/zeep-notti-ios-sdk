@@ -244,7 +244,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T7: `NottiFacade` permission request
+### T7: `NottiFacade` permission request ✅ (NottiFacadePermissionTests 6; SDK 292, Shared 14, Ext 1, total 307)
 
 **What**: Add `requestPermission(completion:)` and `requestPermission() async -> Bool`. The completion is wrapped in a once-guard and delivered on main through the dispatcher. Before `initialize` the core answers `false` without a prompt.
 **Where**: `Sources/NottiSDK/Facade/NottiFacade.swift`, `Tests/NottiSDKTests/NottiFacadePermissionTests.swift`
@@ -254,12 +254,12 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] Granted and denied OS results come back as `true` and `false`, through the dispatcher
-- [ ] Before `initialize` the result is `false` and the requester double is never called
-- [ ] A double that calls the callback twice does not crash the async variant and delivers once
-- [ ] Two concurrent requests both complete
-- [ ] Test count: SDK +5 minimum (281)
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiFacadePermissionTests`
+- [x] Granted and denied OS results come back as `true` and `false`, through the dispatcher
+- [x] Before `initialize` the result is `false` and the requester double is never called
+- [x] A double that calls the callback twice does not crash the async variant and delivers once
+- [x] Two concurrent requests both complete
+- [x] Test count: SDK +5 minimum (281)
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiFacadePermissionTests`
 
 **Tests**: unit
 **Gate**: quick
