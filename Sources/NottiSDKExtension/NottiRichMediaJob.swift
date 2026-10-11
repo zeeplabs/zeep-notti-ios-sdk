@@ -12,7 +12,12 @@ final class NottiRichMediaJob: NSObject, URLSessionDownloadDelegate {
     enum Outcome {
         case attached(UNNotificationAttachment)
         case dropped(NottiRichMediaDropReason)
+        /// The OS called `serviceExtensionTimeWillExpire`; deliver the host's best-attempt content.
+        case expired(UNNotificationContent)
     }
+
+    /// Snapshot of the notification's `userInfo`, used to match an expiry call to this job (D10).
+    let userInfo: NSDictionary
 
     private let content: UNMutableNotificationContent
     private let gate: NottiHandlerGate
@@ -34,6 +39,7 @@ final class NottiRichMediaJob: NSObject, URLSessionDownloadDelegate {
         environment: NottiRichMediaEnvironment
     ) {
         self.content = content
+        self.userInfo = content.userInfo as NSDictionary
         self.gate = gate
         self.environment = environment
         let queue = OperationQueue()
@@ -63,11 +69,13 @@ final class NottiRichMediaJob: NSObject, URLSessionDownloadDelegate {
 
     /// First caller wins. Cancels the transfer, invalidates the session (which releases this delegate),
     /// logs a drop and fires the gate.
-    private func finish(_ outcome: Outcome) {
+    /// Returns `true` for the caller that won; a loser must clean up anything it still owns.
+    @discardableResult
+    private func finish(_ outcome: Outcome) -> Bool {
         lock.lock()
         if finished {
             lock.unlock()
-            return
+            return false
         }
         finished = true
         let session = self.session
@@ -85,10 +93,21 @@ final class NottiRichMediaJob: NSObject, URLSessionDownloadDelegate {
         switch outcome {
         case .attached(let attachment):
             content.attachments = [attachment]
+            gate.fire(content)
         case .dropped(let reason):
             NottiLogger.log(.error, "rich media dropped: \(reason.code)", category: "nse")
+            gate.fire(content)
+        case .expired(let hostContent):
+            NottiLogger.log(.error, "rich media dropped: \(NottiRichMediaDropReason.expired.code)", category: "nse")
+            gate.fire(hostContent)
         }
-        gate.fire(content)
+        return true
+    }
+
+    /// The OS is about to kill the extension (NSE-11). First caller wins: cancels the download, logs `expired`
+    /// and fires the gate with the host's content. A job that already finished does nothing.
+    func expire(with hostContent: UNNotificationContent) {
+        finish(.expired(hostContent))
     }
 
     private var isFinished: Bool {
@@ -176,7 +195,8 @@ final class NottiRichMediaJob: NSObject, URLSessionDownloadDelegate {
             let attachment = try UNNotificationAttachment(
                 identifier: UUID().uuidString, url: destination, options: nil
             )
-            finish(.attached(attachment))
+            // Lost the race to the deadline or expiry: nobody owns the file now.
+            if !finish(.attached(attachment)) { try? fileManager.removeItem(at: destination) }
         } catch {
             try? fileManager.removeItem(at: destination)
             finish(.dropped(.attachmentRejected(error)))
