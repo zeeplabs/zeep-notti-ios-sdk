@@ -81,7 +81,7 @@ Do not add `dpearson2699/swift-ios-skills` (PolyForm Perimeter license) to this 
 
 ### Public API surface
 
-Every `public` / `open` declaration in `Sources/NottiSDK` and `Sources/NottiSDKExtension` is listed in `.specs/codebase/PUBLIC_SURFACE.txt`, and `Sources/NottiShared` must have none (it stays `package`). A new, changed or removed public symbol updates that file in the same commit: run `scripts/check-public-surface.sh --update`, review the diff, commit it. `scripts/check-public-surface.sh` fails CI on drift. Keep `public` on the declaration line, and put no `package` type in a public signature.
+Every `public` / `open` declaration in `Sources/NottiSDK` and `Sources/NottiSDKExtension` is listed in `.specs/codebase/PUBLIC_SURFACE.txt`, and `Sources/NottiShared` must have none (it stays `package`). A new, changed or removed public symbol updates that file in the same commit: run `scripts/check-public-surface.sh --update`, review the diff, commit it. `scripts/check-public-surface.sh` fails CI on drift. It also fails when a top-level public type in `Sources/NottiSDK` lacks `@available(iOSApplicationExtension, unavailable)` (extension-safe types are allowlisted in the script). Keep `public` on the declaration line, and put no `package` type in a public signature.
 
 ### Version
 
