@@ -39,13 +39,13 @@
 | Before `initialize` | Calls that need a registered device are dropped and logged at `.warn`/`.error` as the core does today. `requestPermission` completes with `false` without showing the prompt. Email/phone are persisted and converge on the next registration (DPF-19) | Preserves core-port behavior, no new rules | y (inherited) |
 | Failure model | Nothing in the facade throws or crashes. Invalid input is logged and ignored | Core contract (invalid `baseUrl` disables the SDK instead of throwing) | y (inherited) |
 | Log level default | `.error` | CORE-13. The roadmap line "off by default in release" is read as "no verbose output by default", not as `.none` | y (Julio went on to Design without objecting, 2026-10-11) |
-| ObjC shape | Swift `enum`/`struct` namespaces are not visible to Objective-C, so the `@objc` layer is a separate set of `NSObject` classes. Class names and prefix are decided in Design | Language constraint | n - Design |
+| ObjC shape | Swift `enum`/`struct` namespaces are not visible to Objective-C, so the `@objc` layer is a separate set of `NSObject` classes: ObjC names `Notti`, `NottiUser`, `NottiNotifications` (Swift side `NottiObjC`, `NottiUserObjC`, `NottiNotificationsObjC`). Listeners and `takeInitialClick` use `NSDictionary` payloads, and `NottiSubscription` inherits `NSObject` | Language constraint. T1 spike showed the original names coexist with `enum Notti`. Julio confirmed the names | y (Julio, 2026-10-11) |
 | `getDeviceId()` before `initialize` | Returns the persisted device id, or `nil` if the device never registered | RN builds its core eagerly, so it returns the persisted id (`NottiImpl.swift:377`). The native runtime has no core before `start`, so Design adds `NottiRuntime.ensureCore()` | y (verified in Design, 2026-10-11) |
 | Initial click | One-shot: returns the latest click and consumes it | Core `takeInitialClick()` and RN parity | y (inherited) |
 | Replay for listeners | The `received` core handler replays buffered events when it is first registered, so only the first listener receives that replay. `clicked` has no replay. Later listeners get new events only | Core buffer semantics (`NottiEventBuffer.setHandler`), confirmed in Design | y (verified in Design, 2026-10-11) |
-| Naming of public types | `Notti` (namespace), `Notti.User`, `Notti.Notifications`, `Notti.LogLevel`, `NottiSubscription`, `NottiNotificationPayload`. ObjC names in `design.md`, with a spike and a fallback | ROADMAP wording. `NottiLogLevel` clashes with the `package` type inside the module | y for Swift names. ObjC names pending the spike |
+| Naming of public types | `Notti` (namespace), `Notti.User`, `Notti.Notifications`, `Notti.LogLevel` (a typealias of the top-level `@objc(NottiLogLevel) NottiLogLevelObjC`, because a nested `@objc` enum is not exported to ObjC), `NottiSubscription`, `NottiNotificationPayload` | ROADMAP wording. `NottiLogLevel` clashes with the `package` type inside the module. Spike in T1 | y |
 
-Open questions: none for Design. The Objective-C class names stay open until the first task's spike (`design.md`), and the default host needs backend confirmation before v0.1.0.
+Open questions: none. The default host needs backend confirmation before v0.1.0.
 
 ---
 
@@ -165,7 +165,7 @@ Open questions: none for Design. The Objective-C class names stay open until the
 - WHEN `requestPermission` is called twice concurrently THEN both calls SHALL complete, each with the OS result.
 - WHEN a main-thread hop would reorder events THEN delivery order SHALL still equal emission order for one listener.
 - WHEN the host retains a `NottiSubscription` after `remove()` THEN it SHALL hold no strong reference to the handler.
-- WHEN the baseUrl is `http://` in a release build THEN it SHALL be rejected, as in the core (A5).
+- WHEN the baseUrl is `http://` in a release build THEN it SHALL be rejected, as in the core (A5). Debug builds accept it (the unit tests run in Debug, so the test asserts the Debug rule under `#if DEBUG`).
 
 ---
 
@@ -173,21 +173,21 @@ Open questions: none for Design. The Objective-C class names stay open until the
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| API-01 | P1: Initialize and identify (initialize, default baseUrl, no throw) | Design | Pending |
-| API-02 | P1: Initialize and identify (idempotency, N1) | Design | Pending |
-| API-03 | P1: Initialize and identify (`shared` uses `notti_prefs`, F1) | Design | Pending |
-| API-04 | P1: Initialize and identify (login/logout) | Design | Pending |
-| API-05 | P1: Initialize and identify (device id accessor and observer) | Design | Pending |
-| API-06 | P1: User profile (tags) | Design | Pending |
-| API-07 | P1: User profile (email, phone) | Design | Pending |
-| API-08 | P1: User profile (subscription, location sharing) | Design | Pending |
-| API-09 | P1: Notifications (requestPermission) | Design | Pending |
-| API-10 | P1: Notifications (listeners, payload, replay) | Design | Pending |
-| API-11 | P1: Notifications (initial click) | Design | Pending |
-| API-12 | P1: Initialize and identify, Notifications (main-thread delivery) | Design | Pending |
-| API-13 | P2: Objective-C interop | Design | Pending |
-| API-14 | P2: Log level | Design | Pending |
-| API-15 | P1: Public surface hygiene (+ no-PII at all levels) | Design | Pending |
+| API-01 | P1: Initialize and identify (initialize, default baseUrl, no throw)  | Execute | Implemented (Verifier pending) |
+| API-02 | P1: Initialize and identify (idempotency, N1)  | Execute | Implemented (Verifier pending) |
+| API-03 | P1: Initialize and identify (`shared` uses `notti_prefs`, F1)  | Execute | Implemented (Verifier pending) |
+| API-04 | P1: Initialize and identify (login/logout)  | Execute | Implemented (Verifier pending) |
+| API-05 | P1: Initialize and identify (device id accessor and observer)  | Execute | Implemented (Verifier pending) |
+| API-06 | P1: User profile (tags)  | Execute | Implemented (Verifier pending) |
+| API-07 | P1: User profile (email, phone)  | Execute | Implemented (Verifier pending) |
+| API-08 | P1: User profile (subscription, location sharing)  | Execute | Implemented (Verifier pending) |
+| API-09 | P1: Notifications (requestPermission)  | Execute | Implemented (Verifier pending) |
+| API-10 | P1: Notifications (listeners, payload, replay)  | Execute | Implemented (Verifier pending) |
+| API-11 | P1: Notifications (initial click)  | Execute | Implemented (Verifier pending) |
+| API-12 | P1: Initialize and identify, Notifications (main-thread delivery)  | Execute | Implemented (Verifier pending) |
+| API-13 | P2: Objective-C interop  | Execute | Implemented (Verifier pending) |
+| API-14 | P2: Log level  | Execute | Implemented (Verifier pending) |
+| API-15 | P1: Public surface hygiene (+ no-PII at all levels)  | Execute | Implemented (Verifier pending) |
 
 Inherited behavior (facade part only; core part verified in `core-port`):
 
@@ -195,7 +195,7 @@ Inherited behavior (facade part only; core part verified in `core-port`):
 - `opened-event-reporting` SDKOPEN-10 (JS events): API-10
 - `device-profile-fields` DPF-17..21 (JS-surface wording): API-07
 
-**Coverage:** 15 total, 15 mapped to a story, 0 mapped to tasks yet (tasks are written after Design).
+**Coverage:** 15 total, 15 mapped to a story, 15 mapped to tasks and to tests in `traceability.md`. Status is "Implemented (Verifier pending)": only the independent Verifier marks Verified.
 
 ---
 
