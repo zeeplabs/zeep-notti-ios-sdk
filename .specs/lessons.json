@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 15,
+  "next_id": 18,
   "lessons": [
     {
       "id": "L-001",
@@ -256,6 +256,60 @@
       ],
       "created": "2026-10-11T14:43:17Z",
       "last_seen": "2026-10-11T14:43:17Z"
+    },
+    {
+      "id": "L-015",
+      "key": "surviving_mutant::forwarding tests must assert the delivery count not just the first value or a listener that fires twice survives",
+      "text": "Forwarding tests must assert the delivery count, not just the first value, or a listener that fires twice survives.",
+      "signal": "surviving_mutant",
+      "scope": "tests",
+      "status": "candidate",
+      "features": [
+        "public-api"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "B33 NottiObjCBridgeTests.swift:157 (tests)"
+      ],
+      "created": "2026-10-11T15:10:58Z",
+      "last_seen": "2026-10-11T15:10:58Z"
+    },
+    {
+      "id": "L-016",
+      "key": "surviving_mutant::a bare core exists assertion is a weak oracle assert the effect sent persisted or dropped of the call",
+      "text": "A bare 'core exists' assertion is a weak oracle; assert the effect (sent, persisted or dropped) of the call.",
+      "signal": "surviving_mutant",
+      "scope": "tests",
+      "status": "candidate",
+      "features": [
+        "public-api"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "N15 pre-initialize test (tests)"
+      ],
+      "created": "2026-10-11T15:10:58Z",
+      "last_seen": "2026-10-11T15:10:58Z"
+    },
+    {
+      "id": "L-017",
+      "key": "ac_gap::mutate a textual guard with swift grammar variants indirect lone public trailing comment non type declarations not only with the obvious omission",
+      "text": "Mutate a textual guard with Swift grammar variants (indirect, lone public, trailing comment, non-type declarations), not only with the obvious omission.",
+      "signal": "ac_gap",
+      "scope": "scripts",
+      "status": "candidate",
+      "features": [
+        "public-api"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "check-public-surface.sh r2 N9-N13 (scripts)"
+      ],
+      "created": "2026-10-11T15:10:58Z",
+      "last_seen": "2026-10-11T15:10:58Z"
     }
   ]
 }

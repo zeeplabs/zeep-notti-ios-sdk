@@ -173,21 +173,21 @@ Open questions: none. The default host needs backend confirmation before v0.1.0.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| API-01 | P1: Initialize and identify (initialize, default baseUrl, no throw)  | Execute | Implemented (Verifier pending) |
-| API-02 | P1: Initialize and identify (idempotency, N1)  | Execute | Implemented (Verifier pending) |
-| API-03 | P1: Initialize and identify (`shared` uses `notti_prefs`, F1)  | Execute | Implemented (Verifier pending) |
-| API-04 | P1: Initialize and identify (login/logout)  | Execute | Implemented (Verifier pending) |
-| API-05 | P1: Initialize and identify (device id accessor and observer)  | Execute | Implemented (Verifier pending) |
-| API-06 | P1: User profile (tags)  | Execute | Implemented (Verifier pending) |
-| API-07 | P1: User profile (email, phone)  | Execute | Implemented (Verifier pending) |
-| API-08 | P1: User profile (subscription, location sharing)  | Execute | Implemented (Verifier pending) |
-| API-09 | P1: Notifications (requestPermission)  | Execute | Implemented (Verifier pending) |
-| API-10 | P1: Notifications (listeners, payload, replay)  | Execute | Implemented (Verifier pending) |
-| API-11 | P1: Notifications (initial click)  | Execute | Implemented (Verifier pending) |
-| API-12 | P1: Initialize and identify, Notifications (main-thread delivery)  | Execute | Implemented (Verifier pending) |
-| API-13 | P2: Objective-C interop  | Execute | Implemented (Verifier pending) |
-| API-14 | P2: Log level  | Execute | Implemented (Verifier pending) |
-| API-15 | P1: Public surface hygiene (+ no-PII at all levels)  | Execute | Implemented (Verifier pending) |
+| API-01 | P1: Initialize and identify (initialize, default baseUrl, no throw)  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
+| API-02 | P1: Initialize and identify (idempotency, N1)  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
+| API-03 | P1: Initialize and identify (`shared` uses `notti_prefs`, F1)  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
+| API-04 | P1: Initialize and identify (login/logout)  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
+| API-05 | P1: Initialize and identify (device id accessor and observer)  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
+| API-06 | P1: User profile (tags)  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
+| API-07 | P1: User profile (email, phone)  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
+| API-08 | P1: User profile (subscription, location sharing)  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
+| API-09 | P1: Notifications (requestPermission)  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
+| API-10 | P1: Notifications (listeners, payload, replay)  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
+| API-11 | P1: Notifications (initial click)  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
+| API-12 | P1: Initialize and identify, Notifications (main-thread delivery)  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
+| API-13 | P2: Objective-C interop  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
+| API-14 | P2: Log level  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
+| API-15 | P1: Public surface hygiene (+ no-PII at all levels)  | Execute | ✅ Verified (Verifier round 2, 2026-10-11) |
 
 Inherited behavior (facade part only; core part verified in `core-port`):
 
@@ -195,7 +195,7 @@ Inherited behavior (facade part only; core part verified in `core-port`):
 - `opened-event-reporting` SDKOPEN-10 (JS events): API-10
 - `device-profile-fields` DPF-17..21 (JS-surface wording): API-07
 
-**Coverage:** 15 total, 15 mapped to a story, 15 mapped to tasks and to tests in `traceability.md`. Status is "Implemented (Verifier pending)": only the independent Verifier marks Verified.
+**Coverage:** 15 total, 15 mapped to a story, 15 mapped to tasks and to tests in `traceability.md`. All 15 are Verified by independent Verifier round 2 (2026-10-11, `validation.md`).
 
 ---
 

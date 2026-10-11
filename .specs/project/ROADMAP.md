@@ -25,7 +25,7 @@
 - `sdk_version` becomes a native constant
 - Port the XCTest suite and keep the counts traceable to the original requirement IDs (SDK-, SDKCTR-, SDKOPEN-, SEGTEL-, DPF-)
 
-**public-api** - Execute DONE (2026-10-11; T1-T14 on branch `feat/public-api`, 351 tests; Verifier pending)
+**public-api** - DONE (2026-10-11; T1-T14 on branch `feat/public-api`; Verifier PASS round 2; 356 tests)
 
 - Swift-first facade: `Notti.initialize`, `login`/`logout`, `Notti.User` (tags, email, phone, subscription), `Notti.Notifications` (requestPermission, listeners, initial click), device id accessor and observer
 - `@objc` interop surface usable by ObjC hosts and the future RN bridge
