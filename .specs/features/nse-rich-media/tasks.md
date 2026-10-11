@@ -3,7 +3,7 @@
 **Design**: `.specs/features/nse-rich-media/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
 **Depends on feature**: `delegate-integration` done (474 tests)
-**Status**: Draft
+**Status**: Execute done (T1-T16), Verifier pending
 
 ---
 
@@ -482,10 +482,10 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Every NSE-xx has at least one named test; the count in `traceability.md` matches the real total
-- [ ] `python3 .claude/skills/tlc-spec-driven/scripts/validate_tasks.py .specs/features/nse-rich-media/tasks.md` and `validate_state.py` exit 0
-- [ ] Gate check passes: **full** (tests, SwiftLint `--strict`, every guard script, strict device builds, `pod lib lint`)
-- [ ] Test count at least 474 + the sum of the minimums above, with none removed
+- [x] Every NSE-xx has at least one named test; the count in `traceability.md` matches the real total
+- [x] `python3 .claude/skills/tlc-spec-driven/scripts/validate_tasks.py .specs/features/nse-rich-media/tasks.md` and `validate_state.py` exit 0
+- [x] Gate check passes: **full** (tests, SwiftLint `--strict`, every guard script, strict device builds, `pod lib lint`)
+- [x] Test count at least 474 + the sum of the minimums above, with none removed
 
 **Tests**: none
 **Gate**: full

@@ -24,7 +24,7 @@
 | `NottiSDKTests` | `NottiSDK`: core, storage, network, events, runtime, providers, privacy manifest, continuity fixture, PII-in-logs, and the public-api layers: `NottiListenerHubTests`, `NottiNotificationPayloadTests`, `NottiFacade{Initialize,Profile,Permission,Listener,LogLevel}Tests`, `NottiPublicApiTests` (public `Notti` shell + the F1 test on the real `notti_prefs` suite + the manual forwarding API), `NottiObjCBridgeTests` (ObjC-facing classes called from Swift), and the delegate-integration layers: `NottiSwizzlingConfigurationTests`, `NottiMethodSwizzlerTests`, `NottiPushAdapterTests`, `NottiAppDelegateSwizzlerTests`, `NottiNotificationCenterSwizzlerTests`, `NottiDelegateInstallerTests`, `NottiDeepLinkTests` |
 | `NottiSDKObjCTests` | Objective-C compile check and smoke calls of every `@objc` entry point, including the manual forwarding API (`NottiObjCTests.m`) |
 | `NottiSDKExtensionObjCTests` | Objective-C smoke calls of the two extension selectors: nil-content expiry is a no-op, a request without `notti_image_url` calls the handler once (`NottiExtensionObjCTests.m`, NSE-16) |
-| `NottiSDKExtensionTests` | `NottiSDKExtension`: privacy manifest (NSE behavior in `nse-rich-media`) |
+| `NottiSDKExtensionTests` | `NottiSDKExtension` (108): URL parse, file type, handler gate, drop reasons and limits, the download job (success, drops, early abort, deadline, expiry), the registry, the facade through an injected environment, the sentinel, handler-count and temp-file sweep, the contract literals, privacy manifest. Support: `StubURLProtocol`, `LogSink`, `MediaSamples`, `JobTestCase` |
 
 ---
 
