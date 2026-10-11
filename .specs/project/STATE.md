@@ -101,6 +101,12 @@ This repo's lessons live in `.specs/LESSONS.md` (managed by `lessons.py`; L-001.
 - RN L-001: test the layer that implements the acceptance criterion, not just the facade that calls it
 - RN L-002: the Verifier re-derives proof of properties and does not trust task notes
 
+delegate-integration Verifier round 1 (candidate lessons, not yet in `.specs/LESSONS.md`):
+
+- A constant that tests read does not prove the constant's value: a public contract string (an Info.plist key) is asserted as a literal, and one test builds the input with the literal.
+- A dependency injected in tests needs one test of the production binding (`NottiFacade.shared` with `NottiSwizzlingState.shared`), or a wrong wiring passes every test.
+- An acceptance criterion verified "by review" needs a grep check or a test (DEL-14: `scripts/check-launch-hook-purity.sh`).
+
 ---
 
 ## Quick Tasks Completed
@@ -174,6 +180,9 @@ This repo's lessons live in `.specs/LESSONS.md` (managed by `lessons.py`; L-001.
 - [ ] (delegate-integration, behavior) With swizzling active, `Notti.Notifications.willPresent(_:)` logs one warning and returns the D2 options (not `[]`), so a host that uses the value as its completion still shows a Notti push.
 - [ ] (delegate-integration, CI) Draft PR CI has not run for `delegate-integration`: the two `check-hook-linked.sh` steps, `check-no-url-open.sh` and the extended `check-package-graph.sh` are proved locally only. `check-hook-linked.sh pod` checks the Core subspec; a static-library pod (`--use-libraries`) is not covered.
 - [ ] (delegate-integration, tests) Test files added in earlier delegate-integration tasks (`NottiMethodSwizzlerTests` and others) emit "inferred to have type AnyClass" compiler warnings in the test build; the device builds (strict) are unaffected. Annotate `: AnyClass` when next touched.
+- [ ] (delegate-integration Verifier r1 M5, tooling) `check-no-url-open.sh` bans `UIApplication.shared.open`, `.open(_:options` and `openURL`; its second pattern is selector text real code never contains, so an alias, a multi-line call or `app.open(url, ...)` passes. `grep -rnE "\.open\(|openURL|canOpenURL" Sources` is empty today (DEL-18 holds). A plain `\.open\(` ban would close it; check for legitimate uses first.
+- [ ] (delegate-integration Verifier r1 M2, tests) The production binding `installDelegates: { NottiDelegateInstaller.ensureInstalled() }` (`Notti.swift`) is untested; it is the safety net if `+load` does not run. Needs a seam that proves it calls `ensureInstalled` without installing real swizzles in the test process.
+- [ ] (delegate-integration Verifier r1 N5/N7/N9, notes) `NottiDeepLinkTests.test_noCallbackOfEitherSwizzlerOpensAURL` is tautological (the script is the real guard); `NottiBootstrap.h` is public in the pod but not in `PUBLIC_SURFACE.txt` (confirm acceptable); late-install path where UIKit may read the app delegate's capabilities before the SDK adds a missing callback is [Incerto] and device-only.
 
 ## Preferences
 
