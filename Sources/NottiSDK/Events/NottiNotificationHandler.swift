@@ -80,6 +80,28 @@ final class NottiNotificationHandler {
         }
     }
 
+    /// Silent (data-only) remote push received through
+    /// `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)` (DEL-15, DEL-17).
+    ///
+    /// A payload is silent when it has `aps` and no `aps.alert`. Everything else returns without
+    /// doing anything: a visible push (even with `content-available: 1`) is reported once by
+    /// `handleWillPresent`, and a payload without `aps` is not a remote push. Emits `received`
+    /// keyed by `delivery_id` (a missing or empty one gets no stable key and is not de-duplicated)
+    /// and queues the `received` report through the same path as the visible push.
+    func handleSilentPush(userInfo: [AnyHashable: Any]) {
+        guard Self.isSilentPush(userInfo) else {
+            return
+        }
+        let parsed = parseUserInfo(userInfo)
+        let deliveryId = parsed.data[NottiPayloadKeys.deliveryId]
+        runtime.eventBuffer.emit(
+            .received,
+            identifier: deliveryId?.isEmpty == false ? deliveryId : nil,
+            payload: parsed.toEventPayload()
+        )
+        enqueueIfReportable(parsed, type: NottiEventType.received)
+    }
+
     /// Queues the offline-reportable event for `parsed` when its payload carries
     /// both `notification_id` and `delivery_id` (the same detection rule as
     /// Android), then opportunistically triggers a flush through the live core.
@@ -95,6 +117,16 @@ final class NottiNotificationHandler {
         }
         _ = runtime.eventStore.enqueue(notificationId: notificationId, deliveryId: deliveryId, type: type)
         runtime.core?.onNetworkAvailable()
+    }
+
+    private static func isSilentPush(_ userInfo: [AnyHashable: Any]) -> Bool {
+        guard let aps = userInfo[NottiPayloadKeys.aps] else {
+            return false
+        }
+        guard let apsDictionary = aps as? [String: Any] else {
+            return true
+        }
+        return apsDictionary["alert"] == nil
     }
 
     private static func isRemotePush(_ userInfo: [AnyHashable: Any]) -> Bool {
