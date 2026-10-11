@@ -1,4 +1,18 @@
-# Validation: public-api - FAIL ❌ (round 1)
+# Validation: public-api - PASS ✅ (round 2)
+
+**Date**: 2026-10-11 (round 2; round 1 the same day)
+**Spec**: `.specs/features/public-api/spec.md` (API-01..API-15, plus the facade part of SDK-17..19, SDKOPEN-10, DPF-17..21)
+**Diff range**: round 2 re-verifies `main` (`d55d980`) `..faa3c99` on `feat/public-api` (22 commits). Round-1 fix range: `469593c..faa3c99` (3 test/script fixes, lessons, status lines; `git diff --stat e31812b..HEAD -- Sources` is empty). Branch not pushed.
+**Verifier**: a third independent sub-agent. It wrote neither the code, the round-1 report, nor the round-1 fixes. Read-only over the real tree: every mutant was applied, run and reverted with `git checkout -- <file>`; `git diff --stat` was empty after each (ledger column `dirty=0`).
+**Environment**: Xcode 27.0, simulator `iPhone 17 Pro`, SwiftLint 0.65.1 (Docker), CocoaPods (local), Docker `ubuntu:24.04` for the Linux run of the surface script.
+
+**Verdict (round 2)**: PASS. All five round-1 blockers are killed on the new tree (U15, U16, U17, S06 by tests; E1 by `scripts/check-public-surface.sh`). 26 fresh code mutants on the new tests and wiring: 25 killed, 1 survived (B33, a Note); plus 32 script cases against the new G3 guard, with 4 false passes and 1 false fail, none of which touches a type that exists today. The 7 round-1 Notes that were deliberately not fixed were re-run and are unchanged. Gates are green on the unmodified tree: 356 tests (Shared 14, SDK 337, ObjC 4, Ext 1), SwiftLint 0, four scripts, `pod lib lint`, `validate_spec`, `validate_tasks`. CI is not checkable (branch not pushed). See [Round 2](#round-2) at the end. Round 1 is kept unchanged below as a record; its only edit is the sensor-tally label, renamed so that the verdict parser reads round 2's verdict.
+
+**Blocking criteria (unchanged from round 1)**: only (a) an acceptance criterion of API-01..API-15 (or the inherited facade IDs SDK-17..19, SDKOPEN-10, DPF-17..21) with no test that fails when the behavior is wrong, (b) a correctness/LGPD/security defect, (c) a spec or AD-002 violation, or (d) a red gate blocks PASS. Everything else is a Note with a severity.
+
+<details><summary>Round 1 (FAIL) - kept as a record</summary>
+
+Round 1 verdict: FAIL ❌
 
 **Date**: 2026-10-11
 **Spec**: `.specs/features/public-api/spec.md` (API-01..API-15, plus the facade part of SDK-17..19, SDKOPEN-10, DPF-17..21)
@@ -217,7 +231,7 @@ Mutant ledger:
 | X6 | `Sources/NottiSDK/Facade/NottiListenerHub.swift:32` | NottiSubscription.remove never runs the action | ✅ killed | test_aListenerRemovedAfterTheEventWasQueuedIsNotCalled (+3) | - |
 | E1 | `Sources/NottiSDK/Public/Notti.swift:16` | @available(iOSApplicationExtension, unavailable) removed from public enum Notti (API-15 AC2) | ❌ **SURVIVED** | - | BLOCKING (G3) |
 
-**Result**: 104/119 killed; 5 blocking survivors (3 distinct gaps), 9 non-blocking survivors. ❌ FAIL.
+**Sensor tally (round 1)**: 104/119 killed; 5 blocking survivors (3 distinct gaps), 9 non-blocking survivors. ❌ FAIL.
 
 ---
 
@@ -350,3 +364,186 @@ Max 3 fix-to-re-verify rounds apply; this is round 1.
 **Issues found**: G1, G2, G3 above.
 
 **Next steps**: implement the three fixes, re-run the 5 surviving blocking mutants (U15, U16, U17, S06, E1) plus the full gate, then round 2. Lessons to distil (`scripts/lessons.py`): (1) a pre-initialize test must make each method the *first* call, because an earlier call creates the core and hides the bug (extends L-011); (2) a shell-level "reaches the facade" test must emit one event type at a time, not all of them with one payload; (3) an attribute the spec requires on a public symbol needs a guard that reads the attribute, not only the declaration line (extends L-004).
+
+</details>
+
+---
+
+## Round 2
+
+### 2.1 The five round-1 blockers, re-run on `faa3c99`
+
+Definitions are the exact round-1 ledger entries. Tests via the watchdog `run.sh`, class `NottiSDKTests/NottiFacadeProfileTests` or `NottiPublicApiTests`; E1 via the script.
+
+| # | File:line | Mutation | Round 1 | Round 2 | Failing assertion / message |
+| --- | --- | --- | --- | --- | --- |
+| U15 | `Sources/NottiSDK/Facade/NottiFacade.swift:136` | `setPhone`: `runtime.ensureCore().setPhone` -> `runtime.core?.setPhone` | survived | ✅ killed | `NottiFacadeProfileTests.test_setPhoneAsTheFirstCallBeforeInitializePersistsAndIsSentAtRegistration` (`Tests/NottiSDKTests/NottiFacadeProfileTests.swift:225-239`: `XCTAssertEqual(store.getPhone(), "+10000000000")` and the PATCH contains the phone) |
+| U16 | `NottiFacade.swift:132` | `clearEmail` -> `runtime.core?.clearEmail` | survived | ✅ killed | `test_clearEmailAsTheFirstCallBeforeInitializeClearsAndSendsExplicitNullAtRegistration` (`XCTAssertNil(store.getEmail())`, explicit `NSNull` PATCH) |
+| U17 | `NottiFacade.swift:140` | `clearPhone` -> `runtime.core?.clearPhone` | survived | ✅ killed | `test_clearPhoneAsTheFirstCallBeforeInitializeClearsAndSendsExplicitNullAtRegistration` (`XCTAssertNil(store.getPhone())`, explicit `NSNull` PATCH) |
+| S06 | `Sources/NottiSDK/Public/Notti.swift:154` | `addClickedListener` wired to `addReceivedListener` | survived | ✅ killed | `NottiPublicApiTests.test_receivedAndClickedListenersReachTheFacadeEachOnItsOwnEvent` (`Tests/NottiSDKTests/NottiPublicApiTests.swift:231-252`: `XCTAssertEqual(clicked.values, ["Clicked title fixture"])` / `received.values == []`) |
+| E1 | `Notti.swift:16` | `@available(iOSApplicationExtension, unavailable)` removed from `public enum Notti` | survived | ✅ killed (by the script, not a test) | `scripts/check-public-surface.sh` exits 1: `error: public type without @available(iOSApplicationExtension, unavailable) (API-15 AC 2)`; same on macOS and `ubuntu:24.04` |
+
+G1, G2 and G3 are closed.
+
+### 2.2 Fresh code mutants (new tests and wiring)
+
+Test mutants (ledger file `scratchpad/ledger2.tsv`): each run against the relevant class only; "first failing test" is the first `Test Case ... failed`. 26 mutants: **25 killed, 1 survived (B33, Note), 0 build-broken**. (The earlier crafting error of one E1 invocation with a wrong argument was a pattern error, nothing was applied.)
+
+| # | File | Mutation | Result | First failing test | Class |
+| --- | --- | --- | --- | --- | --- |
+| V01 | `NottiFacade.swift` | `login` -> `runtime.core?.login` (first call before initialize) | ✅ killed | `NottiFacadeProfileTests.test_eachOtherPreInitializeCallAsTheFirstCallReachesEnsureCoreAndDoesNotCrash` (`XCTAssertNotNil(isolated.core)`, line 282) | - |
+| V02 | `NottiFacade.swift` | `logout` -> `core?` | ✅ killed | same test | - |
+| V03 | `NottiFacade.swift` | `addTags` -> `core?` | ✅ killed | same test | - |
+| V04 | `NottiFacade.swift` | `removeTags` -> `core?` | ✅ killed | same test | - |
+| V05 | `NottiFacade.swift` | `setSubscription` -> `core?` | ✅ killed | same test | - |
+| V06 | `NottiFacade.swift` | `setLocationSharingEnabled` -> `core?` | ✅ killed | `test_locationSharingPreferenceIsWrittenBeforeTheCallReturns` | - |
+| V07 | `NottiFacade.swift` | `deviceId` -> `core?.getDeviceId()` | ✅ killed | `test_deviceIdIsThePersistedIdBeforeInitialize` | - |
+| V08 | `NottiFacade.swift` | `setEmail` -> `core?` | ✅ killed | `test_emailAndPhoneSetBeforeInitializeArePersistedAndSentAtRegistration` | - |
+| W01 | `NottiRuntime.swift` | `ensureCore` builds a core but does not store it | ✅ killed | `test_clearEmailAsTheFirstCallBeforeInitializeClearsAndSendsExplicitNullAtRegistration` | - |
+| W02 | `NottiRuntime.swift` | `ensureCore` never reuses the stored core | ✅ killed | `test_addTagsPatchesTheMergedMap` | - |
+| W03 | `NottiFacade.swift` | `setEmail` calls `ensureCore()` but drops the call | ✅ killed | `test_emailAndPhoneSetBeforeInitializeArePersistedAndSentAtRegistration` | - |
+| W04 | `NottiFacade.swift` | `clearPhone` calls `ensureCore()` but drops the call | ✅ killed | `test_clearEmailAndClearPhoneSendExplicitNull` | - |
+| W05 | `NottiFacade.swift` | `setPhone` then `runtime.stop()` (core dropped after use) | ✅ killed | `test_clearEmailAndClearPhoneSendExplicitNull` | - |
+| S10 | `Notti.swift` | shell `addReceivedListener` wired to clicked | ✅ killed | `NottiPublicApiTests.test_receivedAndClickedListenersReachTheFacadeEachOnItsOwnEvent` | - |
+| S11 | `Notti.swift` | shell received listener fires twice | ✅ killed | same | - |
+| S12 | `Notti.swift` | shell clicked listener fires twice | ✅ killed | same | - |
+| S13 | `Notti.swift` | shell `addDeviceIdChangedListener` fires twice | ✅ killed | `test_deviceIdChangedListenerReachesTheFacadeAndCanBeRemoved` | - |
+| S14 | `Notti.swift` | shell deviceId listener swallowed | ✅ killed | same | - |
+| S15 | `Notti.swift` | shell received listener swallowed | ✅ killed | `test_receivedAndClickedListenersReachTheFacadeEachOnItsOwnEvent` | - |
+| S20 | `Notti.swift` | shell `clearPhone` -> `clearEmail` | ✅ killed | `test_userEmailPhoneAndSubscriptionMethodsReachTheFacade` | - |
+| S21 | `Notti.swift` | shell `setPhone` -> `setEmail` | ✅ killed | same | - |
+| B30 | `NottiObjC.swift` | ObjC `addReceivedListener` wired to clicked | ✅ killed | `NottiObjCBridgeTests.test_listenersReceiveTheNSDictionaryShapeAndTakeInitialClickReturnsIt` | - |
+| B31 | `NottiObjC.swift` | ObjC `addClickedListener` wired to received | ✅ killed | `NottiObjCBridgeTests.test_clickedListenerAndDeviceIdListenerReachTheFacade` | - |
+| B32 | `NottiObjC.swift` | ObjC clicked listener fires twice | ✅ killed | same | - |
+| B33 | `NottiObjC.swift:50` | ObjC `addDeviceIdChangedListener` fires twice | ❌ **SURVIVED** | - | Note (N8) |
+| B34 | `NottiObjC.swift:50` | ObjC deviceId listener swallowed | ✅ killed | `test_clickedListenerAndDeviceIdListenerReachTheFacade` | - |
+
+Observation on V01-V05: `test_eachOtherPreInitializeCallAsTheFirstCallReachesEnsureCoreAndDoesNotCrash` kills them only through `XCTAssertNotNil(isolated.core)`. That is enough for the wiring (each method is the first call on a fresh runtime, the exact G1 shape), but it does not assert the call's effect. The effect of login/logout/tags/subscription needs a registered device and is covered after initialize (round-1 U01-U04, U09, S02, S03).
+
+### 2.3 The new G3 guard (`scripts/check-public-surface.sh`) against 32 cases
+
+Method: each case is a new file `Sources/NottiSDK/Public/Extra.swift` (or an edit) in a throw-away copy of `Sources`, `scripts` and `PUBLIC_SURFACE.txt` under the scratchpad (never in the repo), the surface file refreshed with `--update` so that only the attribute check can fail, then the check on macOS and in `docker run --rm -v ... ubuntu:24.04` (mawk). macOS and Linux agreed on every case run on both (14 snippet cases, E1 and G3a-c).
+
+Removing the attribute from each existing type, in the real tree:
+
+| Case | Expected | Got (macOS / Linux) |
+| --- | --- | --- |
+| E1 `Notti` | fail | ✅ rc 1 / rc 1, "public type without @available(...)" |
+| G3a `NottiObjC` | fail | ✅ rc 1 / rc 1 |
+| G3b `NottiUserObjC` | fail | ✅ rc 1 / rc 1 |
+| G3c `NottiNotificationsObjC` | fail | ✅ rc 1 / rc 1 |
+
+New declarations (surface file kept in sync):
+
+| Case | Expected | Got |
+| --- | --- | --- |
+| `public struct` without attribute | fail | ✅ fail |
+| `public protocol`, `public final class`, `public enum`, `public actor`, `public class`, `open class` (6 cases) | fail | ✅ all fail |
+| generic `public struct Box<T>`, `public final  class   Spaces` (extra spaces), `@MainActor public struct`, `public struct X: Sendable`, inside `#if DEBUG` | fail | ✅ all fail |
+| attribute above a **different** type (`A1` marked, `B1` not) | fail | ✅ fail |
+| attribute above a `public func`, then an unmarked type | fail | ✅ fail |
+| attribute above a `public typealias`, then an unmarked type | fail | ✅ fail |
+| three types, attribute above 1st and 2nd only | fail | ✅ fail (3rd named) |
+| blank line between attribute and type | fail | ✅ fail (strict, documented) |
+| `//` comment between attribute and type | fail | ✅ fail (stricter than Swift, documented) |
+| `@available(iOS 15, *)` instead of the extension-unavailable form | fail | ✅ fail |
+| type whose name is the allowlisted name plus a suffix (`NottiSubscriptionX`) | fail | ✅ fail (exact-token match) |
+| attribute on the same line (`@available(...) public struct`) | pass | ✅ pass |
+| `@available(iOS 15, *)` plus the extension attribute | pass | ✅ pass |
+| attribute, `@objc(Foo)` line, then the type; attribute then `@objc(Foo) public final class` | pass | ✅ pass (both) |
+| `///` doc comment above the attribute | pass | ✅ pass |
+| nested `public struct` inside an `extension` (indented) | pass (top-level only, documented) | ✅ pass |
+
+**Findings against the guard** (none blocks: no type that exists today is affected, and AC 2 holds for every type in the tree, proven by E1 and G3a-c):
+
+| ID | Case | Behavior | Severity |
+| --- | --- | --- | --- |
+| N9 | `public indirect enum X` | not matched by the type regex (`indirect` is not in the modifier list): **false pass**, with or without the attribute. No such type exists today | Low |
+| N10 | `public struct X {} // @available(iOSApplicationExtension, unavailable)` | the attribute text inside a trailing comment satisfies the check: **false pass**. Contrived | Info |
+| N11 | top-level `public func` / `public let` / `public extension` (not a type) that reads `NottiFacade.shared` | the check is for types only: **false pass**. Nothing like it exists (`grep` of unindented non-type `public` in `Sources/NottiSDK` is empty). The spec's AC 2 says "app-only API", so a top-level free function would be in scope; the surface-file diff still forces a reviewer to see it | Low |
+| N12 | `@available(iOSApplicationExtension, unavailable, message: "...")` | **false fail** (exact string match): stricter than needed; a contributor would add the plain form or allowlist it | Info |
+| N3 (r1) | `public` alone on a line, then `struct X` | still not matched by either the surface scan or the attribute check (58 declarations, rc 0). Unchanged from round 1; documented in the script header | Low |
+| N13 | a type added to `ext_safe_types` in the script | **passes silently**, no test or script notices (`git grep` shows only `ci.yml` and the script reference it). Only a reviewer reading the script diff sees it. By design (the allowlist is the escape hatch, documented in the script and AGENTS.md); mitigation: CODEOWNERS or a review checklist line | Low |
+
+The script also still passes on `ubuntu:24.04` for the real tree (58 declarations).
+
+### 2.4 Round-1 Notes that were deliberately not fixed
+
+| Note | Re-check | Changed? |
+| --- | --- | --- |
+| F07 (facade `lock` removed in `initialize`) | re-run against `NottiFacadeInitializeTests`: survived | No. Note N1 stands (Medium; spec Edge Case, not an AC) |
+| R09 (`ensureCore` without `lifecycleLock`) | re-run against Runtime, Profile and Initialize tests: survived | No. N1 stands |
+| B12 (ObjC `logout`), B20 (`setPhone`), B21 (`clearEmail`), B22 (`clearPhone`), B23 (`removeTag` singular) | re-run against `NottiObjCBridgeTests` + `NottiSDKObjCTests`: all 5 survived (the plural `removeTags` forward is killed) | No. N2 stands. B33 (new, same family) adds the ObjC deviceId observer's call count. API-13 AC 1 says "callable", which the `.m` compile-and-call tests prove; Medium Note, not blocking |
+| T6 retire-on-replace (`NottiRuntime.invalidateCurrentCore`) | `git diff e31812b..HEAD -- Sources` is empty, so the F1 analysis (60 s worker pin, old core can still act on old config, alternative `workQueue.async { _ = previous }`) is unchanged. The new `W01`/`W02`/`W05` runtime mutants around `ensureCore` are killed | No. Keep as a post-M1 todo |
+| N3 script blind spots | see N3/N9-N13 above: the round-1 blind spots remain, two new ones (`indirect`, non-type `public`) recorded | Slightly widened inventory, none violates an AC |
+| N4, N5, N6, N7 | no source or test change since round 1 | No |
+
+### 2.5 Gates (unmodified tree, HEAD `faa3c99`)
+
+| Gate | Result |
+| --- | --- |
+| Full test run via the watchdog, `NBUNDLES=4` (log `pv2_full.log`) | ✅ `** TEST SUCCEEDED **`; all four bundles "passed": `NottiSharedTests` 14, `NottiSDKTests` 337, `NottiSDKObjCTests` 4, `NottiSDKExtensionTests` 1 = **356**, 0 failures; 356 `Test Case ... passed` lines. Round 1 was 351: +5 (the five new G1 tests; the G2 test was rewritten in place) |
+| SwiftLint `0.65.1 --strict` (Docker) | ✅ 0 violations, 0 serious, 57 files |
+| `check-version.sh && check-extension-safety.sh && check-package-graph.sh && check-public-surface.sh` | ✅ `version ok: 0.1.0`, `extension safety ok`, `package graph ok`, `public surface ok (58 declarations)` |
+| `check-public-surface.sh` in `ubuntu:24.04` | ✅ `public surface ok (58 declarations)` |
+| `pod lib lint NottiSDK.podspec --platforms=ios` | ✅ `NottiSDK passed validation.` (only AppIntents metadata NOTEs) |
+| `validate_spec.py` | ✅ 0 errors, 0 warnings |
+| `validate_tasks.py` | ✅ 0 errors, 11 warnings (same granularity smells as round 1; accepted) |
+| `validate_state.py public-api` | ✅ exit 0 (run after this report was written) |
+| CI (`.github/workflows/ci.yml`) | ⚠️ Not verifiable: the branch is not pushed. Read instead: the step `Public API surface (API-15)` (`.github/workflows/ci.yml:45-47`) is in the `checks` job (`ubuntu-24.04`, after the version and extension-safety steps); the `test` job runs the whole `NottiSDK-Package` scheme, which includes the ObjC target |
+
+Test integrity: the only test-file changes since round 1 are in `NottiFacadeProfileTests.swift` (+79, tests added) and `NottiPublicApiTests.swift` (+27/-13: the one G2 test rewritten and strengthened, with both directions asserted). No test was deleted or weakened; the count rose from 351 to 356.
+
+### 2.6 AD-002, PII, attribution
+
+- AD-002: `git diff main..HEAD --stat` over `Sources/NottiSDK/Core`, `Network`, `Storage`, `Events/NottiEventBuffer.swift`, `Events/NottiNotificationHandler.swift`, `Sources/NottiShared`, `Sources/NottiSDKExtension` and `NottiSDK.podspec` is empty. The only existing source file touched on the branch is `Sources/NottiSDK/Runtime/NottiRuntime.swift` (+32/-2, `ensureCore` and retire-on-replace, reviewed in round 1 F1). Sources are byte-identical to round 1.
+- PII: the new tests use synthetic values only (`user@example.invalid`, `+10000000000`, `user-fixture`, `*fixture*` titles). A scan of the round-1 fix diff for emails/phones finds only those.
+- Attribution: no `Claude`, `Anthropic` or `Co-Authored-By` in the 22 commit messages. A text scan of the whole diff matches three lines that are not attribution: the path `.claude/skills/` in `tasks.md`, the round-1 report's own description of this check, and a pre-existing sentence in `AGENTS.md` context ("Claude Code, Codex, Cursor").
+
+### 2.7 Findings
+
+**Blocking**: none.
+
+**Notes (new in round 2)**
+
+| ID | Severity | Note |
+| --- | --- | --- |
+| N8 | Medium | **ObjC `addDeviceIdChangedListener` call count is not asserted.** B33 (the ObjC forward wraps the handler so it fires twice) passes `NottiObjCBridgeTests.test_clickedListenerAndDeviceIdListenerReachTheFacade`, which reads `ids.values.first` (`Tests/NottiSDKTests/NottiObjCBridgeTests.swift:157-173`) and never `count`. The same property is proven for the Swift shell (S13 killed) and the facade (L03/L04), so it is a ObjC-layer pass-through. Same family as N2. One-line fix: `XCTAssertEqual(ids.values.count, 1)` |
+| N9-N13 | Low/Info | G3 guard blind spots, see 2.3 |
+| N14 | Low | **`traceability.md` is stale for round 2**: it still says 332 / 351 tests and "Independent Verifier pending", and its API-07/API-10/API-15 rows do not name the G1/G2/G3 tests or the new guard clause (see recommendations) |
+| N15 | Info | `test_eachOtherPreInitializeCallAsTheFirstCallReachesEnsureCoreAndDoesNotCrash` asserts only that the core exists (see 2.2 observation) |
+
+Round-1 Notes N1-N7 stand (2.4).
+
+### 2.8 Lessons (not written to `LESSONS.md`; for the orchestrator to distil)
+
+L-012..L-014 from round 1 were applied correctly: each pre-initialize method is the first call on a fresh runtime (U15-U17, V01-V08 killed), the shell test emits one event type at a time with distinct payloads (S06, S10-S12, S15 killed), and the surface guard reads the attribute (E1, G3a-c killed). Candidates:
+
+1. **A mutation of a guard script must include "false pass" inputs from the grammar, not only the removal of what exists today.** The new attribute check handles the shapes in use but misses `public indirect enum`, a non-type `public`, and an attribute inside a trailing comment. When a guard is textual, enumerate the declaration keywords and modifiers of the language (Swift: `indirect`, `final`, `actor`, `@frozen`, free functions) and run them as negative fixtures (extends L-004 and L-014).
+2. **A forwarding layer test must assert the call count (`count == 1`), not `first`.** B33 survives because the ObjC test reads `.first`; the same pattern let the pre-fix S06 pass. Assert `count`, and make each event/entry point distinguishable (extends L-013).
+3. **A "reaches the core" assertion that only checks the core exists is a weak oracle**: pair it with an observable effect when the call can be made to produce one (N15).
+
+### 2.9 Traceability status recommendations (for the orchestrator; spec.md/tasks.md are not edited by the Verifier)
+
+| Requirement | Previous (after round 1) | New |
+| --- | --- | --- |
+| API-01, 02, 03, 04, 05, 06, 08, 09, 11, 12, 14 | ✅ Verified | ✅ Verified (unchanged) |
+| API-07 (and DPF-17..21) | ❌ Needs Fix (G1) | ✅ Verified (U15-U17 and V01-V08, W01-W05 killed) |
+| API-10 (SDK-17..19, SDKOPEN-10) | ❌ Needs Fix (G2) | ✅ Verified (S06, S10-S15, B30-B32 killed) |
+| API-13 | ✅ Verified (Note N2) | ✅ Verified (Notes N2, N8) |
+| API-15 | ❌ Needs Fix (G3) | ✅ Verified (E1, G3a-c killed; guard Notes N9-N13) |
+
+Also update `traceability.md` section 4 (counts to 14 / 337 / 4 / 1 = 356) and its API-07/API-10/API-15 rows (N14).
+
+### 2.10 Summary
+
+**Overall**: ✅ Ready (PASS, round 2).
+
+**Spec-anchored check**: 15 of 15 requirements have a test (or, for the attribute clause of API-15, a script) that fails when the behavior is wrong; the round-1 gaps G1, G2 and G3 are closed and each re-run blocker is killed.
+**Sensor**: round 2 total 26 fresh test mutants (25 killed, 1 survived as a Note, 0 build-broken), 5 round-1 blockers killed, 7 round-1 Notes re-run (7 survived, unchanged), plus 4 script mutants (killed) and 32 guard-input cases (4 false passes, 1 false fail, none blocking).
+**Gate**: 356 passed, 0 failed, SwiftLint 0, four scripts green (also on Linux), `pod lib lint` passed. CI not checkable (not pushed).
+**Next steps**: optional Notes (N8 one-line assertion, N2 ObjC forwards, N1 race test, N9-N13 guard hardening, N14 traceability refresh). Ready for the pull request; CI will be the first real run of the `checks` job on Linux.
+
+### Closing check
+
+`python3 .claude/skills/tlc-spec-driven/scripts/validate_state.py public-api` after writing this report: `0 error(s) across [public-api]`, exit 0. `git status` shows only this file modified; `git diff` over `Sources`, `Tests` and `scripts` is empty.
