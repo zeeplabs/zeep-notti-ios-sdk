@@ -22,8 +22,8 @@ A test may appear under several IDs. A row lists the tests that assert that acce
 | NSE-06 | A file over 10 MiB is deleted and not attached | `JD.test_aFileOverTheCapIsDeletedAndNotAttached`, `JD.test_aFileExactlyAtTheCapIsAccepted`, `PV.test_pathOversizeAfterDownload`, `CT.test_theSizeCapIs10MiBAsALiteralAndEnforcedAtThatBoundary`, `CT.test_aBodyDeclaredAtExactlyTheCapIsNotCutOff` | Covered |
 | NSE-07 | File type from the MIME (case-insensitive), then the allowlisted URL extension, else `jpg` | `FT.test_eachAllowedMimeTypeMapsToItsExtension`, `FT.test_mimeMatchIsCaseInsensitive`, `FT.test_mimeTypeWinsOverTheUrlExtension`, `FT.test_unknownMimeFallsBackToAnAllowlistedUrlExtension`, `FT.test_unknownMimeAndUnlistedUrlExtensionFallBackToJpg`, `FT.test_noMimeAndNoExtensionFallBackToJpg`, `FT.test_aPathLikeExtensionNeverReachesTheResult`, `FT.test_onlyTheLastPathComponentExtensionCounts`, the five `JB.test_*IsAttached` (extension of the attached file) | Covered |
 | NSE-08 | `UNNotificationAttachment` rejects the file: moved file deleted, nothing attached, one handler call | `JD.test_bytesTheSystemRejectsDropAsAttachmentRejectedAndTheMovedFileIsDeleted`, `PV.test_pathAttachmentRejected` | Covered |
-| NSE-09 | No downloaded file stays in the temp directory except the one owned by an attachment | `JB.test_successLeavesOnlyTheAttachmentFileInTheDirectory`, `JD.test_aSuccessfulAttachmentIsTheOnlyFileInTheDirectory`, `JD.test_aDirectoryThatCannotBeWrittenDropsAsMoveFailed`, `JL.test_aStubThatNeverFinishesEndsAtTheDeadlineWithTheTaskCancelledAndNoFile`, `JX.test_aLateCompletionAfterExpiryAddsNoCallAndNoFile`, the directory assertion of every `PV.test_path*` | Covered |
-| NSE-10 | A 20 s total deadline cancels the download; trickling bytes do not extend it | `JL.test_aStubThatNeverFinishesEndsAtTheDeadlineWithTheTaskCancelledAndNoFile`, `JL.test_aResponseThatTricklesBytesStillEndsAtTheDeadline`, `JL.test_aJobThatFinishesFirstCancelsTheTimer`, `JL.test_theDeadlineIsMeasuredFromStartNotFromTheLastByte`, `PV.test_pathDeadline`, `CT.test_theDeadlineIs20SecondsAsALiteral` (the 20 s value is asserted as a literal; the behavior tests use a short injected deadline) | Covered |
+| NSE-09 | No downloaded file stays in the temp directory except the one owned by an attachment | `JB.test_successLeavesOnlyTheAttachmentFileInTheDirectory`, `JD.test_aSuccessfulAttachmentIsTheOnlyFileInTheDirectory`, `JD.test_aDirectoryThatCannotBeWrittenDropsAsMoveFailed`, `JL.test_aStubThatNeverFinishesEndsAtTheDeadlineWithTheTaskCancelledAndNoFile`, `JL.test_aCompletionRacingTheDeadlineOrExpiryLeavesNoFileWithoutAnAttachment` (300 racing jobs; covers the lost-race cleanup), `JX.test_aLateCompletionAfterExpiryAddsNoCallAndNoFile`, the directory assertion of every `PV.test_path*` | Covered |
+| NSE-10 | A 20 s total deadline cancels the download; trickling bytes do not extend it | `JL.test_aStubThatNeverFinishesEndsAtTheDeadlineWithTheTaskCancelledAndNoFile`, `JL.test_aResponseThatTricklesBytesStillEndsAtTheDeadline`, `JL.test_aJobThatFinishesFirstCancelsTheTimer`, `JL.test_theDeadlineIsMeasuredFromStartNotFromTheLastByte`, `JL.test_aResponseThatSendsLargeChunksStillEndsAtTheDeadlineBecauseProgressDoesNotRearmIt` (64 KiB chunks reach `didWriteData`; kills the re-arm mutant), `PV.test_pathDeadline`, `CT.test_theDeadlineIs20SecondsAsALiteral` (the 20 s value is asserted as a literal; the behavior tests use a short injected deadline) | Covered |
 | NSE-11 | Expiry cancels the matching job, calls the handler once with the host content, a late completion adds no call | `JX.test_expireOnAnInFlightJobCancelsItAndCallsTheHandlerOnceWithTheHostContent`, `JX.test_aLateCompletionAfterExpiryAddsNoCallAndNoFile`, `JX.test_expireOnAFinishedJobCallsNothing`, `JX.test_aSecondExpireCallsNothing`, `JX.test_theDeadlineAfterAnExpiryAddsNoCall`, `JX.test_expiringOneOfTwoInFlightJobsLeavesTheOtherRunning`, `RG.test_returnsOnlyTheJobWhoseUserInfoEquals`, `RG.test_returnsNothingWhenNoUserInfoEquals`, `RG.test_keepsAtMostSixteenJobsAndDropsTheOldest`, `RG.test_stillReturnsAFinishedJob`, `RG.test_matchesBySharedDeliveryIdWhenAnotherKeyDiffers`, `RG.test_differentDeliveryIdsNeverMatchEvenWhenEverythingElseIsEqual`, `RG.test_anEmptyDeliveryIdFallsBackToUserInfoEquality`, `RG.test_aDeliveryIdOnOnlyOneSideFallsBackToUserInfoEquality`, `FA.test_expiryThroughTheFacadeCancelsTheMatchingJobAndCallsTheHandlerOnce`, `FA.test_expiryWithNoMatchingJobCallsTheHostHandlerDirectly`, `FA.test_expiryLeavesAJobOfAnotherNotificationRunning`, `FA.test_expiryStillFindsTheJobWhenTheHostChangedAnotherUserInfoKey`, `GT.test_secondFireDoesNotCallTheHandler`, `GT.test_manyConcurrentFiresCallTheHandlerOnce`, `PV.test_pathExpiry`, `SP.test_twoMutableCopiesOfTheSameRequestHaveEqualUserInfoAndADifferentOneDoesNot` | Covered |
 | NSE-12 | Expiry with `nil` content calls no handler | `FA.test_expiryWithNilContentCallsNoHandler`, `OC.testExpiryWithNilContentIsANoOp` | Covered |
 | NSE-13 | `NottiLogger` category `nse`, no URL, host, query, title, body or `localizedDescription`, errors as `domain#code` | `PV.test_pathSuccess` ... `PV.test_pathExpiry` (13 paths, a sentinel in the URL host, path and query and in the title and body; asserts level `.error`, one line, no sentinel; checked once against a temporary edit that logged the URL: 21 assertions failed), `PV.test_pathTransportError` (an error whose `userInfo` and description carry the URL), `PV.test_everyLogCallInTheExtensionSourcesUsesCategoryNse`, `DR.test_fixedCodesAreLiterals`, `DR.test_errorReasonsCarryOnlyDomainAndCode`, `DR.test_errorReasonsNeverUseTheErrorMessageOrUserInfo`; `scripts/check-nse-logging.sh` (CI `checks` job; proved on a fixture per banned token and on a comment-only fixture) | Covered. The category is checked on the source text, not on the captured line (the logger sink does not carry it; recorded as a deviation in T12) |
@@ -35,7 +35,7 @@ A test may appear under several IDs. A row lists the tests that assert that acce
 
 ---
 
-## 2. Test counts by target and file (full run after T15: Shared 14, SDK 453, ObjC 6, Extension 108, Extension ObjC 3 = 584; baseline before this feature 474, so 110 added)
+## 2. Test counts by target and file (full run after the Verifier round 1 test fixes: Shared 14, SDK 453, ObjC 6, Extension 110, Extension ObjC 3 = 586; baseline before this feature 474, so 112 added)
 
 | File | Tests |
 | --- | --- |
@@ -47,7 +47,7 @@ A test may appear under several IDs. A row lists the tests that assert that acce
 | `NottiRichMediaJobTests` | 12 |
 | `NottiRichMediaJobDropTests` | 6 |
 | `NottiRichMediaJobEarlyAbortTests` | 5 |
-| `NottiRichMediaJobDeadlineTests` | 4 |
+| `NottiRichMediaJobDeadlineTests` | 6 |
 | `NottiRichMediaJobExpiryTests` | 7 |
 | `NottiRichMediaRegistryTests` | 8 |
 | `NottiNotificationServiceExtensionTests` | 14 |
@@ -55,7 +55,7 @@ A test may appear under several IDs. A row lists the tests that assert that acce
 | `NottiRichMediaContractTests` | 7 |
 | `PrivacyManifestTests` (existing) | 1 |
 | `NottiExtensionObjCTests` (`NottiSDKExtensionObjCTests`) | 3 |
-| Extension target total | 108, plus 3 Objective-C |
+| Extension target total | 110, plus 3 Objective-C |
 
 ---
 
