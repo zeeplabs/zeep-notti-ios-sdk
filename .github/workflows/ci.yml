@@ -54,6 +54,10 @@ jobs:
       - name: Launch hook purity (DEL-14)
         run: scripts/check-launch-hook-purity.sh
 
+      # The extension logs only through NottiLogger and never prints a URL-carrying error (NSE-13).
+      - name: Extension logging (NSE-13)
+        run: scripts/check-nse-logging.sh
+
   test:
     runs-on: macos-26
     steps:
