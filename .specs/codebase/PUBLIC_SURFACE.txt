@@ -48,6 +48,10 @@ Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func addTag(_ key: S
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func addTags(_ tags: [AnyHashable: Any]) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func clearEmail() {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func clearPhone() {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func didFailToRegisterForRemoteNotifications(error: Error) {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func didReceive(_ response: UNNotificationResponse) {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func didRegisterForRemoteNotifications(deviceToken: Data) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func initialize(appId: String, clientKey: String, baseUrl: String?) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func login(_ externalUserId: String) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func logout() {
@@ -59,5 +63,6 @@ Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func setLocationShar
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func setPhone(_ phone: String) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func setSubscription(_ enabled: Bool) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func takeInitialClick() -> NSDictionary? {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func willPresent(_ notification: UNNotification) -> UNNotificationPresentationOptions {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static var deviceId: String? {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static var logLevel: NottiLogLevelObjC {
