@@ -122,4 +122,39 @@ final class NottiFacade {
     func setLocationSharingEnabled(_ enabled: Bool) {
         runtime.ensureCore().setLocationSharingEnabled(enabled)
     }
+
+    // MARK: - Permission (API-09, API-12)
+
+    /// Asks the OS for notification permission and reports the dialog result on
+    /// the main thread, once. Before `initialize` the core answers `false`
+    /// without prompting. A second invocation of the core callback is ignored.
+    func requestPermission(completion: @escaping (Bool) -> Void) {
+        let once = Once()
+        runtime.ensureCore().requestPermission { [dispatcher] granted in
+            guard once.claim() else { return }
+            dispatcher { completion(granted) }
+        }
+    }
+
+    /// `async` variant of `requestPermission(completion:)`. The once-guard above
+    /// guarantees the continuation is resumed exactly once.
+    func requestPermission() async -> Bool {
+        await withCheckedContinuation { continuation in
+            requestPermission { continuation.resume(returning: $0) }
+        }
+    }
+
+    /// One-shot flag: `claim()` is true for the first caller only.
+    private final class Once {
+        private let lock = NSLock()
+        private var claimed = false
+
+        func claim() -> Bool {
+            lock.withLock {
+                if claimed { return false }
+                claimed = true
+                return true
+            }
+        }
+    }
 }
