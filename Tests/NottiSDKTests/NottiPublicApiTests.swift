@@ -404,6 +404,50 @@ final class NottiPublicApiTests: XCTestCase {
         }
     }
 
+    // MARK: - G2: the production facade is wired to the production swizzling state
+
+    /// DEL-09 / DEL-07, Verifier r1 G2. Goes through `NottiFacade.shared` (production) with the
+    /// production `NottiSwizzlingState.shared`: the override facade used elsewhere would hide a wrong
+    /// `isSwizzlingActive` binding, and the manual API would then double-report.
+    func test_productionFacadeIgnoresEveryManualCallWhileTheSharedSwizzlingStateIsActive() {
+        NottiFacade.setSharedForTesting(nil)
+        let state = NottiSwizzlingState.shared
+        let wasActive = state.isActive
+        defer { state.setActive(wasActive) }
+        state.setActive(true)
+        let storedBefore = NottiRuntime.shared.eventStore.all().count
+        let userInfo = nottiUserInfo(notificationId: "n-g2", deliveryId: "d-g2")
+        let calls: [() -> Void] = [
+            { Notti.Notifications.didRegisterForRemoteNotifications(deviceToken: Data([0x01])) },
+            { Notti.Notifications.didFailToRegisterForRemoteNotifications(error: NSError(domain: "fixture.g2", code: 5)) },
+            { _ = Notti.Notifications.didReceiveRemoteNotification(self.silentUserInfo) },
+            { Notti.Notifications.didReceive(self.makeResponse(userInfo: userInfo)) }
+        ]
+
+        let logs = captureLogs { calls.forEach { $0() } }
+
+        XCTAssertEqual(logs.filter { $0.0 == .warn }.count, calls.count, "one warn per ignored call")
+        XCTAssertEqual(logs.count, calls.count, "nothing processed, so nothing else is logged (no `.error` for the failure)")
+        XCTAssertEqual(NottiRuntime.shared.eventStore.all().count, storedBefore, "nothing reported")
+    }
+
+    func test_productionFacadeProcessesManualCallsWhileTheSharedSwizzlingStateIsInactive() {
+        NottiFacade.setSharedForTesting(nil)
+        let state = NottiSwizzlingState.shared
+        let wasActive = state.isActive
+        defer { state.setActive(wasActive) }
+        state.setActive(false)
+
+        let logs = captureLogs {
+            Notti.Notifications.didRegisterForRemoteNotifications(deviceToken: Data([0x01]))
+            Notti.Notifications.didFailToRegisterForRemoteNotifications(error: NSError(domain: "fixture.g2", code: 5))
+        }
+
+        XCTAssertTrue(logs.filter { $0.0 == .warn }.isEmpty, "no ignore warning")
+        XCTAssertEqual(logs.filter { $0.0 == .error }.count, 1, "the failure reached the runtime")
+        XCTAssertEqual(logs.first { $0.0 == .error }?.1.contains("fixture.g2#5"), true)
+    }
+
     // MARK: - F1: the production facade reads the real `notti_prefs` suite
 
     /// core-port Verifier r2 F1 / API-03. Uses the literal suite name on purpose:
