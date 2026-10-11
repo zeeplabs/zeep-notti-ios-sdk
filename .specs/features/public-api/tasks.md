@@ -128,7 +128,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T2: `NottiRuntime.ensureCore()`
+### T2: `NottiRuntime.ensureCore()` ✅ (NottiRuntimeTests 18 (13 + 5 new); SDK 242, Shared 14, Ext 1, total 257 (derived, confirmed in the T9 full run))
 
 **What**: Add `ensureCore() -> NottiCore` to the runtime: returns the live core, or builds an uninitialized one and stores it as the current core, under `lifecycleLock`. `start` and `stop` are unchanged. Document that `core != nil` no longer implies "initialized".
 **Where**: `Sources/NottiSDK/Runtime/NottiRuntime.swift`, `Tests/NottiSDKTests/NottiRuntimeTests.swift`
@@ -138,12 +138,12 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] `ensureCore()` returns the same instance on two calls, and `core` is non-nil afterwards
-- [ ] After `ensureCore()`, `start(...)` still invalidates that core and installs a new one (existing start-twice tests stay green)
-- [ ] An uninitialized core registers no `NotificationCenter` observer (asserted by posting `didBecomeActive` and seeing no network request)
-- [ ] `setEmail` on the ensured core persists the value in the suite
-- [ ] Test count: SDK +4 minimum (241)
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiRuntimeTests`
+- [x] `ensureCore()` returns the same instance on two calls, and `core` is non-nil afterwards
+- [x] After `ensureCore()`, `start(...)` still invalidates that core and installs a new one (existing start-twice tests stay green)
+- [x] An uninitialized core registers no `NotificationCenter` observer (asserted by posting `didBecomeActive` and seeing no network request)
+- [x] `setEmail` on the ensured core persists the value in the suite
+- [x] Test count: SDK +4 minimum (241)
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiRuntimeTests`
 
 **Tests**: unit
 **Gate**: quick

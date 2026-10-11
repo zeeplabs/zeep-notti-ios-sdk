@@ -338,6 +338,64 @@ final class NottiRuntimeTests: XCTestCase {
         XCTAssertEqual(patches.first?["tags"] as? [String: String], ["lang": "pt"])
         XCTAssertEqual(NottiDeviceStore(defaults: defaults).getTags(), ["lang": "pt"])
     }
+
+    // MARK: - ensureCore (public-api API-05, API-07)
+
+    func test_ensureCoreReturnsTheSameInstanceAndSetsTheCurrentCore() {
+        let runtime = makeRuntime()
+        XCTAssertNil(runtime.core)
+
+        let first = runtime.ensureCore()
+        let second = runtime.ensureCore()
+
+        XCTAssertTrue(first === second)
+        XCTAssertTrue(runtime.core === first)
+    }
+
+    func test_ensureCoreReturnsTheCoreCreatedByStart() {
+        StubURLProtocol.enqueue(.echoDevice())
+        let runtime = makeRuntime(sdkVersion: "")
+        runtime.start(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        let started = runtime.core
+
+        XCTAssertTrue(runtime.ensureCore() === started)
+        drain(started)
+    }
+
+    func test_startAfterEnsureCoreInvalidatesTheEnsuredCoreAndInstallsANewOne() {
+        StubURLProtocol.enqueue(.echoDevice())
+        let runtime = makeRuntime(sdkVersion: "")
+        let ensured = runtime.ensureCore()
+
+        runtime.start(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        let started = runtime.core
+
+        XCTAssertNotNil(started)
+        XCTAssertFalse(started === ensured)
+        drain(started)
+        XCTAssertEqual(bodies("POST").count, 1, "the new core registered once")
+    }
+
+    func test_anUninitializedEnsuredCoreSendsNothingOnDidBecomeActive() {
+        let runtime = makeRuntime(startObservers: false)
+        let core = runtime.ensureCore()
+
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        drain(core)
+
+        XCTAssertTrue(StubURLProtocol.recordedRequests().isEmpty)
+    }
+
+    func test_setEmailOnTheEnsuredCorePersistsInTheSuiteWithoutANetworkCall() {
+        let runtime = makeRuntime()
+        let core = runtime.ensureCore()
+
+        core.setEmail("user@example.invalid")
+        drain(core)
+
+        XCTAssertEqual(NottiDeviceStore(defaults: defaults).getEmail(), "user@example.invalid")
+        XCTAssertTrue(StubURLProtocol.recordedRequests().isEmpty)
+    }
 }
 
 private final class LockedCounter {
