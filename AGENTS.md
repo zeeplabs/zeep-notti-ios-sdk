@@ -18,7 +18,7 @@ Sources/NottiSDK/          app-only
 Sources/NottiSDKExtension/ Notification Service Extension, extension-safe, never depends on NottiSDK
 Tests/<Target>Tests/       XCTest, run through the SPM scheme NottiSDK-Package (`NottiSDKObjCTests` is Objective-C)
 scripts/                   check-version.sh, check-extension-safety.sh, check-package-graph.sh, check-public-surface.sh,
-                           check-no-url-open.sh, check-hook-linked.sh (+ hook-consumer/, the scratch app it builds)
+                           check-no-url-open.sh, check-launch-hook-purity.sh, check-hook-linked.sh (+ hook-consumer/, the scratch app it builds)
 ```
 
 ## Commands
@@ -33,7 +33,7 @@ xcodebuild test -scheme NottiSDK-Package -destination "platform=iOS Simulator,na
 # lint (SwiftLint is pinned; not installed locally)
 docker run --rm -v "$PWD:/w" -w /w ghcr.io/realm/swiftlint:0.65.1 lint --strict
 # guards and packaging
-scripts/check-version.sh && scripts/check-extension-safety.sh && scripts/check-package-graph.sh && scripts/check-public-surface.sh && scripts/check-no-url-open.sh
+scripts/check-version.sh && scripts/check-extension-safety.sh && scripts/check-package-graph.sh && scripts/check-public-surface.sh && scripts/check-no-url-open.sh && scripts/check-launch-hook-purity.sh
 # launch hook proofs (need Xcode; NOTTI_SIM picks the simulator, default "iPhone 17")
 scripts/check-hook-linked.sh spm   # Release build of scripts/hook-consumer, run in the simulator, loadCount == installCount == 1
 scripts/check-hook-linked.sh pod   # pod lib lint --no-clean, then nm for NottiBootstrap (about 2 min)
@@ -89,7 +89,7 @@ Every `public` / `open` declaration in `Sources/NottiSDK` and `Sources/NottiSDKE
 
 ### Delegate integration and the launch hook
 
-- `Sources/NottiSDKBootstrap` (ObjC) is app-only and a dependency of `NottiSDK` only. Its `+load` does a class lookup and one message send to `NottiDelegateInstaller`: no UIKit, no I/O, no logging above debug, no `NottiRuntime` access. `scripts/check-package-graph.sh` fails if `NottiShared`, `NottiSDKExtension` or the `Extension` subspec reach it; `scripts/check-hook-linked.sh` proves it runs (SPM) and is in the pod product.
+- `Sources/NottiSDKBootstrap` (ObjC) is app-only and a dependency of `NottiSDK` only. Its `+load` does a class lookup and one message send to `NottiDelegateInstaller`: no UIKit, no I/O, no `NottiRuntime` access, and on the enabled, valid path nothing logged above debug (opt-out `.info`, install failure `.error` and non-Boolean `.warn` are the only lines). `scripts/check-launch-hook-purity.sh` bans `NSLog|os_log|NSUserDefaults|NSFileManager|NSURLSession|dataWithContentsOfFile|NottiRuntime` in `NottiBootstrap.m` and `UserDefaults|FileManager|URLSession|NottiRuntime` in `NottiDelegateInstaller.swift` (comments ignored). `scripts/check-package-graph.sh` fails if `NottiShared`, `NottiSDKExtension` or the `Extension` subspec reach it; `scripts/check-hook-linked.sh` proves it runs (SPM) and is in the pod product.
 - The SDK never opens a URL: a tapped push's `data` reaches the host untouched. `scripts/check-no-url-open.sh` bans `UIApplication.shared.open`, `.open(_:options` and `openURL` under `Sources/NottiSDK` and `Sources/NottiSDKBootstrap`.
 - Swizzling tests build their own fake classes (`objc_allocateClassPair`, unique names) and their own `NottiMethodSwizzler`. No unit test swizzles `UIApplication` or `UNUserNotificationCenter`; `UNUserNotificationCenter` instances come from `class_createInstance` because `current()` can raise without an app bundle.
 
