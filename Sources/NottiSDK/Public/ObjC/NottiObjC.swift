@@ -1,4 +1,6 @@
 import Foundation
+import UIKit
+import UserNotifications
 
 // Objective-C interop layer (API-13). Swift namespaces (`Notti.User`, ...) are
 // invisible to Objective-C, so these three `NSObject` classes expose the same
@@ -141,6 +143,49 @@ public final class NottiNotificationsObjC: NSObject {
     @objc(takeInitialClick)
     public static func takeInitialClick() -> NSDictionary? {
         NottiFacade.shared.takeInitialClick()?.objcDictionary
+    }
+
+    // MARK: - Manual forwarding (DEL-12)
+    //
+    // For hosts that set `NottiDisableSwizzling` to YES. Same semantics as `Notti.Notifications` in Swift:
+    // the same adapter entry points, ignored with one warning while swizzling is on.
+
+    @objc(didRegisterForRemoteNotificationsWithDeviceToken:)
+    public static func didRegisterForRemoteNotifications(deviceToken: Data) {
+        NottiFacade.shared.pushAdapter.manualDidRegister(deviceToken: deviceToken)
+    }
+
+    @objc(didFailToRegisterForRemoteNotificationsWithError:)
+    public static func didFailToRegisterForRemoteNotifications(error: Error) {
+        NottiFacade.shared.pushAdapter.manualDidFail(error: error)
+    }
+
+    /// Returns the result to pass to the fetch completion handler (`UIBackgroundFetchResultNoData`).
+    @discardableResult
+    @objc(didReceiveRemoteNotification:)
+    public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
+        NottiFacade.shared.pushAdapter.manualDidReceiveRemoteNotification(userInfo: userInfo)
+    }
+
+    /// Banner, list, sound and badge for a Notti push, none for anything else.
+    @discardableResult
+    @objc(willPresentNotification:)
+    public static func willPresent(_ notification: UNNotification) -> UNNotificationPresentationOptions {
+        let request = notification.request
+        return NottiFacade.shared.pushAdapter.manualWillPresent(
+            userInfo: request.content.userInfo,
+            identifier: request.identifier
+        )
+    }
+
+    @objc(didReceiveNotificationResponse:)
+    public static func didReceive(_ response: UNNotificationResponse) {
+        let request = response.notification.request
+        NottiFacade.shared.pushAdapter.manualDidReceive(
+            actionIdentifier: response.actionIdentifier,
+            userInfo: request.content.userInfo,
+            identifier: request.identifier
+        )
     }
 }
 

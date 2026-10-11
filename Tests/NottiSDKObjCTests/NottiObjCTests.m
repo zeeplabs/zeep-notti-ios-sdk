@@ -1,5 +1,7 @@
 @import XCTest;
 @import NottiSDK;
+@import UIKit;
+@import UserNotifications;
 
 // API-13: every P1 capability is callable from Objective-C. These tests only use
 // the public ObjC surface (no internal seam), so they run against the shared
@@ -84,6 +86,43 @@
     XCTAssertNil([NottiNotifications takeInitialClick]);
 
     [self waitForExpectationsWithTimeout:10 handler:nil];
+}
+
+// DEL-12: the five manual forwarding methods are callable from Objective-C. UNNotification and
+// UNNotificationResponse have no public initializer, so the fixtures are allocated and filled by KVC.
+// The shared runtime is used: while swizzling is active the calls are ignored (no network, no event).
+- (UNNotification *)fixtureNotification {
+    UNMutableNotificationContent *content = [UNMutableNotificationContent new];
+    content.userInfo = @{
+        @"aps": @{@"alert": @{@"title": @"Title fixture", @"body": @"Body fixture"}},
+        @"notification_id": @"n-objc-fixture",
+        @"delivery_id": @"d-objc-fixture"
+    };
+    UNNotificationRequest *request = [UNNotificationRequest requestWithIdentifier:@"req-objc-fixture"
+                                                                          content:content
+                                                                          trigger:nil];
+    UNNotification *notification = [NSClassFromString(@"UNNotification") new];
+    [notification setValue:request forKey:@"request"];
+    [notification setValue:[NSDate date] forKey:@"date"];
+    return notification;
+}
+
+- (void)testManualForwardingEntryPointsAreCallable {
+    [NottiNotifications didRegisterForRemoteNotificationsWithDeviceToken:[NSData data]];
+    [NottiNotifications didFailToRegisterForRemoteNotificationsWithError:
+        [NSError errorWithDomain:@"fixture.apns" code:1 userInfo:nil]];
+    UIBackgroundFetchResult result = [NottiNotifications didReceiveRemoteNotification:@{@"aps": @{@"content-available": @1}}];
+    XCTAssertEqual(result, UIBackgroundFetchResultNoData);
+
+    UNNotification *notification = [self fixtureNotification];
+    UNNotificationPresentationOptions options = [NottiNotifications willPresentNotification:notification];
+    XCTAssertEqual(options, UNNotificationPresentationOptionBanner | UNNotificationPresentationOptionList |
+                            UNNotificationPresentationOptionSound | UNNotificationPresentationOptionBadge);
+
+    UNNotificationResponse *response = [NSClassFromString(@"UNNotificationResponse") new];
+    [response setValue:notification forKey:@"notification"];
+    [response setValue:UNNotificationDefaultActionIdentifier forKey:@"actionIdentifier"];
+    [NottiNotifications didReceiveNotificationResponse:response];
 }
 
 @end

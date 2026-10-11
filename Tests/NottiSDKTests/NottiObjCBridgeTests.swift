@@ -1,3 +1,5 @@
+import UIKit
+import UserNotifications
 import XCTest
 @testable import NottiSDK
 @testable import NottiShared
@@ -24,9 +26,11 @@ final class NottiObjCBridgeTests: XCTestCase {
     private var facade: NottiFacade!
     private var sessions: [URLSession] = []
     private var savedLevel: NottiLogLevel = .error
+    private var swizzlingActive = false
 
     override func setUp() {
         super.setUp()
+        swizzlingActive = false
         StubURLProtocol.reset()
         suiteName = "NottiObjCBridgeTests.\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suiteName)
@@ -48,7 +52,11 @@ final class NottiObjCBridgeTests: XCTestCase {
             sdkVersion: "",
             startObservers: false
         )
-        facade = NottiFacade(runtime: runtime, dispatcher: { $0() })
+        facade = NottiFacade(
+            runtime: runtime,
+            dispatcher: { $0() },
+            isSwizzlingActive: { [weak self] in self?.swizzlingActive ?? false }
+        )
         NottiFacade.setSharedForTesting(facade)
     }
 
@@ -183,5 +191,57 @@ final class NottiObjCBridgeTests: XCTestCase {
             done.fulfill()
         }
         wait(for: [done], timeout: 10)
+    }
+
+    // MARK: - Manual forwarding (DEL-12)
+
+    private func fixtureNotification() -> UNNotification {
+        let content = UNMutableNotificationContent()
+        content.userInfo = [
+            "aps": ["alert": ["title": "Title fixture", "body": "Body fixture"]],
+            "notification_id": "n-1",
+            "delivery_id": "d-1"
+        ]
+        let request = UNNotificationRequest(identifier: "req-1", content: content, trigger: nil)
+        guard let notification = (UNNotification.self as NSObject.Type).init() as? UNNotification else {
+            fatalError("could not allocate UNNotification")
+        }
+        notification.setValue(request, forKey: "request")
+        notification.setValue(Date(), forKey: "date")
+        return notification
+    }
+
+    private func fixtureResponse() -> UNNotificationResponse {
+        guard let response = (UNNotificationResponse.self as NSObject.Type).init() as? UNNotificationResponse else {
+            fatalError("could not allocate UNNotificationResponse")
+        }
+        response.setValue(fixtureNotification(), forKey: "notification")
+        response.setValue(UNNotificationDefaultActionIdentifier, forKey: "actionIdentifier")
+        return response
+    }
+
+    func test_objcManualForwardingReachesTheAdapter() {
+        let options = NottiNotificationsObjC.willPresent(fixtureNotification())
+        NottiNotificationsObjC.didReceive(fixtureResponse())
+        let result = NottiNotificationsObjC.didReceiveRemoteNotification(["aps": ["content-available": 1], "delivery_id": "d-s"])
+
+        XCTAssertEqual(options, [.banner, .list, .sound, .badge])
+        XCTAssertEqual(result, .noData)
+        XCTAssertEqual(Set(runtime.eventStore.all().map(\.type)), ["received", "opened", "clicked"])
+        XCTAssertEqual(NottiNotificationsObjC.takeInitialClick()?["title"] as? String, "Title fixture")
+    }
+
+    func test_objcManualForwardingIsIgnoredWhileSwizzlingIsActive() {
+        swizzlingActive = true
+
+        NottiNotificationsObjC.didRegisterForRemoteNotifications(deviceToken: Data([0x01]))
+        NottiNotificationsObjC.didFailToRegisterForRemoteNotifications(error: NSError(domain: "fixture.apns", code: 1))
+        NottiNotificationsObjC.didReceive(fixtureResponse())
+        let result = NottiNotificationsObjC.didReceiveRemoteNotification(["aps": ["content-available": 1], "delivery_id": "d-s"])
+
+        XCTAssertEqual(result, .noData)
+        XCTAssertTrue(runtime.eventStore.all().isEmpty)
+        XCTAssertNil(NottiNotificationsObjC.takeInitialClick())
+        XCTAssertTrue(StubURLProtocol.recordedRequests().isEmpty)
     }
 }
