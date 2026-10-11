@@ -260,11 +260,11 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] PNG, JPG, GIF, MP4 and MP3 stubs each give one attachment, the other content fields equal, one handler call
-- [ ] 404, a transport error and no-file each give the untouched copy, one handler call, no file left in `directory`
-- [ ] The session is invalidated and the job released on every path (asserted with a weak reference)
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 9 new
+- [x] PNG, JPG, GIF, MP4 and MP3 stubs each give one attachment, the other content fields equal, one handler call
+- [x] 404, a transport error and no-file each give the untouched copy, one handler call, no file left in `directory`
+- [x] The session is invalidated and the job released on every path (asserted with a weak reference)
+- [x] Gate check passes: quick
+- [x] Test count: at least 9 new
 
 **Tests**: unit
 **Gate**: quick
