@@ -55,4 +55,17 @@ final class NottiSwizzlingConfigurationTests: XCTestCase {
 
         XCTAssertFalse(config.isEnabled)
     }
+
+    // G1 (DEL-02): the key is the public Info.plist contract. These two use the literal on purpose:
+    // a test that read the constant would follow a typo in it instead of catching it.
+    func test_infoPlistKeyIsTheDocumentedLiteral() {
+        XCTAssertEqual(NottiSwizzlingConfiguration.infoPlistKey, "NottiDisableSwizzling")
+    }
+
+    func test_literalNottiDisableSwizzlingKeyTurnsSwizzlingOff() {
+        let config = NottiSwizzlingConfiguration(infoDictionary: ["NottiDisableSwizzling": true])
+
+        XCTAssertFalse(config.isEnabled)
+        XCTAssertFalse(config.invalidValueWarning)
+    }
 }
