@@ -351,13 +351,13 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] `expire` on an in-flight job cancels it, calls the handler once with the host's content, and releasing the stub afterwards adds no call
-- [ ] `expire` on a finished job calls nothing
-- [ ] The registry returns only the job whose `userInfo` equals, keeps at most 16, and still returns a finished job
-- [ ] Two in-flight jobs with different `userInfo`: expiring one leaves the other running
-- [ ] `jobs(matching:)` also matches by a non-empty `delivery_id` (`NottiPayloadKeys.deliveryId`) when both sides have it, even if another `userInfo` key differs (a host that mutated its best-attempt copy); two different `delivery_id`s never match
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 9 new
+- [x] `expire` on an in-flight job cancels it, calls the handler once with the host's content, and releasing the stub afterwards adds no call
+- [x] `expire` on a finished job calls nothing
+- [x] The registry returns only the job whose `userInfo` equals, keeps at most 16, and still returns a finished job
+- [x] Two in-flight jobs with different `userInfo`: expiring one leaves the other running
+- [x] `jobs(matching:)` also matches by a non-empty `delivery_id` (`NottiPayloadKeys.deliveryId`) when both sides have it, even if another `userInfo` key differs (a host that mutated its best-attempt copy); two different `delivery_id`s never match
+- [x] Gate check passes: quick
+- [x] Test count: at least 9 new
 
 **Tests**: unit
 **Gate**: quick

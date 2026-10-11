@@ -7,6 +7,11 @@ struct NottiRichMediaEnvironment {
     var limits: NottiRichMediaLimits
     /// Folder that receives the downloaded file. Created on demand.
     var directory: URL
+    /// Recent jobs, for correlating an expiry call with its download.
+    var registry = NottiRichMediaRegistry()
+
+    /// One registry for the process: `didReceive` and the expiry call are separate static calls.
+    private static let liveRegistry = NottiRichMediaRegistry()
 
     static var live: NottiRichMediaEnvironment {
         NottiRichMediaEnvironment(
@@ -18,7 +23,8 @@ struct NottiRichMediaEnvironment {
                 return configuration
             },
             limits: .default,
-            directory: FileManager.default.temporaryDirectory.appendingPathComponent("notti-media", isDirectory: true)
+            directory: FileManager.default.temporaryDirectory.appendingPathComponent("notti-media", isDirectory: true),
+            registry: liveRegistry
         )
     }
 }
