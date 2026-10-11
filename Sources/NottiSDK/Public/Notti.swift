@@ -1,0 +1,183 @@
+import Foundation
+
+/// Entry point of the Notti SDK for Swift hosts.
+///
+/// Call `Notti.initialize(appId:clientKey:)` once at launch, as early as
+/// possible. Every other call is safe before it: email and phone are kept and
+/// sent at registration, and calls that need a registered device (login, tags,
+/// subscription) are dropped with a warning, as in the React Native SDK.
+///
+/// All callbacks (`requestPermission`, listeners) run on the main thread. No
+/// method throws, and none logs email, phone, push token, external user id,
+/// country or tag values.
+///
+/// Not available in app extensions: use `NottiSDKExtension` in a Notification
+/// Service Extension.
+@available(iOSApplicationExtension, unavailable)
+public enum Notti {
+
+    /// Verbosity of the SDK's own logs. Default `.error`.
+    public typealias LogLevel = NottiLogLevelObjC
+
+    /// Optional configuration for `initialize`.
+    public struct Options {
+        /// Backend host (`https://...`). `nil` uses the Notti default host.
+        public var baseUrl: String?
+
+        public init(baseUrl: String? = nil) {
+            self.baseUrl = baseUrl
+        }
+    }
+
+    // MARK: - Initialize and identity
+
+    /// Starts the SDK. Calling it again with the same values does nothing; with
+    /// different values it restarts the SDK. Invalid values are logged (without
+    /// the values) and ignored.
+    public static func initialize(appId: String, clientKey: String, options: Options = Options()) {
+        NottiFacade.shared.initialize(appId: appId, clientKey: clientKey, baseUrl: options.baseUrl)
+    }
+
+    /// Associates this device with the host's own user id.
+    public static func login(_ externalUserId: String) {
+        NottiFacade.shared.login(externalUserId)
+    }
+
+    /// Clears the user id, email and phone on this device.
+    public static func logout() {
+        NottiFacade.shared.logout()
+    }
+
+    /// The device id issued by the backend, also before `initialize` for an
+    /// already registered device; `nil` for a device that never registered.
+    public static var deviceId: String? {
+        NottiFacade.shared.deviceId
+    }
+
+    /// Calls `handler` on the main thread each time the device id changes.
+    /// Keep the subscription and call `remove()` to stop; it is not removed on
+    /// `deinit`.
+    @discardableResult
+    public static func addDeviceIdChangedListener(_ handler: @escaping (String) -> Void) -> NottiSubscription {
+        NottiFacade.shared.addDeviceIdChangedListener(handler)
+    }
+
+    /// Opts the device in or out of sharing its country. Off by default. The
+    /// preference is stored before the call returns.
+    public static func setLocationSharingEnabled(_ enabled: Bool) {
+        NottiFacade.shared.setLocationSharingEnabled(enabled)
+    }
+
+    /// Verbosity of the SDK's own logs. Default `.error`.
+    public static var logLevel: LogLevel {
+        get { NottiFacade.shared.logLevel }
+        set { NottiFacade.shared.logLevel = newValue }
+    }
+
+    // MARK: - User profile
+
+    /// Profile data of the current user: tags, email, phone and subscription.
+    public enum User {
+        /// Adds or updates one tag.
+        public static func addTag(_ key: String, value: String) {
+            NottiFacade.shared.addTags([key: value])
+        }
+
+        /// Adds or updates several tags.
+        public static func addTags(_ tags: [String: String]) {
+            NottiFacade.shared.addTags(tags)
+        }
+
+        public static func removeTag(_ key: String) {
+            NottiFacade.shared.removeTags([key])
+        }
+
+        public static func removeTags(_ keys: [String]) {
+            NottiFacade.shared.removeTags(keys)
+        }
+
+        public static func setEmail(_ email: String) {
+            NottiFacade.shared.setEmail(email)
+        }
+
+        public static func clearEmail() {
+            NottiFacade.shared.clearEmail()
+        }
+
+        public static func setPhone(_ phone: String) {
+            NottiFacade.shared.setPhone(phone)
+        }
+
+        public static func clearPhone() {
+            NottiFacade.shared.clearPhone()
+        }
+
+        /// Subscribes or unsubscribes this device from notifications.
+        public static func setSubscription(_ enabled: Bool) {
+            NottiFacade.shared.setSubscription(enabled)
+        }
+    }
+
+    // MARK: - Notifications
+
+    /// Permission prompt, listeners and the launch notification.
+    public enum Notifications {
+        /// Asks the user for notification permission. Returns `false` before
+        /// `initialize`, without prompting.
+        public static func requestPermission() async -> Bool {
+            await NottiFacade.shared.requestPermission()
+        }
+
+        /// Completion-handler variant of `requestPermission()`. `completion`
+        /// runs once, on the main thread.
+        public static func requestPermission(completion: @escaping (Bool) -> Void) {
+            NottiFacade.shared.requestPermission(completion: completion)
+        }
+
+        /// Calls `handler` on the main thread for each notification received
+        /// while the app runs. The first listener also gets the ones buffered
+        /// before it was added.
+        @discardableResult
+        public static func addReceivedListener(
+            _ handler: @escaping (NottiNotificationPayload) -> Void
+        ) -> NottiSubscription {
+            NottiFacade.shared.addReceivedListener(handler)
+        }
+
+        /// Calls `handler` on the main thread when the user taps a notification
+        /// while the app runs. The tap that launched the app is not replayed:
+        /// use `takeInitialClick()`.
+        @discardableResult
+        public static func addClickedListener(
+            _ handler: @escaping (NottiNotificationPayload) -> Void
+        ) -> NottiSubscription {
+            NottiFacade.shared.addClickedListener(handler)
+        }
+
+        /// The notification the user tapped to launch the app, once; `nil`
+        /// afterwards.
+        public static func takeInitialClick() -> NottiNotificationPayload? {
+            NottiFacade.shared.takeInitialClick()
+        }
+    }
+}
+
+// MARK: - Shared facade and test seam
+
+@available(iOSApplicationExtension, unavailable)
+extension NottiFacade {
+    private static let sharedLock = NSLock()
+    private static let production = NottiFacade(runtime: .shared)
+    private static var override: NottiFacade?
+
+    /// The facade behind the public `Notti` API, built on `NottiRuntime.shared`.
+    static var shared: NottiFacade {
+        sharedLock.withLock { override ?? production }
+    }
+
+    /// Test seam (internal, no public setter): routes `Notti` to a facade built
+    /// on an isolated runtime. Pass `nil` to restore the production facade.
+    static func setSharedForTesting(_ facade: NottiFacade?) {
+        sharedLock.withLock { override = facade }
+    }
+}

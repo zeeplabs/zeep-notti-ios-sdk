@@ -314,7 +314,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T10: Public Swift shell and F1 test
+### T10: Public Swift shell and F1 test ✅ (NottiPublicApiTests 14; SDK 324, Shared 14, Ext 1, total 339; F1 mutant (suite name in `NottiRuntime.shared`) fails the F1 test, reverted; internal seam `NottiFacade.setSharedForTesting(_:)`; `Notti.LogLevel` is a typealias of `NottiLogLevelObjC`; strict device builds of SDK and NSE, `pod lib lint` all and Extension, SwiftLint 0 and the 3 scripts green)
 
 **What**: Add `Notti`, `Notti.Options`, `Notti.User`, `Notti.Notifications` and the static entry points, forwarding to `NottiFacade.shared` (built on `NottiRuntime.shared`), marked `@available(iOSApplicationExtension, unavailable)`. Add the F1 test: write a device id into the `notti_prefs` suite directly, assert `Notti.deviceId` reads it, remove the key.
 **Where**: `Sources/NottiSDK/Public/Notti.swift`, `Tests/NottiSDKTests/NottiPublicApiTests.swift`
@@ -324,12 +324,12 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] Every public method has a test proving it reaches the facade (through an injectable `NottiFacade.shared` seam that exists only for tests, `internal`)
-- [ ] F1: changing the suite name used by `NottiRuntime.shared` makes the F1 test fail (mutant verified and reverted)
-- [ ] `NottiSDKExtension` and `NottiShared` expose no new public symbol; `check-extension-safety.sh` and `check-package-graph.sh` pass
-- [ ] SwiftLint `--strict` clean; strict device build of `NottiSDK` and of the NSE (`APPLICATION_EXTENSION_API_ONLY=YES`) pass
-- [ ] Test count: SDK +4 minimum (301)
-- [ ] Gate passes: full
+- [x] Every public method has a test proving it reaches the facade (through an injectable `NottiFacade.shared` seam that exists only for tests, `internal`)
+- [x] F1: changing the suite name used by `NottiRuntime.shared` makes the F1 test fail (mutant verified and reverted)
+- [x] `NottiSDKExtension` and `NottiShared` expose no new public symbol; `check-extension-safety.sh` and `check-package-graph.sh` pass
+- [x] SwiftLint `--strict` clean; strict device build of `NottiSDK` and of the NSE (`APPLICATION_EXTENSION_API_ONLY=YES`) pass
+- [x] Test count: SDK +4 minimum (301)
+- [x] Gate passes: full
 
 **Tests**: unit
 **Gate**: full
