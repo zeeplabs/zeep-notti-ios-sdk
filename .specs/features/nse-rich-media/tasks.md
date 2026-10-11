@@ -239,10 +239,10 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] The three spike behaviors hold on the iOS simulator. **If one does not, STOP and report** (it reopens D4 or D10 in the design)
-- [ ] The stub never touches the network
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 3 new
+- [x] The three spike behaviors hold on the iOS simulator. **If one does not, STOP and report** (it reopens D4 or D10 in the design)
+- [x] The stub never touches the network
+- [x] Gate check passes: quick
+- [x] Test count: at least 3 new
 
 **Tests**: unit
 **Gate**: quick
