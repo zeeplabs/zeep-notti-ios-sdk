@@ -8,6 +8,12 @@
 # .specs/codebase/PUBLIC_SURFACE.txt. Sources/NottiShared must stay `package`:
 # any `public` / `open` there fails the check.
 #
+# Also: every top-level public type in Sources/NottiSDK must carry
+# `@available(iOSApplicationExtension, unavailable)` on its declaration line or
+# on an attribute line directly above it (API-15 AC 2), unless it is in the
+# extension-safe allowlist below. The surface file alone cannot catch a removed
+# attribute because it records only the declaration line.
+#
 # Textual check on purpose: grep/sed/sort/diff only, so it runs on the Linux
 # `checks` job with no Swift toolchain. A declaration whose `public` is on a line
 # of its own is not caught; the code style keeps modifiers on the declaration line.
@@ -26,6 +32,14 @@ root="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
 surface_file=".specs/codebase/PUBLIC_SURFACE.txt"
 api_dirs=("Sources/NottiSDK" "Sources/NottiSDKExtension")
 shared_dir="Sources/NottiShared"
+ext_attr="@available(iOSApplicationExtension, unavailable)"
+# Top-level public types that are extension-safe on purpose, so they carry no
+# attribute: NottiSubscription (listener token, no runtime access),
+# NottiNotificationPayload (plain value type) and NottiLogLevelObjC (plain enum).
+# Everything else, including the public `Notti` enum and the ObjC classes, reaches
+# `NottiFacade.shared` / `NottiRuntime.shared`, which are unavailable in
+# extensions, so it must be marked. A new type needs the attribute or an entry here.
+ext_safe_types=" NottiSubscription NottiNotificationPayload NottiLogLevelObjC "
 
 cd "$root"
 
@@ -83,7 +97,36 @@ if [[ -n "$shared_public" ]]; then
   exit 1
 fi
 
-# 2. The API surface equals the committed file.
+# 2. App-only public types carry the extension-unavailable attribute (API-15 AC 2).
+# Top-level means no indentation. The attribute may share the line or sit on the
+# attribute lines directly above (a blank or comment line breaks the chain).
+unmarked="$(find "${api_dirs[0]}" -name '*.swift' -type f | LC_ALL=C sort | while IFS= read -r f; do
+  awk -v attr="$ext_attr" -v safe="$ext_safe_types" -v file="$f" '
+    BEGIN {
+      decl = "^(@[^ ]+ +)*(public|open) +(final +)?(class|struct|enum|protocol|actor) +[A-Za-z0-9_]+"
+      ok = 0
+    }
+    {
+      if ($0 ~ /^@/ && $0 !~ /(public|open) /) { if (index($0, attr) > 0) ok = 1; next_attr = 1 }
+      else next_attr = 0
+      if ($0 ~ /^[^ \t\/*]/ && match($0, /(public|open) +(final +)?(class|struct|enum|protocol|actor) +[A-Za-z0-9_]+/)) {
+        text = substr($0, RSTART, RLENGTH); n = split(text, w, / +/); name = w[n]
+        if (index($0, attr) > 0) ok = 1
+        if (!ok && index(safe, " " name " ") == 0) print file ": " name
+        ok = 0; next
+      }
+      if (!next_attr) ok = 0
+    }
+  ' "$f"
+done)"
+if [[ -n "$unmarked" ]]; then
+  echo "error: public type without $ext_attr (API-15 AC 2):" >&2
+  echo "$unmarked" >&2
+  echo "Add the attribute, or list the type in ext_safe_types in $0 if it is extension-safe." >&2
+  exit 1
+fi
+
+# 3. The API surface equals the committed file.
 current="$(scan "${api_dirs[@]}" | LC_ALL=C sort)"
 
 if [[ $update -eq 1 ]]; then
