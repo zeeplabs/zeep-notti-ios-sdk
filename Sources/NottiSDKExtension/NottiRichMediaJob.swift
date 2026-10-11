@@ -89,6 +89,31 @@ final class NottiRichMediaJob: NSObject, URLSessionDownloadDelegate {
 
     // MARK: - URLSessionDownloadDelegate
 
+    /// Refuses a redirect to anything but https (NSE-04). Answering `nil` alone does not end the task
+    /// (proved in `NottiRichMediaSpikeTests`), so `finish` also cancels it.
+    func urlSession(
+        _ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void
+    ) {
+        guard !isFinished, request.url?.scheme?.lowercased() == "https" else {
+            completionHandler(nil)
+            finish(.dropped(.redirectNotHTTPS))
+            return
+        }
+        completionHandler(request)
+    }
+
+    /// Aborts as soon as the declared length or the bytes received pass the cap (NSE-17).
+    func urlSession(
+        _ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64,
+        totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64
+    ) {
+        let maxBytes = environment.limits.maxBytes
+        if totalBytesExpectedToWrite > maxBytes || totalBytesWritten > maxBytes {
+            finish(.dropped(.oversize))
+        }
+    }
+
     /// Runs synchronously: the system deletes `location` as soon as this returns.
     func urlSession(
         _ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL
