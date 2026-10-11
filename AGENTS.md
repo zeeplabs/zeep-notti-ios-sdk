@@ -16,7 +16,7 @@ These rules apply to every contributor and every coding agent (Claude Code, Code
 Sources/NottiShared/       internal, extension-safe, `package` access (AD-006)
 Sources/NottiSDK/          app-only
 Sources/NottiSDKExtension/ Notification Service Extension, extension-safe, never depends on NottiSDK
-Tests/<Target>Tests/       XCTest, run through the SPM scheme NottiSDK-Package
+Tests/<Target>Tests/       XCTest, run through the SPM scheme NottiSDK-Package (`NottiSDKObjCTests` is Objective-C)
 scripts/                   check-version.sh, check-extension-safety.sh, check-package-graph.sh, check-public-surface.sh
 ```
 

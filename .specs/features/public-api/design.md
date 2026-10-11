@@ -1,7 +1,7 @@
 # Public API Design
 
 **Spec**: `.specs/features/public-api/spec.md`
-**Status**: Draft (awaiting Julio's review)
+**Status**: Implemented (Execute done 2026-10-11, Verifier pending). Deviations found while implementing are applied below and listed in `traceability.md` section 3
 
 ---
 
@@ -81,6 +81,7 @@ Principles:
   - `core` keeps its meaning for existing tests (`nil` until `start` or `ensureCore`).
 - **Dependencies**: `makeCore()`.
 - **Reuses**: existing locks. No change to ported core code (AD-002).
+- **T6 deviation**: `invalidateCurrentCore` keeps a replaced core alive until its queue drains (wait bounded to 60 s on a utility thread). Without it, work queued on the ensured core (a pre-initialize `setEmail`) was dropped when `start` replaced it, because queued core blocks capture `self` weakly.
 - **Effect**: `Notti.deviceId`, `setEmail`/`setPhone` before initialize, `login`/tags (dropped by the core, as RN) and `requestPermission` (core logs a warning and returns `false`) all behave as the core already specifies. `onApnsToken` before initialize reaches the uninitialized core, which discards it, as RN does.
 
 ### NottiListenerHub<Payload> (internal)
@@ -91,7 +92,7 @@ Principles:
   - `init(attach: @escaping (_ handler: @escaping (Payload) -> Void) -> Void, detach: @escaping () -> Void, dispatcher: @escaping NottiMainDispatcher)`
   - `add(_ handler: @escaping (Payload) -> Void) -> NottiSubscription`
   - `remove(id:)` (idempotent, called by the subscription)
-  - `receive(_ payload: Payload)`: source side. Hops to main, snapshots the listener list at execution time, calls each in registration order.
+  - `receive(_ payload: Payload)`: source side. Snapshots the listener list **when the event is received** (T3 deviation; this is what makes the replay inside `attach` reach only the first listener), hops to main, and calls each recipient in registration order, skipping one removed before its turn.
 - **Behavior**:
   - An `attachLock` serializes list mutation together with the `attach`/`detach` call, so a concurrent add/remove can never leave the source handler attached to an empty list (which would drop events instead of buffering them). No callback runs while `attachLock` is held, so re-entrant add/remove from a listener cannot deadlock.
   - 0 to 1 listeners calls `attach` (replay, if any, goes to that first listener). 1 to 0 calls `detach`.
@@ -138,10 +139,10 @@ The decision and the `start` call happen under the facade lock, and `start` itse
   - `static func login(_:)`, `static func logout()`, `static var deviceId: String?`
   - `static func addDeviceIdChangedListener(_ handler: @escaping (String) -> Void) -> NottiSubscription` (`@discardableResult`)
   - `static func setLocationSharingEnabled(_:)`
-  - `static var logLevel: Notti.LogLevel { get set }`; `enum LogLevel: Int { none, error, warn, info, debug, verbose }` mapped to `NottiLogLevel` (a distinct name avoids the clash with the `package` type inside the module)
+  - `static var logLevel: Notti.LogLevel { get set }`; `Notti.LogLevel` is a typealias of the top-level `@objc(NottiLogLevel) public enum NottiLogLevelObjC: Int { none, error, warn, info, debug, verbose }`, mapped to `NottiLogLevel` by exhaustive switches (a nested `@objc` enum is not exported to ObjC, see Spike results; a distinct name avoids the clash with the `package` type inside the module)
   - `enum User`: `addTag(_:value:)`, `addTags(_:)`, `removeTag(_:)`, `removeTags(_:)`, `setEmail`, `clearEmail`, `setPhone`, `clearPhone`, `setSubscription(_:)`
   - `enum Notifications`: `requestPermission() async -> Bool`, `requestPermission(completion:)`, `addReceivedListener`, `addClickedListener`, `takeInitialClick() -> NottiNotificationPayload?`
-- `public struct NottiNotificationPayload: Equatable, Sendable { title: String?; body: String?; data: [String: String] }`, built from the core's `[String: Any]` using `NottiPayloadKeys`. Missing `data` becomes `[:]`. Non-string `data` values are dropped, as in RN.
+- `public struct NottiNotificationPayload: Equatable, Sendable { title: String?; body: String?; data: [String: String] }`, built from the core's `[String: Any]`. `NottiPayloadKeys` has no title/body/data constants (`toEventPayload()` hardcodes them), so the type keeps private key constants and the handler round-trip tests catch drift (T4). No public initializer. Missing `data` becomes `[:]`. Non-string `data` values are dropped, as in RN.
 - `Sendable` is declared only on pure value types, which is valid in Swift 5 mode and adds no concurrency rewrite.
 
 ### Objective-C layer
@@ -149,12 +150,13 @@ The decision and the `start` call happen under the facade lock, and `start` itse
 - **Location**: `Sources/NottiSDK/Public/ObjC/`
 - Three `@objc` classes, because Swift namespaces are invisible to ObjC: `Notti` (initialize, login/logout, deviceId, location sharing, log level, listeners, permission, initial click), `NottiUser`, `NottiNotifications`. Swift names are suffixed (`NottiObjC` and so on) and the ObjC runtime names are set with `@objc(Notti)`, `@objc(NottiUser)`, `@objc(NottiNotifications)`. The ObjC and RN bridge calls use `NSDictionary` payloads and completion blocks.
 - `addTags:` takes `[AnyHashable: Any]` and goes through `NottiRuntime.sanitizeTags` (non-string values dropped).
+- **As built (T12)**: `NottiSubscription` inherits `NSObject` (`@objc(NottiSubscription)`, `@objc remove()`) so ObjC can hold it. Listeners and `takeInitialClick` use `NSDictionary` (`title`/`body` only when present, `data` always). The classes are also visible to Swift as `NottiObjC`, `NottiUserObjC`, `NottiNotificationsObjC`; Swift hosts use `Notti`.
 - **Risk**: an ObjC name `Notti` next to a Swift `enum Notti` in one module. Spike in the first task. Fallback: ObjC names `NottiSDKClient`, `NottiSDKUser`, `NottiSDKNotifications`, chosen with Julio before v0.1.0 because they are public.
 
 ### Public surface guard
 
 - **Location**: `scripts/check-public-surface.sh`, `.specs/codebase/PUBLIC_SURFACE.txt`
-- **Behavior**: lists every `public`/`open` declaration under `Sources/NottiSDK` (declaration line only, sorted, attributes kept), diffs it against the committed file, and fails with the diff on drift. Also fails if a `public` declaration appears in `Sources/NottiShared` (it must stay `package`) or in `Sources/NottiSDKExtension` when it is not in the file.
+- **Behavior**: lists every `public`/`open` declaration under `Sources/NottiSDK` and `Sources/NottiSDKExtension` (`path: declaration` per entry, a multi-line parameter list joined into one entry, sorted, attributes kept, line numbers dropped; `--update` rewrites the file), diffs it against the committed file, and fails with the diff on drift. Also fails if a `public` declaration appears in `Sources/NottiShared` (it must stay `package`). It uses grep/sed/sort/diff plus POSIX `awk` (present on macOS and on the Linux runner; also run on `ubuntu:24.04` with mawk).
 - **Why a script and not `swift-api-digester`**: it runs on the Linux lint/checks job with no toolchain dependency, and its failure mode is trivial to mutate-test. Limitation: it is a textual check, so a public symbol hidden behind an unusual declaration form could escape. The digester is a post-M1 improvement if it proves available.
 - Run in the existing `checks` job.
 

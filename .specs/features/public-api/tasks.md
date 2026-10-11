@@ -3,7 +3,7 @@
 **Design**: `.specs/features/public-api/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
 **Depends on feature**: `core-port` done (runtime, core, event buffer, logger, 252 tests)
-**Status**: Draft (2026-10-11, awaiting Julio's approval)
+**Status**: Execute done (2026-10-11), Verifier pending
 
 ---
 
@@ -405,7 +405,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T14: Traceability, docs and full gate
+### T14: Traceability, docs and full gate ✅ (final tree: Shared 14, SDK 332, ObjC 4, Ext 1, total 351; SwiftLint 0, four scripts, `pod lib lint` all and Extension, strict device builds of SDK and NSE; validators exit 0; `traceability.md` maps API-01..15 and the inherited IDs; spec statuses set to "Implemented (Verifier pending)", not Verified)
 
 **What**: Write `.specs/features/public-api/traceability.md` mapping each API-xx and inherited ID (SDK-17..19, SDKOPEN-10, DPF-17..21 facade part) to its tests. Update `TESTING.md` (new layers and files), `STATE.md` (close F1 and N1, keep N7), `ROADMAP.md` and the spec's traceability statuses. Run the full gate once more on the final tree.
 **Where**: `.specs/features/public-api/traceability.md`
@@ -415,10 +415,11 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] Every API-xx has at least one named test, or a stated reason (docs/script requirements point to T13)
-- [ ] `validate_tasks.py`, `validate_spec.py` and `validate_state.py` exit 0
-- [ ] Full gate green: tests, SwiftLint 0, four scripts, `pod lib lint` (all and Extension), strict device builds; test count at least 252 plus the minimums above
-- [ ] `STATE.md` Current Work says Execute done and Verifier pending
+- [x] Every API-xx has at least one named test, or a stated reason (docs/script requirements point to T13)
+- [x] `validate_tasks.py`, `validate_spec.py` and `validate_state.py` exit 0
+- [x] Full gate green: tests, SwiftLint 0, four scripts, `pod lib lint` (all and Extension), strict device builds; test count at least 252 plus the minimums above
+- [x] `STATE.md` Current Work says Execute done and Verifier pending
+- [ ] Independent Verifier PASS (`validation.md`, written by the Verifier, not by the executor). Left open on purpose: `validate_state.py` treats a feature with every box ticked as complete and then requires `validation.md`
 
 **Tests**: none
 **Gate**: full
