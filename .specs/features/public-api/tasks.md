@@ -151,7 +151,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ---
 
-### T3: `NottiListenerHub` and `NottiSubscription`
+### T3: `NottiListenerHub` and `NottiSubscription` ✅ (NottiListenerHubTests 11 (10 + a second stress test); SDK 253, Shared 14, Ext 1, total 268. SPEC_DEVIATION: the recipient list is snapshotted at reception, not at main-execution time, so the replay inside attach reaches only the first listener even if a second is added before main runs; a removed listener is still skipped at call time. The add/remove stress test kills the missing-attachLock mutant)
 
 **What**: Internal hub that multiplexes many handlers over one source handler, with the `NottiMainDispatcher` typealias, plus the public `NottiSubscription` class (idempotent `remove()`, releases the closure). Behavior as in design: `attachLock`, list updated before `attach`, snapshot at main-execution time, order of registration.
 **Where**: `Sources/NottiSDK/Facade/NottiListenerHub.swift` (hub, dispatcher typealias and `NottiSubscription`, kept in one file because they are one mechanism)
@@ -161,14 +161,14 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] `attach` is called once on 0 to 1 listeners, `detach` once on 1 to 0, never otherwise
-- [ ] With a source that replays synchronously inside `attach`, the first listener receives the replay and a second one does not
-- [ ] Every listener gets each event in registration order, through the injected dispatcher (a recording dispatcher proves the hop; delivery is never inline)
-- [ ] A listener that adds or removes a listener inside its callback does not deadlock, and the change applies from the next event
-- [ ] `remove()` twice is safe, and after `remove()` the handler is not called
-- [ ] A concurrent add/remove stress test never ends with the source attached to an empty list
-- [ ] Test count: SDK +8 minimum (249)
-- [ ] Gate passes: quick `-only-testing:NottiSDKTests/NottiListenerHubTests`
+- [x] `attach` is called once on 0 to 1 listeners, `detach` once on 1 to 0, never otherwise
+- [x] With a source that replays synchronously inside `attach`, the first listener receives the replay and a second one does not
+- [x] Every listener gets each event in registration order, through the injected dispatcher (a recording dispatcher proves the hop; delivery is never inline)
+- [x] A listener that adds or removes a listener inside its callback does not deadlock, and the change applies from the next event
+- [x] `remove()` twice is safe, and after `remove()` the handler is not called
+- [x] A concurrent add/remove stress test never ends with the source attached to an empty list
+- [x] Test count: SDK +8 minimum (249)
+- [x] Gate passes: quick `-only-testing:NottiSDKTests/NottiListenerHubTests`
 
 **Tests**: unit
 **Gate**: quick
