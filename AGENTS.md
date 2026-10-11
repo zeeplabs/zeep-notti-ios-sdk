@@ -17,7 +17,7 @@ Sources/NottiShared/       internal, extension-safe, `package` access (AD-006)
 Sources/NottiSDK/          app-only
 Sources/NottiSDKExtension/ Notification Service Extension, extension-safe, never depends on NottiSDK
 Tests/<Target>Tests/       XCTest, run through the SPM scheme NottiSDK-Package
-scripts/                   check-version.sh, check-extension-safety.sh, check-package-graph.sh
+scripts/                   check-version.sh, check-extension-safety.sh, check-package-graph.sh, check-public-surface.sh
 ```
 
 ## Commands
@@ -32,7 +32,7 @@ xcodebuild test -scheme NottiSDK-Package -destination "platform=iOS Simulator,na
 # lint (SwiftLint is pinned; not installed locally)
 docker run --rm -v "$PWD:/w" -w /w ghcr.io/realm/swiftlint:0.65.1 lint --strict
 # guards and packaging
-scripts/check-version.sh && scripts/check-extension-safety.sh && scripts/check-package-graph.sh
+scripts/check-version.sh && scripts/check-extension-safety.sh && scripts/check-package-graph.sh && scripts/check-public-surface.sh
 pod lib lint NottiSDK.podspec --platforms=ios
 ```
 
@@ -78,6 +78,10 @@ Do not add `dpearson2699/swift-ios-skills` (PolyForm Perimeter license) to this 
 - Access: `internal` in `NottiSDK` until `public-api`; `package` in `NottiShared`. Guard shared imports with `#if canImport(NottiShared)`.
 - Resources: access through `NottiSDKResources.bundle` / `NottiSDKExtensionResources.bundle`, never `Bundle.module` directly (CocoaPods has no `Bundle.module`).
 - Every code change ships with its tests in the same commit (see the coverage matrix in `.specs/codebase/TESTING.md`). Test counts must not drop.
+
+### Public API surface
+
+Every `public` / `open` declaration in `Sources/NottiSDK` and `Sources/NottiSDKExtension` is listed in `.specs/codebase/PUBLIC_SURFACE.txt`, and `Sources/NottiShared` must have none (it stays `package`). A new, changed or removed public symbol updates that file in the same commit: run `scripts/check-public-surface.sh --update`, review the diff, commit it. `scripts/check-public-surface.sh` fails CI on drift. Keep `public` on the declaration line, and put no `package` type in a public signature.
 
 ### Version
 

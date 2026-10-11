@@ -1,0 +1,58 @@
+Sources/NottiSDK/Facade/NottiListenerHub.swift: @objc public func remove() {
+Sources/NottiSDK/Facade/NottiListenerHub.swift: public final class NottiSubscription: NSObject {
+Sources/NottiSDK/Facade/NottiLogLevelObjC.swift: public enum NottiLogLevelObjC: Int {
+Sources/NottiSDK/Facade/NottiNotificationPayload.swift: public let body: String?
+Sources/NottiSDK/Facade/NottiNotificationPayload.swift: public let data: [String: String]
+Sources/NottiSDK/Facade/NottiNotificationPayload.swift: public let title: String?
+Sources/NottiSDK/Facade/NottiNotificationPayload.swift: public struct NottiNotificationPayload: Equatable, Sendable {
+Sources/NottiSDK/Public/Notti.swift: public enum Notifications {
+Sources/NottiSDK/Public/Notti.swift: public enum Notti {
+Sources/NottiSDK/Public/Notti.swift: public enum User {
+Sources/NottiSDK/Public/Notti.swift: public init(baseUrl: String? = nil) {
+Sources/NottiSDK/Public/Notti.swift: public static func addClickedListener( _ handler: @escaping (NottiNotificationPayload) -> Void ) -> NottiSubscription {
+Sources/NottiSDK/Public/Notti.swift: public static func addDeviceIdChangedListener(_ handler: @escaping (String) -> Void) -> NottiSubscription {
+Sources/NottiSDK/Public/Notti.swift: public static func addReceivedListener( _ handler: @escaping (NottiNotificationPayload) -> Void ) -> NottiSubscription {
+Sources/NottiSDK/Public/Notti.swift: public static func addTag(_ key: String, value: String) {
+Sources/NottiSDK/Public/Notti.swift: public static func addTags(_ tags: [String: String]) {
+Sources/NottiSDK/Public/Notti.swift: public static func clearEmail() {
+Sources/NottiSDK/Public/Notti.swift: public static func clearPhone() {
+Sources/NottiSDK/Public/Notti.swift: public static func initialize(appId: String, clientKey: String, options: Options = Options()) {
+Sources/NottiSDK/Public/Notti.swift: public static func login(_ externalUserId: String) {
+Sources/NottiSDK/Public/Notti.swift: public static func logout() {
+Sources/NottiSDK/Public/Notti.swift: public static func removeTag(_ key: String) {
+Sources/NottiSDK/Public/Notti.swift: public static func removeTags(_ keys: [String]) {
+Sources/NottiSDK/Public/Notti.swift: public static func requestPermission() async -> Bool {
+Sources/NottiSDK/Public/Notti.swift: public static func requestPermission(completion: @escaping (Bool) -> Void) {
+Sources/NottiSDK/Public/Notti.swift: public static func setEmail(_ email: String) {
+Sources/NottiSDK/Public/Notti.swift: public static func setLocationSharingEnabled(_ enabled: Bool) {
+Sources/NottiSDK/Public/Notti.swift: public static func setPhone(_ phone: String) {
+Sources/NottiSDK/Public/Notti.swift: public static func setSubscription(_ enabled: Bool) {
+Sources/NottiSDK/Public/Notti.swift: public static func takeInitialClick() -> NottiNotificationPayload? {
+Sources/NottiSDK/Public/Notti.swift: public static var deviceId: String? {
+Sources/NottiSDK/Public/Notti.swift: public static var logLevel: LogLevel {
+Sources/NottiSDK/Public/Notti.swift: public struct Options {
+Sources/NottiSDK/Public/Notti.swift: public typealias LogLevel = NottiLogLevelObjC
+Sources/NottiSDK/Public/Notti.swift: public var baseUrl: String?
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public final class NottiNotificationsObjC: NSObject {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public final class NottiObjC: NSObject {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public final class NottiUserObjC: NSObject {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func addClickedListener(_ handler: @escaping (NSDictionary) -> Void) -> NottiSubscription {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func addDeviceIdChangedListener(_ handler: @escaping (String) -> Void) -> NottiSubscription {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func addReceivedListener(_ handler: @escaping (NSDictionary) -> Void) -> NottiSubscription {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func addTag(_ key: String, value: String) {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func addTags(_ tags: [AnyHashable: Any]) {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func clearEmail() {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func clearPhone() {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func initialize(appId: String, clientKey: String, baseUrl: String?) {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func login(_ externalUserId: String) {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func logout() {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func removeTag(_ key: String) {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func removeTags(_ keys: [String]) {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func requestPermission(_ completion: @escaping (Bool) -> Void) {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func setEmail(_ email: String) {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func setLocationSharingEnabled(_ enabled: Bool) {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func setPhone(_ phone: String) {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func setSubscription(_ enabled: Bool) {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func takeInitialClick() -> NSDictionary? {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static var deviceId: String? {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static var logLevel: NottiLogLevelObjC {
