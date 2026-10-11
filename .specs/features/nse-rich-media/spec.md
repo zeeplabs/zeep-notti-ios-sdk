@@ -134,24 +134,24 @@ Open questions: none. Q1 to Q4 were confirmed by Julio on 2026-10-11 with the re
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| NSE-01 | P1: Attach the media | Specify | Implemented, Verifier pending |
-| NSE-02 | P1: Attach the media | Specify | Implemented, Verifier pending |
-| NSE-03 | P1: Attach the media (scheme allowlist) | Specify | Implemented, Verifier pending |
-| NSE-04 | P1: Attach the media (redirect to non-https) | Specify | Implemented, Verifier pending |
-| NSE-05 | P1: Attach the media (transfer and status failures) | Specify | Implemented, Verifier pending |
-| NSE-06 | P1: Attach the media (size cap, after download) | Specify | Implemented, Verifier pending |
-| NSE-07 | P1: Attach the media (file type) | Specify | Implemented, Verifier pending |
-| NSE-08 | P1: Attach the media (attachment init failure) | Specify | Implemented, Verifier pending |
-| NSE-09 | P1: Attach the media (no leaked temp files) | Specify | Implemented, Verifier pending |
-| NSE-10 | P1: Time budget (total deadline) | Specify | Implemented, Verifier pending |
-| NSE-11 | P1: Time budget (expiry, single handler call) | Specify | Implemented, Verifier pending |
-| NSE-12 | P1: Time budget (expiry with nil content) | Specify | Implemented, Verifier pending |
-| NSE-13 | P1: Privacy, logging and extension safety (no PII in logs) | Specify | Implemented, Verifier pending |
-| NSE-14 | P1: Privacy, logging and extension safety (extension-safe) | Specify | Implemented, Verifier pending |
-| NSE-15 | P1: Privacy, logging and extension safety (public surface) | Specify | Implemented, Verifier pending |
-| NSE-16 | P2: Hardening and interop (`@objc` mirror) | Specify | Implemented, Verifier pending |
-| NSE-17 | P2: Hardening and interop (early size abort) | Specify | Implemented, Verifier pending |
-| NSE-18 | P2: Hardening and interop (contract literals) | Specify | Implemented, Verifier pending |
+| NSE-01 | P1: Attach the media | Specify | Verified (round 2 PASS) |
+| NSE-02 | P1: Attach the media | Specify | Verified (round 2 PASS) |
+| NSE-03 | P1: Attach the media (scheme allowlist) | Specify | Verified (round 2 PASS) |
+| NSE-04 | P1: Attach the media (redirect to non-https) | Specify | Verified (round 2 PASS) |
+| NSE-05 | P1: Attach the media (transfer and status failures) | Specify | Verified (round 2 PASS) |
+| NSE-06 | P1: Attach the media (size cap, after download) | Specify | Verified (round 2 PASS) |
+| NSE-07 | P1: Attach the media (file type) | Specify | Verified (round 2 PASS) |
+| NSE-08 | P1: Attach the media (attachment init failure) | Specify | Verified (round 2 PASS) |
+| NSE-09 | P1: Attach the media (no leaked temp files) | Specify | Verified (round 2 PASS) |
+| NSE-10 | P1: Time budget (total deadline) | Specify | Verified (round 2 PASS) |
+| NSE-11 | P1: Time budget (expiry, single handler call) | Specify | Verified (round 2 PASS) |
+| NSE-12 | P1: Time budget (expiry with nil content) | Specify | Verified (round 2 PASS) |
+| NSE-13 | P1: Privacy, logging and extension safety (no PII in logs) | Specify | Verified (round 2 PASS) |
+| NSE-14 | P1: Privacy, logging and extension safety (extension-safe) | Specify | Verified (round 2 PASS) |
+| NSE-15 | P1: Privacy, logging and extension safety (public surface) | Specify | Verified (round 2 PASS) |
+| NSE-16 | P2: Hardening and interop (`@objc` mirror) | Specify | Verified (round 2 PASS) |
+| NSE-17 | P2: Hardening and interop (early size abort) | Specify | Verified (round 2 PASS) |
+| NSE-18 | P2: Hardening and interop (contract literals) | Specify | Verified (round 2 PASS) |
 
 Inherited behavior: `react-native-notti` 0.6.0 NSE helper and its 9 tests (`52e4b55`), carried over except where a row above says otherwise. RN has no test for redirect, size cap, transfer error, deadline or expiry races, so NSE-04, 05, 06, 10, 11 are new tests.
 

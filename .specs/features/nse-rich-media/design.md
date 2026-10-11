@@ -1,7 +1,7 @@
 # NSE Rich Media Design
 
 **Spec**: `.specs/features/nse-rich-media/spec.md`
-**Status**: Implemented, Verifier pending (spike results re-proved on the Simulator in T5)
+**Status**: Verified (round 2 PASS) (spike results re-proved on the Simulator in T5)
 
 ---
 
