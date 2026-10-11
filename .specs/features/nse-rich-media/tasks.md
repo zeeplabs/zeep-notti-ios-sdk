@@ -151,11 +151,11 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Missing key and a non-`String` value give `absent`
-- [ ] Empty string, unparsable text, `file:`, `http:`, `ftp:`, a custom scheme and a URL with no host give `invalid`
-- [ ] `HTTPS://` and a valid `https` URL give `valid`
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 9 new, total at least 483
+- [x] Missing key and a non-`String` value give `absent`
+- [x] Empty string, unparsable text, `file:`, `http:`, `ftp:`, a custom scheme and a URL with no host give `invalid`
+- [x] `HTTPS://` and a valid `https` URL give `valid`
+- [x] Gate check passes: quick
+- [x] Test count: at least 9 new, total at least 483
 
 **Tests**: unit
 **Gate**: quick
