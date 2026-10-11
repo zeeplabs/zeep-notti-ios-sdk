@@ -383,6 +383,20 @@ final class NottiNotificationHandlerTests: XCTestCase {
         XCTAssertTrue(runtime.eventStore.all().isEmpty)
     }
 
+    /// DEL-15 says "`aps` and no `aps.alert`", not "`content-available`": a silent push without the flag is
+    /// still reported, once.
+    func test_aSilentPushWithoutContentAvailableIsReportedOnce() {
+        for aps: [String: Any] in [["badge": 1], [:]] {
+            var payloads: [[String: Any]] = []
+            runtime.eventBuffer.setHandler(.received) { payloads.append($0) }
+
+            handler.handleSilentPush(userInfo: ["aps": aps, "notification_id": "n-\(aps.count)", "delivery_id": "d-\(aps.count)"])
+
+            XCTAssertEqual(payloads.count, 1, "\(aps)")
+        }
+        XCTAssertEqual(runtime.eventStore.all().map(\.type), ["received", "received"])
+    }
+
     func test_payloadWithoutApsEmitsNothingAndQueuesNothing() {
         var payloads: [[String: Any]] = []
         runtime.eventBuffer.setHandler(.received) { payloads.append($0) }

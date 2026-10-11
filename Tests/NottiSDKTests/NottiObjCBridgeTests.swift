@@ -233,6 +233,11 @@ final class NottiObjCBridgeTests: XCTestCase {
 
     func test_objcManualForwardingIsIgnoredWhileSwizzlingIsActive() {
         swizzlingActive = true
+        let lock = NSLock()
+        var logs: [(NottiLogLevel, String)] = []
+        NottiLogger.level = .verbose
+        NottiLogger.sink = { level, message in lock.withLock { logs.append((level, message)) } }
+        defer { NottiLogger.sink = nil }
 
         NottiNotificationsObjC.didRegisterForRemoteNotifications(deviceToken: Data([0x01]))
         NottiNotificationsObjC.didFailToRegisterForRemoteNotifications(error: NSError(domain: "fixture.apns", code: 1))
@@ -240,6 +245,9 @@ final class NottiObjCBridgeTests: XCTestCase {
         let result = NottiNotificationsObjC.didReceiveRemoteNotification(["aps": ["content-available": 1], "delivery_id": "d-s"])
 
         XCTAssertEqual(result, .noData)
+        let captured = lock.withLock { logs }
+        XCTAssertEqual(captured.filter { $0.0 == .warn }.count, 4, "one warn per ignored call, didRegister included")
+        XCTAssertTrue(captured.filter { $0.0 == .error }.isEmpty, "the failure was not processed")
         XCTAssertTrue(runtime.eventStore.all().isEmpty)
         XCTAssertNil(NottiNotificationsObjC.takeInitialClick())
         XCTAssertTrue(StubURLProtocol.recordedRequests().isEmpty)
