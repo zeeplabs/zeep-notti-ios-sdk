@@ -110,7 +110,7 @@ Open questions: none. Q1 to Q4 were confirmed by Julio on 2026-10-11 with the re
 
 **Acceptance Criteria**:
 
-1. NSE-16: WHEN an Objective-C host calls `+[NottiNotificationServiceExtension didReceive:withContentHandler:]` and `serviceExtensionTimeWillExpireForContent:contentHandler:` THEN they SHALL behave as the Swift methods, proven by a test in `NottiSDKObjCTests` or an extension-side Objective-C test target.
+1. NSE-16: WHEN an Objective-C host calls `+[NottiNotificationServiceExtension didReceive:withContentHandler:]` and `+[NottiNotificationServiceExtension serviceExtensionTimeWillExpireFor:contentHandler:]` THEN they SHALL behave as the Swift methods, proven by a test in `NottiSDKObjCTests` or an extension-side Objective-C test target.
 2. NSE-17: WHEN the response is larger than 10 MiB (declared length or bytes received) THEN the helper SHALL cancel the transfer as soon as that is known, instead of after the file is complete.
 3. NSE-18: WHEN the contract values are tested THEN the key literal `notti_image_url`, the 10 MiB cap, the 20 s deadline and the five allowed types SHALL each be asserted as literals, not through the constants the code reads (lesson from `delegate-integration` G1).
 
