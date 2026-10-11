@@ -329,11 +329,11 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] With a 0.2 s deadline, a stub that never finishes ends with one handler call, the task cancelled and no file
-- [ ] A stub that sends a small chunk every 50 ms still ends at the deadline
-- [ ] A job that finishes first cancels the timer (no second call after the deadline passes)
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 3 new
+- [x] With a 0.2 s deadline, a stub that never finishes ends with one handler call, the task cancelled and no file
+- [x] A stub that sends a small chunk every 50 ms still ends at the deadline
+- [x] A job that finishes first cancels the timer (no second call after the deadline passes)
+- [x] Gate check passes: quick
+- [x] Test count: at least 3 new
 
 **Tests**: unit
 **Gate**: quick
