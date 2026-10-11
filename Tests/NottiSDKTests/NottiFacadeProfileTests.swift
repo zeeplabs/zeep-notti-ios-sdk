@@ -207,6 +207,85 @@ final class NottiFacadeProfileTests: XCTestCase {
         XCTAssertTrue(sent.contains { $0["phone"] as? String == "+10000000000" })
     }
 
+    // Verifier r1 G1: each method below is the FIRST call on a brand-new runtime.
+    // An earlier call would create the core and hide a `runtime.core?.` regression.
+
+    func test_setEmailAsTheFirstCallBeforeInitializePersistsAndIsSentAtRegistration() {
+        XCTAssertNil(runtime.core, "precondition: no core before the first call")
+        facade.setEmail("user@example.invalid")
+        drain()
+        StubURLProtocol.enqueue(.echoDevice()) // registration
+        StubURLProtocol.enqueue(.echoDevice()) // email resync
+        facade.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        drain()
+
+        XCTAssertEqual(store.getEmail(), "user@example.invalid")
+        XCTAssertTrue(bodies("PATCH").contains { $0["email"] as? String == "user@example.invalid" })
+    }
+
+    func test_setPhoneAsTheFirstCallBeforeInitializePersistsAndIsSentAtRegistration() {
+        XCTAssertNil(runtime.core, "precondition: no core before the first call")
+        facade.setPhone("+10000000000")
+        drain()
+        StubURLProtocol.enqueue(.echoDevice()) // registration
+        StubURLProtocol.enqueue(.echoDevice()) // phone resync
+        facade.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        drain()
+
+        XCTAssertEqual(store.getPhone(), "+10000000000")
+        XCTAssertTrue(bodies("PATCH").contains { $0["phone"] as? String == "+10000000000" })
+    }
+
+    func test_clearEmailAsTheFirstCallBeforeInitializeClearsAndSendsExplicitNullAtRegistration() {
+        store.setEmail("user@example.invalid")
+        store.setLastSyncedEmail("user@example.invalid")
+        XCTAssertNil(runtime.core, "precondition: no core before the first call")
+        facade.clearEmail()
+        drain()
+        StubURLProtocol.enqueue(.echoDevice()) // registration
+        StubURLProtocol.enqueue(.echoDevice()) // email clear resync
+        facade.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        drain()
+
+        XCTAssertNil(store.getEmail())
+        XCTAssertTrue(bodies("PATCH").contains { $0["email"] is NSNull })
+    }
+
+    func test_clearPhoneAsTheFirstCallBeforeInitializeClearsAndSendsExplicitNullAtRegistration() {
+        store.setPhone("+10000000000")
+        store.setLastSyncedPhone("+10000000000")
+        XCTAssertNil(runtime.core, "precondition: no core before the first call")
+        facade.clearPhone()
+        drain()
+        StubURLProtocol.enqueue(.echoDevice()) // registration
+        StubURLProtocol.enqueue(.echoDevice()) // phone clear resync
+        facade.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        drain()
+
+        XCTAssertNil(store.getPhone())
+        XCTAssertTrue(bodies("PATCH").contains { $0["phone"] is NSNull })
+    }
+
+    func test_eachOtherPreInitializeCallAsTheFirstCallReachesEnsureCoreAndDoesNotCrash() {
+        // One fresh runtime per method: the method under test is always the first call.
+        let calls: [(NottiFacade) -> Void] = [
+            { $0.login("user-fixture") },
+            { $0.logout() },
+            { $0.addTags(["plan": "vip"]) },
+            { $0.removeTags(["plan"]) },
+            { $0.setSubscription(false) }
+        ]
+        for call in calls {
+            let isolated = makeRuntime()
+            XCTAssertNil(isolated.core)
+            call(NottiFacade(runtime: isolated, dispatcher: { $0() }))
+            XCTAssertNotNil(isolated.core, "the call reached ensureCore()")
+            isolated.core?.waitForPendingWork(timeout: 20)
+            isolated.stop()
+        }
+        XCTAssertTrue(StubURLProtocol.recordedRequests().isEmpty)
+    }
+
     func test_loginTagsAndSubscriptionBeforeInitializeSendNothingAndDoNotCrash() {
         facade.login("user-fixture")
         facade.addTags(["plan": "vip"])
