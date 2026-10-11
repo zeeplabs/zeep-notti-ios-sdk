@@ -228,17 +228,28 @@ final class NottiPublicApiTests: XCTestCase {
         XCTAssertTrue(granted)
     }
 
-    func test_receivedAndClickedListenersReachTheFacade() {
+    /// Verifier r1 G2: one event type at a time, with a different payload per event,
+    /// so a listener wired to the wrong event cannot pass.
+    func test_receivedAndClickedListenersReachTheFacadeEachOnItsOwnEvent() {
         let received = Log()
         let clicked = Log()
         let receivedSub = Notti.Notifications.addReceivedListener { received.append($0.title ?? "") }
-        let clickedSub = Notti.Notifications.addClickedListener { clicked.append($0.body ?? "") }
+        let clickedSub = Notti.Notifications.addClickedListener { clicked.append($0.title ?? "") }
 
-        let payload = ParsedNotification(title: "Title fixture", body: "Body fixture", data: ["id": "n-1"]).toEventPayload()
-        runtime.eventBuffer.emit(.received, identifier: "n-1", payload: payload)
-        runtime.eventBuffer.emit(.clicked, identifier: "n-1", payload: payload)
-        XCTAssertEqual(received.values, ["Title fixture"])
-        XCTAssertEqual(clicked.values, ["Body fixture"])
+        let clickedPayload = ParsedNotification(
+            title: "Clicked title fixture", body: "Clicked body fixture", data: ["id": "n-c"]
+        ).toEventPayload()
+        let receivedPayload = ParsedNotification(
+            title: "Received title fixture", body: "Received body fixture", data: ["id": "n-r"]
+        ).toEventPayload()
+
+        runtime.eventBuffer.emit(.clicked, identifier: "n-c", payload: clickedPayload)
+        XCTAssertEqual(clicked.values, ["Clicked title fixture"])
+        XCTAssertEqual(received.values, [], "a clicked event must not reach the received listener")
+
+        runtime.eventBuffer.emit(.received, identifier: "n-r", payload: receivedPayload)
+        XCTAssertEqual(received.values, ["Received title fixture"])
+        XCTAssertEqual(clicked.values, ["Clicked title fixture"], "a received event must not reach the clicked listener")
 
         receivedSub.remove()
         clickedSub.remove()
