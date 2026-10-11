@@ -107,7 +107,7 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 ## Task Breakdown
 
-### T1: Spike: Objective-C naming, nested `@objc` enum, ObjC test target
+### T1: Spike: Objective-C naming, nested `@objc` enum, ObjC test target ✅ (a: coexist OK; b: nested `@objc` enum compiles but is NOT exported to ObjC, use top-level `@objc(NottiLogLevel)` + typealias; c: SPM ObjC test target OK; original ObjC names kept, Julio to confirm)
 
 **What**: Throwaway experiments in a scratch copy of the package (no production code committed). Answer three questions and write the answers into `design.md`: (a) can an `@objc(Notti)` class coexist with a Swift `enum Notti` in one module; (b) can `Notti.LogLevel` be `@objc` when nested in a non-`@objc` enum, otherwise how the ObjC level type is declared; (c) can an SPM ObjC test target import `NottiSDK`.
 **Where**: `.specs/features/public-api/design.md` (new "Spike results" section)
@@ -117,10 +117,10 @@ Sequential order used in Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 �
 
 **Done when**:
 
-- [ ] Each of (a), (b), (c) has an observed result, not an assumption, with the command or snippet that showed it
-- [ ] Design records the chosen ObjC class names (original or the fallback `NottiSDKClient`/`NottiSDKUser`/`NottiSDKNotifications`) and the compile-check approach (SPM ObjC test target, or the pod-lint fallback)
-- [ ] If the fallback names are chosen, Julio confirms them before T12 (they are public)
-- [ ] No source or `Package.swift` change is committed
+- [x] Each of (a), (b), (c) has an observed result, not an assumption, with the command or snippet that showed it
+- [x] Design records the chosen ObjC class names (original or the fallback `NottiSDKClient`/`NottiSDKUser`/`NottiSDKNotifications`) and the compile-check approach (SPM ObjC test target, or the pod-lint fallback)
+- [x] If the fallback names are chosen, Julio confirms them before T12 (they are public)
+- [x] No source or `Package.swift` change is committed
 
 **Tests**: none
 **Gate**: none (docs only)
