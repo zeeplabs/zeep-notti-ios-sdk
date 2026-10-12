@@ -26,6 +26,28 @@ class NottiRichMediaJobTestCase: XCTestCase {
     var directory: URL!
     private var liveJobs: [NottiRichMediaJob] = []
 
+    /// The first `UNNotificationAttachment` in a process on a clean simulator takes up to ~20 s (measured on
+    /// a freshly created iPhone 17 Pro, iOS 26.5: 20.2 s, then 9 ms), longer than any `waitForHandler`. Pay it
+    /// once, here, where nothing is timed, so the first test that attaches media does not time out.
+    private static let attachmentWarmUp: Void = {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NottiAttachmentWarmUp-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let file = directory.appendingPathComponent("warmup.png")
+            try MediaSamples.png.write(to: file)
+            _ = try UNNotificationAttachment(identifier: "warm-up", url: file, options: nil)
+        } catch {
+            // Best effort: a failure here only brings the old cold-start timing back.
+        }
+    }()
+
+    override class func setUp() {
+        super.setUp()
+        _ = attachmentWarmUp
+    }
+
     override func setUp() {
         super.setUp()
         StubURLProtocol.reset()
