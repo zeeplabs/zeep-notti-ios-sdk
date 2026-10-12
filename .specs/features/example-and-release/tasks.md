@@ -22,7 +22,7 @@ Implement these tasks with the `tlc-spec-driven` skill (pinned in `.claude/skill
 | Code Layer | Required Test Type | Coverage Expectation | Location Pattern | Run Command |
 | ---------- | ------------------ | -------------------- | ---------------- | ----------- |
 | `ExampleConfig`, `ExampleLog`, `ExampleModel` | unit (hosted XCTest) | configured/unconfigured, closed log events, sentinel never in a row | `Example/Tests/*Tests.swift` | `xcodebuild test -project Example/NottiExample.xcodeproj -scheme NottiExample -destination "platform=iOS Simulator,name=$NOTTI_SIM" CODE_SIGNING_ALLOWED=NO` |
-| Hook and resources in the real product | integration (hosted XCTest) | `loadCount == installCount == 1`; privacy bundles present in app and appex | `Example/Tests/ProductIntegrationTests.swift` | same, per leg (spm, pods-static, pods-dynamic) |
+| Hook and resources in the real product | integration (hosted XCTest) | `loadCount == installCount == 1`; privacy bundles present in app and appex | `Example/Tests/ProductIntegrationTests.swift` | same, per leg (spm, pods-static, pods-libs) |
 | SwiftUI screens | none | covered by `docs/DEVICE_CHECKLIST.md` | - | build only |
 | New scripts under `scripts/` | none (script) | each run against a passing tree and a mutated failing tree; both outputs in the commit body | - | the script |
 | `README.md`, `CHANGELOG.md`, `docs/`, specs | none | `check-readme-snippets.sh`, `check-version.sh` | - | the scripts |
@@ -119,8 +119,8 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Each of the five questions has a recorded result (works, or the fallback chosen) with the command that proved it
-- [ ] Any answer that changes the design updates the design in the same commit
+- [x] Each of the five questions has a recorded result (works, or the fallback chosen) with the command that proved it
+- [x] Any answer that changes the design updates the design in the same commit
 - [ ] Gate check passes: quick
 
 **Tests**: none
@@ -237,9 +237,9 @@ All match. No `[P]` task.
 
 ---
 
-### T7: CocoaPods variant (static and dynamic)
+### T7: CocoaPods variant (static frameworks, static libraries; dynamic pending S6)
 
-**What**: `project-pods.yml`, `Podfile` (`:path => '..'`, `NOTTI_LINKAGE`), NSE conditional import, pod bundle names in the integration test; run the hosted tests and a generic device build for both linkages.
+**What**: `project-pods.yml`, `Podfile` (`:path => '..'`, `NOTTI_LINKAGE=static|libs|dynamic`), NSE conditional import, pod bundle names in the integration test; run the hosted tests and a generic device build for both linkages.
 **Where**: `Example/project-pods.yml`, `Example/Podfile`, `Example/NotificationService/NotificationService.swift`, `Example/Tests/ProductIntegrationTests.swift`, `.gitignore`
 **Depends on**: T6
 **Reuses**: T1 spike results, `scripts/check-hook-linked.sh pod` semantics
@@ -247,16 +247,16 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] `pod install` + hosted tests pass with `use_frameworks! :linkage => :static` and with dynamic frameworks
+- [ ] `pod install` + hosted tests pass with `use_frameworks! :linkage => :static` and with static libraries (`use_modular_headers!`); the `dynamic` linkage is kept in the Podfile and its failure (S6) is documented, not hidden, until Julio decides the fix
 - [ ] App uses `pod 'NottiSDK'` and NSE uses `pod 'NottiSDK/Extension'` only
 - [ ] The bundles `NottiSDK_Privacy` and `NottiSDKExtension_Privacy` are found in the products of each linkage
-- [ ] Hook counts equal 1 in each linkage; a static-library pod (`use_frameworks!` off) result is recorded as covered or not (it was not covered by `check-hook-linked.sh pod`)
+- [ ] Hook counts equal 1 in each passing linkage (static libraries covered, which `check-hook-linked.sh pod` did not)
 - [ ] `PKG-06` independent test result and the CocoaPods `Resources` todo are noted in `STATE.md` as closed or narrowed
-- [ ] Gate check passes: Example on both linkages
+- [ ] Gate check passes: Example on the passing linkages
 
 **Tests**: integration (hosted)
 **Gate**: Example
-**Commit**: `feat(example): build the example through CocoaPods, static and dynamic`
+**Commit**: `feat(example): build the example through CocoaPods`
 
 ---
 
@@ -305,7 +305,7 @@ All match. No `[P]` task.
 
 ### T10: CI `example` job
 
-**What**: Matrix job `spm | pods-static | pods-dynamic` on `macos-26` with a pinned XcodeGen, per leg: generate, (pod install), test, generic device build (warnings as errors, NSE with `APPLICATION_EXTENSION_API_ONLY=YES`); SPM leg also builds `Debug-Manual`.
+**What**: Matrix job `spm | pods-static | pods-libs` on `macos-26` with a pinned XcodeGen, per leg: generate, (pod install), test, generic device build (warnings as errors, NSE with `APPLICATION_EXTENSION_API_ONLY=YES`); SPM leg also builds `Debug-Manual`.
 **Where**: `.github/workflows/ci.yml`
 **Depends on**: T7, T9
 **Reuses**: existing `test` and `pod-lint` job steps
@@ -313,7 +313,7 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Draft PR CI runs the three legs green (link recorded)
+- [ ] Draft PR CI runs the legs green (link recorded)
 - [ ] A generated project or `Pods/` is never committed by a leg
 - [ ] Gate check passes: Full
 

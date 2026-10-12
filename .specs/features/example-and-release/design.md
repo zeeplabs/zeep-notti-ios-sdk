@@ -1,7 +1,23 @@
 # Example App and Release 0.1.0 Design
 
 **Spec**: `.specs/features/example-and-release/spec.md`
-**Status**: Draft (nothing built yet; every [Incerto] below is a spike in task T1)
+**Status**: Draft. Spikes (T1) done 2026-10-12, results below; one blocking finding (S6).
+
+## Spike results (T1, 2026-10-12)
+
+Scratch project outside the repo, XcodeGen 2.46.0, CocoaPods 1.17.0, Xcode 27 simulator `iPhone 17 Pro`.
+
+| # | Question | Result |
+| --- | --- | --- |
+| S1 | Local package whose directory name differs from the package name, shared by an app and an appex | Works. `packages: NottiSDK: {path: <repo>}`, `{package: NottiSDK, product: NottiSDK}` on the app and `product: NottiSDKExtension` on the NSE. Built for the simulator. [Certo] |
+| S2 | `INFOPLIST_FILE` per configuration | Works. `Debug-Manual` (`debug` type) built with `Info-Manual.plist`; `plutil -type NottiDisableSwizzling` on the built plist prints `bool`. [Certo] |
+| S3 | Optional local xcconfig | Works. `#include?` with no local file gives `NottiAppId = fixture`; with a local file the value is overridden. [Certo] |
+| S4 | SPM product layout | App contains `NottiSDK_NottiSDK.bundle`; the appex contains `NottiSDK_NottiSDKExtension.bundle` (not in the app). The integration test uses these two names. [Certo] |
+| S5 | CocoaPods static frameworks and static libraries (`use_modular_headers!`) | Both pass: hosted test finds `NottiBootstrap.loadCount == installCount == 1` through `import NottiSDK`, and `NottiSDK_Privacy.bundle` plus `NottiSDKExtension_Privacy.bundle` in the product. The NSE imports `NottiSDK` (single module) and `NottiNotificationServiceExtension` resolves. [Certo] |
+| S6 | CocoaPods **dynamic frameworks** (`use_frameworks!`) with the app on `NottiSDK` and the NSE on `NottiSDK/Extension` | **Fails.** CocoaPods builds two pod targets, `NottiSDK.default-Shared` and `NottiSDK-Extension-Shared`, both producing `NottiSDK.framework` with module `NottiSDK`. The app's `FRAMEWORK_SEARCH_PATHS` lists both, the extension one first, so `import NottiSDK` in the app finds the extension framework and `Notti` is "not found in scope". Not caused by embedding the NSE (same failure with the NSE not embedded). `pod lib lint` does not catch it. [Certo for this setup; cause inferred from the generated xcconfig] |
+| S7 | Hosted test target needs `deploymentTarget` | Without it XcodeGen defaults to the SDK's 27.0 and the simulator (26.5) refuses to test. Set `deploymentTarget: "15.0"` on the test target. [Certo] |
+
+S6 is a packaging defect in the M1 pod layout (AD-006 single module across subspecs), found by the PKG-06 independent test that earlier Verifier rounds asked for. It is out of this feature's scope to fix (rule 1) and needs a decision from Julio before `0.1.0`; see tasks T7.
 
 ---
 
@@ -68,7 +84,7 @@ Identical to the doc comment in `NottiNotificationServiceExtension.swift`. Impor
 
 ### NottiExampleTests (hosted XCTest, runs in all three legs)
 - Hook (EXR-19): `NottiBootstrap.loadCount == 1` and `installCount == 1` in the app process (imports `NottiSDKBootstrap` under SPM; the pod exposes it through the `NottiSDK` module [Incerto]).
-- Resources (EXR-18): the built products contain the manifests under the exact bundle names the helpers look up (`NottiSDK_Privacy` pod, `NottiSDK_NottiSDK` SPM; `NottiSDKExtension_Privacy` inside `PlugIns/NotificationService.appex`), each with `PrivacyInfo.xcprivacy`. This proves the pod ships the bundle the CocoaPods branch looks for; it does **not** run `NottiSDKResources.bundle` itself (internal). Exercising that lookup code would need a podspec `test_spec`; recorded as a limitation, not scoped here.
+- Resources (EXR-18): the built products contain the manifests under the exact bundle names the helpers look up (`NottiSDK_Privacy` pod, `NottiSDK_NottiSDK` SPM, plus `NottiSDK_NottiSDKExtension` in the appex; `NottiSDKExtension_Privacy` inside `PlugIns/NotificationService.appex`), each with `PrivacyInfo.xcprivacy`. This proves the pod ships the bundle the CocoaPods branch looks for; it does **not** run `NottiSDKResources.bundle` itself (internal). Exercising that lookup code would need a podspec `test_spec`; recorded as a limitation, not scoped here.
 - Config (EXR-05): sample values give `isConfigured == false`.
 - Log privacy (EXR-03): drive `ExampleModel` with a sentinel email/phone/key and assert no log row contains them.
 
@@ -84,7 +100,7 @@ Identical to the doc comment in `NottiNotificationServiceExtension.swift`. Impor
 
 ## CI (EXR-23, EXR-24)
 
-New job `example` on `macos-26`, matrix `spm | pods-static | pods-dynamic`, each leg: install `xcodegen` (and `pod` where needed), generate, `pod install` for pods, `xcodebuild test` on `$NOTTI_SIM`, then `xcodebuild build` for `generic/platform=iOS` with `CODE_SIGNING_ALLOWED=NO` and warnings as errors; the NSE with `APPLICATION_EXTENSION_API_ONLY=YES`; the SPM leg also builds the `Debug-Manual` configuration. The three scripts join the existing `checks` job. `brew install xcodegen` pins a version in the workflow (2.46.0 today) so the job is reproducible.
+New job `example` on `macos-26`, matrix `spm | pods-static | pods-libs` (and `pods-dynamic` once S6 has a decision), each leg: install `xcodegen` (and `pod` where needed), generate, `pod install` for pods, `xcodebuild test` on `$NOTTI_SIM`, then `xcodebuild build` for `generic/platform=iOS` with `CODE_SIGNING_ALLOWED=NO` and warnings as errors; the NSE with `APPLICATION_EXTENSION_API_ONLY=YES`; the SPM leg also builds the `Debug-Manual` configuration. The three scripts join the existing `checks` job. `brew install xcodegen` pins a version in the workflow (2.46.0 today) so the job is reproducible.
 
 ## Decisions and deviations
 

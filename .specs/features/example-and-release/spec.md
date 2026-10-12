@@ -108,9 +108,9 @@ Open questions: none that block Specify. The two Design spikes are the XcodeGen 
 
 **Acceptance Criteria**:
 
-1. EXR-17: WHEN `pod install` runs in `Example/` with a local `:path` pod THEN the app and NSE SHALL build with `use_frameworks!` dynamic and static linkage, `Core` as default and `Extension` on the NSE only.
+1. EXR-17: WHEN `pod install` runs in `Example/` with a local `:path` pod THEN the app and NSE SHALL build with static frameworks (`use_frameworks! :linkage => :static`) and with static libraries, `Core` as default and `Extension` on the NSE only. Dynamic frameworks fail today (design S6, 2026-10-12) and stay a documented limitation or a fix until Julio decides.
 2. EXR-18: WHEN the pod build runs THEN a test or runtime assertion SHALL load `NottiSDKResources.bundle` and `NottiSDKExtensionResources.bundle` through the CocoaPods branch and find the privacy manifest in each.
-3. EXR-19: WHEN the pod build runs THEN `check-hook-linked.sh pod` semantics (launch hook present, `loadCount == installCount == 1`) SHALL be asserted in the example for static and dynamic linkage.
+3. EXR-19: WHEN the pod build runs THEN `check-hook-linked.sh pod` semantics (launch hook present, `loadCount == installCount == 1`) SHALL be asserted in the example for each passing linkage.
 
 ---
 
