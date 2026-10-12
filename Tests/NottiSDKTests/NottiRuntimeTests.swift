@@ -399,17 +399,65 @@ final class NottiRuntimeTests: XCTestCase {
 
     /// A mutation queued on the ensured core must survive `start` replacing that
     /// core (the old core is held until its queue drains).
+    ///
+    /// The old and the new core run on separate queues, so nothing orders the old core's `setEmail` before the
+    /// new core's registration resync (`resyncHeldEmailAndPhone` reads the persisted email once). Draining only
+    /// the new core therefore raced the old one (seen on CI and, under CPU load, 3 in 400 runs locally: email
+    /// still nil, no email PATCH). The token provider holds the registration until the old core's write is
+    /// visible, which makes the order fixed. The test keeps no reference to the old core, so only the retention in
+    /// `start` lets its queued write run.
     func test_aMutationQueuedOnTheEnsuredCoreSurvivesStartReplacingIt() {
         StubURLProtocol.enqueue(.echoDevice()) // registration
         StubURLProtocol.enqueue(.echoDevice()) // email resync
-        let runtime = makeRuntime(sdkVersion: "")
+        let tokenGate = TokenGate()
+        let runtime = makeRuntime(
+            providers: NottiPlatformProviders(tokenProvider: tokenGate.provide, permissionRequester: { $0(true) }),
+            sdkVersion: ""
+        )
 
         runtime.ensureCore().setEmail("user@example.invalid") // not drained
         runtime.start(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        let store = NottiDeviceStore(defaults: defaults)
+        let persisted = waitUntil(timeout: 25) { store.getEmail() == "user@example.invalid" }
+        tokenGate.release("apns-token-fixture")
         drain(runtime.core)
 
-        XCTAssertEqual(NottiDeviceStore(defaults: defaults).getEmail(), "user@example.invalid")
+        XCTAssertTrue(persisted, "the old core's queued setEmail never ran")
+        XCTAssertEqual(store.getEmail(), "user@example.invalid")
         XCTAssertTrue(bodies("PATCH").contains { $0["email"] as? String == "user@example.invalid" })
+    }
+
+    private func waitUntil(timeout: TimeInterval, _ condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() {
+            if Date() >= deadline { return false }
+            Thread.sleep(forTimeInterval: 0.005)
+        }
+        return true
+    }
+}
+
+/// A token provider that answers only after `release`, whichever side comes first.
+private final class TokenGate {
+    private let lock = NSLock()
+    private var token: String?
+    private var waiting: [(String?) -> Void] = []
+
+    func provide(_ completion: @escaping (String?) -> Void) {
+        let ready: String? = lock.withLock {
+            if token == nil { waiting.append(completion) }
+            return token
+        }
+        if let ready { completion(ready) }
+    }
+
+    func release(_ value: String) {
+        let pending: [(String?) -> Void] = lock.withLock {
+            token = value
+            defer { waiting = [] }
+            return waiting
+        }
+        for completion in pending { completion(value) }
     }
 }
 
