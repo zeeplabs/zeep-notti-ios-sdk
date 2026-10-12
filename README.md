@@ -30,11 +30,11 @@ target 'YourApp' do
 end
 
 target 'YourNotificationServiceExtension' do
-  pod 'NottiSDK/Extension'
+  pod 'NottiSDKExtension'
 end
 ```
 
-Linking `NottiSDKExtension` into the app target builds, but exposes no app API. Use `NottiSDK` there.
+Linking `NottiSDKExtension` into the app target builds, but exposes no app API. Use `NottiSDK` there. In the extension, `import NottiSDKExtension`, the same line as with SPM. Both pods work with dynamic frameworks, static frameworks and static libraries.
 
 ## License
 

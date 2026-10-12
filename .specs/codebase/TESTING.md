@@ -50,7 +50,7 @@
 | NSE logging (NSE-13) | script | `scripts/check-nse-logging.sh`, proved on a fixture tree per banned token (`NSLog`, `print(`, `debugPrint`, `dump(`, `os_log`, `localizedDescription`) and on a comment-only fixture |
 | Public surface | script | `scripts/check-public-surface.sh`, verified by mutation (added, removed, moved symbol; `public` in `NottiShared`) |
 | Resources (privacy manifests) | unit | Parse the bundled plist |
-| Packaging (`Package.swift`, podspec) | build | `xcodebuild build` + `pod lib lint` |
+| Packaging (`Package.swift`, two podspecs) | build | `xcodebuild build` + `pod lib lint` for `NottiSDK.podspec` and `NottiSDKExtension.podspec` (also `--use-libraries`) |
 | Scripts / CI workflow | none | Verified by running the script against a passing and a failing input |
 | Repo hygiene files | none | |
 

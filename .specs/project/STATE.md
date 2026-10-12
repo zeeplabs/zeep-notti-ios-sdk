@@ -44,6 +44,8 @@
 
 ### AD-006: Cross-target sharing uses `package` access + `-package-name NottiSDK` in the podspec (2026-10-09)
 
+> Amended by AD-012 (2026-10-12): the pod is now two root pods; the single-module remark and the subspec lint list below are historical.
+
 **Decision:** Keep the design's primary option. `NottiShared` declarations use `package` access. The podspec sets `pod_target_xcconfig OTHER_SWIFT_FLAGS = '$(inherited) -package-name NottiSDK'`. The `@_spi(NottiInternal)` fallback is not needed.
 **Reason:** Spike (package-foundation T1, throwaway in the scratchpad, Xcode 27.0, CocoaPods 1.17.0) with subspecs Shared/Core/Extension and a `package` symbol used from Core and Extension:
 - SPM `xcodebuild build -scheme Spike-Package`: BUILD SUCCEEDED.
@@ -92,6 +94,13 @@
 **Reason:** An NSE is killed at about 30 s, receives only the host's own content at expiry, and runs without app state; URLSession errors and logs would otherwise carry the media URL (ids, tokens).
 **Trade-off:** Two identical pushes (same `userInfo`, no `delivery_id`) in one process are expired together. The registry keeps 16 jobs. The log category is checked on the source text because the logger sink does not carry it.
 **Impact:** `.specs/features/nse-rich-media/` (spec NSE-01..18, design, tasks, traceability), new script `scripts/check-nse-logging.sh` in the CI `checks` job, new SPM test target `NottiSDKExtensionObjCTests`, 3 new declarations in `PUBLIC_SURFACE.txt`.
+
+### AD-012: Two root pods instead of subspecs (2026-10-12)
+
+**Decision:** CocoaPods ships two root pods with no subspecs: `NottiSDK` (Shared + SDK + ObjC launch hook, module `NottiSDK`) and `NottiSDKExtension` (Shared + Extension, module `NottiSDKExtension`). Both pass `-package-name NottiSDK` and compile the `NottiShared` sources into their own module. The old `NottiSDK/Core`, `/Extension` and `/Shared` subspecs are gone (nothing was published).
+**Reason:** With `use_frameworks!` (dynamic), an app on `NottiSDK` and an NSE on `NottiSDK/Extension` made CocoaPods build two pod targets that both produced `NottiSDK.framework` with module `NottiSDK`, and the app resolved `import NottiSDK` to the extension framework (`cannot find 'Notti' in scope`). Found by the example-and-release spike S6; `pod lib lint` does not catch it. Proved with a scratch app + NSE under dynamic frameworks, static frameworks and static libraries with the real podspecs (hosted tests: hook counts 1, both privacy bundles in the product).
+**Trade-off:** Two pods to publish and keep on one version (`check-version.sh` checks both). `NottiShared` is duplicated across the pods; there are no ObjC types in it, Swift symbols are module-qualified, and a process links only one of the two pods per binary. Amends AD-006 (the single-module remark).
+**Impact:** `.specs/features/pod-split/`, `NottiSDKExtension.podspec`, `scripts/check-package-graph.sh`, `scripts/check-version.sh`, `scripts/check-hook-linked.sh`, CI `pod-lint`, README, AGENTS.md. The permanent app+NSE consumer is `example-and-release` T7.
 
 ---
 

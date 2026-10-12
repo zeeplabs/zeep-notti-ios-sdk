@@ -1,6 +1,6 @@
 # NottiSDK (zeep-notti-ios-sdk): agent and contributor rules
 
-Native iOS SDK for Zeep Notti push notifications. Swift 5.9 tools, **Swift 5 language mode**, iOS 15+. Distributed through SPM (products `NottiSDK`, `NottiSDKExtension`) and CocoaPods (pod `NottiSDK`, subspecs `Shared`, `Core` (default), `Extension`).
+Native iOS SDK for Zeep Notti push notifications. Swift 5.9 tools, **Swift 5 language mode**, iOS 15+. Distributed through SPM (products `NottiSDK`, `NottiSDKExtension`) and CocoaPods (two root pods with no subspecs: `NottiSDK` for the app, `NottiSDKExtension` for the Notification Service Extension, AD-012).
 
 These rules apply to every contributor and every coding agent (Claude Code, Codex, Cursor, Copilot, etc.) working in this repo. This file is the single source of truth; agent-specific files such as `CLAUDE.md` only point here.
 
@@ -37,7 +37,7 @@ scripts/check-version.sh && scripts/check-extension-safety.sh && scripts/check-p
 # launch hook proofs (need Xcode; NOTTI_SIM picks the simulator, default "iPhone 17")
 scripts/check-hook-linked.sh spm   # Release build of scripts/hook-consumer, run in the simulator, loadCount == installCount == 1
 scripts/check-hook-linked.sh pod   # pod lib lint --no-clean, then nm for NottiBootstrap (about 2 min)
-pod lib lint NottiSDK.podspec --platforms=ios
+pod lib lint NottiSDK.podspec --platforms=ios && pod lib lint NottiSDKExtension.podspec --platforms=ios   # add --use-libraries for static libraries
 ```
 
 `swift test` on macOS does not work (UIKit / UserNotifications). Do not run two `xcodebuild` processes on the same checkout at once; use a separate git worktree.
@@ -96,7 +96,7 @@ Every `public` / `open` declaration in `Sources/NottiSDK` and `Sources/NottiSDKE
 
 ### Version
 
-`NottiSDKVersion.current` is the only place the version is defined. Bump it together with `s.version` in `NottiSDK.podspec`; `scripts/check-version.sh` fails CI on drift.
+`NottiSDKVersion.current` is the only place the version is defined. Bump it together with `s.version` in `NottiSDK.podspec` and `NottiSDKExtension.podspec`; `scripts/check-version.sh` fails CI on drift.
 
 ### Git and CI
 
