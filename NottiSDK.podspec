@@ -1,11 +1,12 @@
 Pod::Spec.new do |s|
   s.name         = 'NottiSDK'
-  # Must equal NottiSDKVersion.current (scripts/check-version.sh enforces it in CI).
+  # Must equal NottiSDKVersion.current and NottiSDKExtension.podspec (scripts/check-version.sh enforces it in CI).
   s.version      = '0.1.0'
   s.summary      = 'Native iOS SDK for Zeep Notti push notifications.'
   s.description  = <<-DESC
-    Device registration, user identity, tags, engagement events (received, opened,
-    clicked) and Notification Service Extension rich media for Zeep Notti.
+    Device registration, user identity, tags and engagement events (received, opened,
+    clicked) for Zeep Notti. Rich media in a Notification Service Extension is the
+    separate pod NottiSDKExtension.
   DESC
   s.homepage     = 'https://github.com/zeeplabs/zeep-notti-ios-sdk'
   s.license      = { :type => 'MIT', :file => 'LICENSE' }
@@ -17,30 +18,13 @@ Pod::Spec.new do |s|
   # Resource bundle signing fix (CocoaPods #11402).
   s.cocoapods_version     = '>= 1.12'
 
-  # CocoaPods compiles every subspec into one module, `NottiSDK`. Shared code
-  # uses Swift `package` access, which needs a package name (AD-006).
+  # Shared code uses Swift `package` access, which needs a package name (AD-006). NottiSDKExtension.podspec
+  # sets the same name: both pods compile the NottiShared sources into their own module (AD-012).
   s.pod_target_xcconfig = { 'OTHER_SWIFT_FLAGS' => '$(inherited) -package-name NottiSDK' }
 
-  s.default_subspecs = 'Core'
-
-  # Extension-safe code shared by Core and Extension. Not meant to be used alone.
-  s.subspec 'Shared' do |ss|
-    ss.source_files = 'Sources/NottiShared/**/*.swift'
-  end
-
-  # App target SDK. Default subspec.
-  s.subspec 'Core' do |ss|
-    ss.dependency 'NottiSDK/Shared'
-    # Plus the Objective-C launch hook (`+load`). CocoaPods links static pods with -ObjC, so its class is kept.
-    ss.source_files = 'Sources/NottiSDK/**/*.swift', 'Sources/NottiSDKBootstrap/**/*.{h,m}'
-    ss.public_header_files = 'Sources/NottiSDKBootstrap/include/*.h'
-    ss.resource_bundles = { 'NottiSDK_Privacy' => ['Sources/NottiSDK/Resources/PrivacyInfo.xcprivacy'] }
-  end
-
-  # Notification Service Extension helpers. Must never depend on Core.
-  s.subspec 'Extension' do |ss|
-    ss.dependency 'NottiSDK/Shared'
-    ss.source_files = 'Sources/NottiSDKExtension/**/*.swift'
-    ss.resource_bundles = { 'NottiSDKExtension_Privacy' => ['Sources/NottiSDKExtension/Resources/PrivacyInfo.xcprivacy'] }
-  end
+  # App SDK plus the Objective-C launch hook (`+load`). CocoaPods links static pods with -ObjC, so its class is kept.
+  # The Notification Service Extension uses the separate pod NottiSDKExtension, never this one (AD-012).
+  s.source_files = 'Sources/NottiShared/**/*.swift', 'Sources/NottiSDK/**/*.swift', 'Sources/NottiSDKBootstrap/**/*.{h,m}'
+  s.public_header_files = 'Sources/NottiSDKBootstrap/include/*.h'
+  s.resource_bundles = { 'NottiSDK_Privacy' => ['Sources/NottiSDK/Resources/PrivacyInfo.xcprivacy'] }
 end
