@@ -19,6 +19,8 @@
 	</array>
 	<!--
 	  Email / Phone: sent only when the host app sets them (DPF-17..21).
+	  User ID: the host's external_user_id, sent only when the host sets it;
+	  used by Notti for app functionality (confirmed by Julio 2026-10-12). AD-005.
 	  Coarse Location: opt-in country, reverse-geocoded from the host's own
 	  CoreLocation fix (SEGTEL-10..15). Off by default. AD-005.
 	  Product Interaction: session telemetry (first/last session, count,
@@ -28,6 +30,18 @@
 	-->
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeUserID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeEmailAddress</string>

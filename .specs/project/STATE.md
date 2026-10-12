@@ -37,7 +37,7 @@
 
 ### AD-005: Privacy manifest declares more than RN 0.6.0 (2026-10-09)
 
-**Decision:** The `NottiSDK` privacy manifest declares Coarse Location (opt-in country) and Product Interaction (session telemetry), in addition to RN's Email, Phone and UserDefaults `CA92.1`.
+**Decision:** The `NottiSDK` privacy manifest declares Coarse Location (opt-in country) and Product Interaction (session telemetry), in addition to RN's Email, Phone and UserDefaults `CA92.1`. User ID (the host's `external_user_id`, purpose App Functionality only, linked, no tracking) was added on 2026-10-12 after Julio confirmed the purpose.
 **Reason:** These are data the SDK actually collects and links to the device record. Under-declaring them is an App Store review and LGPD transparency risk.
 **Trade-off:** Integrators' App Store privacy labels gain two entries compared to RN 0.6.0. The RN manifest should be aligned in M2.
 **Impact:** package-foundation PKG-11; README data-collection section in `example-and-release`.
@@ -165,7 +165,7 @@ delegate-integration Verifier round 1 (candidate lessons, not yet in `.specs/LES
 
 - [x] (core-port Verifier r2 F1, closed in public-api T10) `PublicApi.test_productionFacadeReadsTheDeviceIdFromTheNottiPrefsSuite` reads the real `notti_prefs` suite through `Notti.deviceId`; the mutant that renames the suite in `NottiRuntime.shared` fails it.
 - [x] (core-port Verifier r1 N1, closed in public-api T5, AD-009) `NottiFacade.initialize` compares the normalized config and skips `runtime.start` on an identical one (`NottiFacadeInitializeTests`). `NottiRuntime.start` still always rebuilds, by design.
-- [ ] (core-port Verifier r1 N7, LGPD — validate internally/legal) Assess declaring `NSPrivacyCollectedDataTypeUserID` (core sends `external_user_id`) and possibly Device ID in `PrivacyInfo.xcprivacy` (AD-005 scope).
+- [x] (core-port Verifier r1 N7, LGPD) `NSPrivacyCollectedDataTypeUserID` declared 2026-10-12 (App Functionality, confirmed by Julio). Still open, not a blocker: whether Device ID (device id / push token) must be declared [Incerto]; internal/legal confirmation of the declaration text before `0.1.0` is advisable.
 - [ ] (public-api T6, note for the Verifier) `NottiRuntime.invalidateCurrentCore` now keeps a replaced core alive until its queue drains (bounded 60 s wait on a utility thread): work queued on the ensured core (a pre-initialize `setEmail`) was lost when `start` replaced it, because queued core blocks capture `self` weakly. Test: `NottiRuntimeTests.test_aMutationQueuedOnTheEnsuredCoreSurvivesStartReplacingIt`, `NottiFacadeProfileTests.test_emailAndPhoneSetBeforeInitializeArePersistedAndSentAtRegistration`. No ported core file changed.
 - [ ] (public-api T3, note) `NottiListenerHub` snapshots the recipients when the event is received, not when the main block runs, so the replay inside `attach` reaches only the first listener. A listener removed before its turn is still skipped.
 - [ ] (public-api T12, note) `NottiSubscription` inherits `NSObject` for ObjC; ObjC payloads are `NSDictionary`; the ObjC classes (`NottiObjC`, `NottiUserObjC`, `NottiNotificationsObjC`) are visible to Swift too. Revisit whether to hide them from Swift (post-M1).
