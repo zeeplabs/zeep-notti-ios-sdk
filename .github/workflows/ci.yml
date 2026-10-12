@@ -130,16 +130,23 @@ jobs:
           pod --version
 
       # Fails if the platform/tools version drift or the extension product/subspec ever
-      # depends on, compiles or bundles app code (PKG-01, PKG-02, PKG-06, PKG-07).
+      # depends on, compiles or bundles app code, or a pod gains a subspec (PKG-01, PKG-02, PKG-06, PKG-07, PODS-04).
       - name: Package graph (PKG-01, PKG-02, PKG-06)
         run: scripts/check-package-graph.sh
 
-      - name: pod lib lint (all subspecs)
+      - name: pod lib lint (NottiSDK)
         run: pod lib lint NottiSDK.podspec --platforms=ios
 
-      - name: pod lib lint (Extension only)
-        run: pod lib lint NottiSDK.podspec --platforms=ios --subspec=Extension
+      - name: pod lib lint (NottiSDKExtension)
+        run: pod lib lint NottiSDKExtension.podspec --platforms=ios
 
-      # Lints the Core subspec keeping the build, then checks the class is in the pod product (DEL-01).
+      # Static libraries are the React Native default (PODS-07).
+      - name: pod lib lint (NottiSDK, static libraries)
+        run: pod lib lint NottiSDK.podspec --platforms=ios --use-libraries
+
+      - name: pod lib lint (NottiSDKExtension, static libraries)
+        run: pod lib lint NottiSDKExtension.podspec --platforms=ios --use-libraries
+
+      # Lints NottiSDK keeping the build, then checks the class is in the pod product (DEL-01).
       - name: Launch hook is in the pod product (DEL-01)
         run: scripts/check-hook-linked.sh pod

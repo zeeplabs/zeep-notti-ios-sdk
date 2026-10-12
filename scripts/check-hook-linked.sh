@@ -4,7 +4,7 @@
 #   spm  Builds scripts/hook-consumer (an executable that depends on the package and never names the hook) in
 #        Release for an iOS simulator, runs it there and requires `loadCount == 1` and `installCount == 1`:
 #        `+load` ran once and found the Swift installer. Fails when the bootstrap target is not linked.
-#   pod  Lints the Core subspec with `pod lib lint --no-clean` and requires `_OBJC_CLASS_$_NottiBootstrap` in
+#   pod  Lints NottiSDK.podspec with `pod lib lint --no-clean` and requires `_OBJC_CLASS_$_NottiBootstrap` in
 #        the built NottiSDK binary (`nm`). CocoaPods links the pod; this proves the class made it into the product.
 #
 # The consumer is copied to a temp dir and the package is linked there under its repo name, so the check
@@ -79,7 +79,7 @@ sys.exit(1)')" || { echo "error: no available simulator named '$sim' (set NOTTI_
 
 check_pod() {
   local log="$tmp/lint.log"
-  if ! (cd "$root" && pod lib lint NottiSDK.podspec --platforms=ios --subspec=Core --no-clean >"$log" 2>&1); then
+  if ! (cd "$root" && pod lib lint NottiSDK.podspec --platforms=ios --no-clean >"$log" 2>&1); then
     cat "$log" >&2
     echo "error: pod lib lint failed" >&2
     exit 1
