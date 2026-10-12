@@ -3,12 +3,11 @@
 #   SPM:       iOS 15.0 only and swift-tools-version 5.9; exactly two products (NottiSDK, NottiSDKExtension); NottiShared is not a
 #              product and depends on nothing; NottiSDKExtension depends only on NottiShared; NottiSDKBootstrap (the ObjC launch hook)
 #              depends on nothing, is a dependency of NottiSDK only, and is not reachable from NottiShared or NottiSDKExtension.
-#   CocoaPods: allowlist. The root spec may only carry metadata keys (no files, no
-#              platform-scoped attributes); the subspecs are exactly Shared, Core and
-#              Extension, each equal to its expected shape (own Sources/ folder, own
-#              resources, Extension -> NottiSDK/Shared only), with nothing nested (PKG-07). Core also carries the bootstrap
-#              ObjC sources and header glob; Shared and Extension never do.
-#              Any new key fails on purpose: update this script in the same change.
+#   CocoaPods: allowlist, two root pods and no subspecs (AD-012). NottiSDK.podspec: metadata keys plus exactly the
+#              Shared, SDK and bootstrap source globs, the bootstrap header glob and its own resource bundle.
+#              NottiSDKExtension.podspec: metadata keys plus exactly the Shared and Extension source globs and its own
+#              resource bundle, no dependency (never NottiSDK) and no bootstrap (PKG-07, PODS-04). A subspec, test spec,
+#              platform-scoped key or any new key fails on purpose: update this script in the same change.
 #
 # Needs `swift`, `pod` and `python3` (runs on the macOS CI job).
 # Usage: scripts/check-package-graph.sh [repo-root]
@@ -34,8 +33,9 @@ run() {
 
 spm_json="$(run swift package dump-package)"
 pod_json="$(run pod ipc spec NottiSDK.podspec)"
+ext_json="$(run pod ipc spec NottiSDKExtension.podspec)"
 
-SPM_JSON="$spm_json" POD_JSON="$pod_json" python3 - <<'PY'
+SPM_JSON="$spm_json" POD_JSON="$pod_json" EXT_JSON="$ext_json" python3 - <<'PY'
 import json, os, sys
 
 errors = []
@@ -94,52 +94,46 @@ dependents = sorted(n for n, t in targets.items() if "byName:NottiSDKBootstrap" 
 if dependents != ["NottiSDK"]:
     errors.append(f"only NottiSDK may depend on NottiSDKBootstrap (test targets are not checked), got {dependents}")
 
-pod = json.loads(os.environ["POD_JSON"])
-
-# Root: metadata only. Platform-scoped keys (e.g. "ios"), files and test/app specs are
-# not allowed because they could pull app code into the Extension subspec.
-root_allowed = {
+# Root: metadata and the exact file attributes below. Platform-scoped keys (e.g. "ios"), subspecs, test specs and
+# app specs are not allowed because they could pull app code into the extension pod.
+meta_allowed = {
     "name", "version", "summary", "description", "homepage", "license", "authors",
     "source", "platforms", "swift_version", "swift_versions", "cocoapods_version",
-    "pod_target_xcconfig", "default_subspecs", "subspecs",
+    "pod_target_xcconfig",
 }
-extra_root = sorted(set(pod) - root_allowed)
-if extra_root:
-    errors.append(f"podspec root has keys outside the allowlist: {extra_root}")
-if pod.get("platforms") != {"ios": "15.0"}:
-    errors.append(f"podspec platforms must be {{'ios': '15.0'}}, got {pod.get('platforms')!r}")
-if pod.get("default_subspecs") not in ("Core", ["Core"]):
-    errors.append(f"podspec default_subspecs must be Core, got {pod.get('default_subspecs')!r}")
-
-# Subspecs: exact shapes. Equality also rejects platform-scoped keys, nested subspecs,
-# extra dependencies, widened globs and borrowed resources.
-expected_subspecs = [
-    {"name": "Shared", "source_files": "Sources/NottiShared/**/*.swift"},
-    {
-        "name": "Core",
-        "dependencies": {"NottiSDK/Shared": []},
-        "source_files": ["Sources/NottiSDK/**/*.swift", "Sources/NottiSDKBootstrap/**/*.{h,m}"],
+swift_flags = {"OTHER_SWIFT_FLAGS": "$(inherited) -package-name NottiSDK"}
+expected_pods = {
+    "NottiSDK": {
+        "source_files": [
+            "Sources/NottiShared/**/*.swift",
+            "Sources/NottiSDK/**/*.swift",
+            "Sources/NottiSDKBootstrap/**/*.{h,m}",
+        ],
         "public_header_files": "Sources/NottiSDKBootstrap/include/*.h",
         "resource_bundles": {"NottiSDK_Privacy": ["Sources/NottiSDK/Resources/PrivacyInfo.xcprivacy"]},
     },
-    {
-        "name": "Extension",
-        "dependencies": {"NottiSDK/Shared": []},
-        "source_files": "Sources/NottiSDKExtension/**/*.swift",
+    "NottiSDKExtension": {
+        "source_files": ["Sources/NottiShared/**/*.swift", "Sources/NottiSDKExtension/**/*.swift"],
         "resource_bundles": {
             "NottiSDKExtension_Privacy": ["Sources/NottiSDKExtension/Resources/PrivacyInfo.xcprivacy"]
         },
     },
-]
-got_subspecs = pod.get("subspecs", [])
-got_names = [sub.get("name") for sub in got_subspecs]
-want_names = [sub["name"] for sub in expected_subspecs]
-if got_names != want_names:
-    errors.append(f"podspec subspecs must be exactly {want_names}, got {got_names}")
-for want in expected_subspecs:
-    got = next((sub for sub in got_subspecs if sub.get("name") == want["name"]), None)
-    if got is not None and got != want:
-        errors.append(f"podspec subspec {want['name']} must be exactly {want}, got {got}")
+}
+for env, name in (("POD_JSON", "NottiSDK"), ("EXT_JSON", "NottiSDKExtension")):
+    pod = json.loads(os.environ[env])
+    want = expected_pods[name]
+    if pod.get("name") != name:
+        errors.append(f"{name}.podspec must be named {name}, got {pod.get('name')!r}")
+    extra = sorted(set(pod) - meta_allowed - set(want))
+    if extra:
+        errors.append(f"{name}.podspec has keys outside the allowlist: {extra} (subspecs are not allowed, AD-012)")
+    if pod.get("platforms") != {"ios": "15.0"}:
+        errors.append(f"{name}.podspec platforms must be {{'ios': '15.0'}}, got {pod.get('platforms')!r}")
+    if pod.get("pod_target_xcconfig") != swift_flags:
+        errors.append(f"{name}.podspec pod_target_xcconfig must be {swift_flags}, got {pod.get('pod_target_xcconfig')!r}")
+    for key, value in want.items():
+        if pod.get(key) != value:
+            errors.append(f"{name}.podspec {key} must be exactly {value}, got {pod.get(key)!r}")
 
 if errors:
     for e in errors:
