@@ -1,7 +1,7 @@
 # Example App and Release 0.1.0 Design
 
 **Spec**: `.specs/features/example-and-release/spec.md`
-**Status**: Draft. Spikes (T1) done 2026-10-12, results below; one blocking finding (S6).
+**Status**: Draft. Spikes (T1) done 2026-10-12, results below; S6 fixed by the two-pod split (AD-012, PR #8).
 
 ## Spike results (T1, 2026-10-12)
 
@@ -18,7 +18,7 @@ Scratch project outside the repo, XcodeGen 2.46.0, CocoaPods 1.17.0, Xcode 27 si
 | S6b | Option B for S6: two root pods, `NottiSDK` (Shared + Core + Bootstrap, module `NottiSDK`) and `NottiSDKExtension` (Shared + Extension, module `NottiSDKExtension`), same `-package-name NottiSDK` flag | **Works under dynamic frameworks.** Same hosted tests pass (hook counts 1, both privacy bundles in the product); the NSE uses `import NottiSDKExtension`, the same line as SPM. Scratch podspecs only; `NottiShared` sources are compiled into both pods, and the app process links only `NottiSDK`. [Certo for this setup] |
 | S7 | Hosted test target needs `deploymentTarget` | Without it XcodeGen defaults to the SDK's 27.0 and the simulator (26.5) refuses to test. Set `deploymentTarget: "15.0"` on the test target. [Certo] |
 
-S6 is a packaging defect in the M1 pod layout (AD-006 single module across subspecs), found by the PKG-06 independent test that earlier Verifier rounds asked for. It is out of this feature's scope to fix (rule 1) and needs a decision from Julio before `0.1.0`; see tasks T7.
+S6 is a packaging defect in the M1 pod layout (AD-006 single module across subspecs), found by the PKG-06 independent test that earlier Verifier rounds asked for. It was fixed outside this feature by `pod-split` (AD-012, PR #8, merged): the NSE now uses the root pod `NottiSDKExtension` (`import NottiSDKExtension`, same line as SPM) and dynamic frameworks are a supported leg. Read S5 and S6 above as the pre-split findings; the Podfile in T7 follows S6b.
 
 ---
 
@@ -33,8 +33,8 @@ graph TD
     PRJ --> APP[NottiExample app: SwiftUI]
     PRJ --> NSE[NotificationService.appex]
     PRJ --> TST[NottiExampleTests: hosted XCTest]
-    APP -->|SPM: NottiSDK / Pods: NottiSDK Core| SDK[(SDK)]
-    NSE -->|SPM: NottiSDKExtension / Pods: NottiSDK/Extension| SDK
+    APP -->|SPM: NottiSDK / Pods: NottiSDK| SDK[(SDK)]
+    NSE -->|SPM: NottiSDKExtension / Pods: NottiSDKExtension| SDK
     TST --> APP
     S1[check-example-coverage.sh] --> APP
     S2[check-readme-snippets.sh] --> README
@@ -50,7 +50,7 @@ Why not inside `Package.swift`: the package would ship an app target and the pro
 Example/
   project.yml                 SPM variant (local package ..)
   project-pods.yml            CocoaPods variant (no packages; Podfile adds the pod)
-  Podfile                     :path => '..'; NOTTI_LINKAGE=static|dynamic picks use_frameworks!
+  Podfile                     :path => '..'; NOTTI_LINKAGE=static|libs|dynamic picks use_frameworks!
   Config/
     Example.xcconfig          #include "Example.xcconfig.sample", then #include? "Example.local.xcconfig"
     Example.xcconfig.sample   NOTTI_APP_ID=fixture, NOTTI_CLIENT_KEY=fixture, NOTTI_HOST= (empty = SDK default)
@@ -101,7 +101,7 @@ Identical to the doc comment in `NottiNotificationServiceExtension.swift`. Impor
 
 ## CI (EXR-23, EXR-24)
 
-New job `example` on `macos-26`, matrix `spm | pods-static | pods-libs` (and `pods-dynamic` once S6 has a decision), each leg: install `xcodegen` (and `pod` where needed), generate, `pod install` for pods, `xcodebuild test` on `$NOTTI_SIM`, then `xcodebuild build` for `generic/platform=iOS` with `CODE_SIGNING_ALLOWED=NO` and warnings as errors; the NSE with `APPLICATION_EXTENSION_API_ONLY=YES`; the SPM leg also builds the `Debug-Manual` configuration. The three scripts join the existing `checks` job. `brew install xcodegen` pins a version in the workflow (2.46.0 today) so the job is reproducible.
+New job `example` on `macos-26`, matrix `spm | pods-static | pods-libs | pods-dynamic`, each leg: install `xcodegen` (and `pod` where needed), generate, `pod install` for pods, `xcodebuild test` on `$NOTTI_SIM`, then `xcodebuild build` for `generic/platform=iOS` with `CODE_SIGNING_ALLOWED=NO` and warnings as errors; the NSE with `APPLICATION_EXTENSION_API_ONLY=YES`; the SPM leg also builds the `Debug-Manual` configuration. The three scripts join the existing `checks` job. `brew install xcodegen` pins a version in the workflow (2.46.0 today) so the job is reproducible.
 
 ## Decisions and deviations
 
@@ -144,7 +144,7 @@ New job `example` on `macos-26`, matrix `spm | pods-static | pods-libs` (and `po
 - [Incerto] `NottiBootstrap` visible to Swift in the pod module; fallback is an `NSClassFromString` check.
 - [Incerto] `INFOPLIST_FILE` per configuration through XcodeGen.
 - [Incerto] `#include?` of the local xcconfig through XcodeGen `configFiles`.
-- [Provável] The Extension subspec exposes `NottiNotificationServiceExtension` in module `NottiSDK` (single module).
+- [Certo, S6b] The root pod `NottiSDKExtension` exposes `NottiNotificationServiceExtension` in module `NottiSDKExtension`.
 - [Provável] Hosted tests on the simulator add about 3 to 5 min per leg on CI.
 - Hosted tests run inside an app with the SDK swizzling live; the tests must not call `Notti.initialize` with the sample config (no network).
 

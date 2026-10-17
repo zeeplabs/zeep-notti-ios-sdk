@@ -237,22 +237,22 @@ All match. No `[P]` task.
 
 ---
 
-### T7: CocoaPods variant (static frameworks, static libraries; dynamic pending S6)
+### T7: CocoaPods variant (static frameworks, static libraries, dynamic frameworks)
 
-**What**: `project-pods.yml`, `Podfile` (`:path => '..'`, `NOTTI_LINKAGE=static|libs|dynamic`), NSE conditional import, pod bundle names in the integration test; run the hosted tests and a generic device build for both linkages.
-**Where**: `Example/project-pods.yml`, `Example/Podfile`, `Example/NotificationService/NotificationService.swift`, `Example/Tests/ProductIntegrationTests.swift`, `.gitignore`
+**What**: `project-pods.yml`, `Podfile` (`:path => '..'`, `NOTTI_LINKAGE=static|libs|dynamic`), pod bundle names in the integration test; run the hosted tests and a generic device build for the three linkages.
+**Where**: `Example/project-pods.yml`, `Example/Podfile`, `Example/Tests/ProductIntegrationTests.swift`, `.gitignore`
 **Depends on**: T6
 **Reuses**: T1 spike results, `scripts/check-hook-linked.sh pod` semantics
 **Requirement**: EXR-17, EXR-18, EXR-19
 
 **Done when**:
 
-- [ ] `pod install` + hosted tests pass with `use_frameworks! :linkage => :static` and with static libraries (`use_modular_headers!`); the `dynamic` linkage is kept in the Podfile and its failure (S6) is documented, not hidden, until Julio decides the fix
-- [ ] App uses `pod 'NottiSDK'` and NSE uses `pod 'NottiSDK/Extension'` only
+- [ ] `pod install` + hosted tests pass with `use_frameworks! :linkage => :static`, with static libraries (`use_modular_headers!`) and with dynamic frameworks (`use_frameworks!`; S6 is fixed by AD-012)
+- [ ] App uses `pod 'NottiSDK'` and NSE uses `pod 'NottiSDKExtension'` only (NSE imports `NottiSDKExtension`, as in SPM; no conditional import)
 - [ ] The bundles `NottiSDK_Privacy` and `NottiSDKExtension_Privacy` are found in the products of each linkage
-- [ ] Hook counts equal 1 in each passing linkage (static libraries covered, which `check-hook-linked.sh pod` did not)
+- [ ] Hook counts equal 1 in each linkage (static libraries covered, which `check-hook-linked.sh pod` did not)
 - [ ] `PKG-06` independent test result and the CocoaPods `Resources` todo are noted in `STATE.md` as closed or narrowed
-- [ ] Gate check passes: Example on the passing linkages
+- [ ] Gate check passes: Example on the three linkages
 
 **Tests**: integration (hosted)
 **Gate**: Example
