@@ -1,0 +1,2 @@
+#include "Example.xcconfig.sample"
+#include? "Example.local.xcconfig"

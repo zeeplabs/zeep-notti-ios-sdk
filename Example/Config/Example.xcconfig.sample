@@ -1,0 +1,6 @@
+// Sample values. The example builds with these but never calls Notti.initialize (it shows "not configured").
+// To run against a real app, copy this file's keys into Config/Example.local.xcconfig (git-ignored).
+// NOTTI_HOST is a bare host without a scheme (`//` starts a comment in an xcconfig). Empty uses the SDK default.
+NOTTI_APP_ID = fixture
+NOTTI_CLIENT_KEY = fixture
+NOTTI_HOST =

@@ -1,0 +1,58 @@
+name: NottiExample
+options:
+  bundleIdPrefix: invalid.example.notti
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+configFiles:
+  Debug: Config/Example.xcconfig
+  Release: Config/Example.xcconfig
+  Debug-Manual: Config/Example.xcconfig
+configs:
+  Debug: debug
+  Release: release
+  Debug-Manual: debug
+packages:
+  NottiSDK:
+    path: ..
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    TARGETED_DEVICE_FAMILY: "1"
+targets:
+  NottiExample:
+    type: application
+    platform: iOS
+    sources: [App]
+    dependencies:
+      - package: NottiSDK
+        product: NottiSDK
+      - target: NotificationService
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: invalid.example.notti.app
+        CODE_SIGN_ENTITLEMENTS: App/App.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+      configs:
+        Debug:
+          INFOPLIST_FILE: App/Info.plist
+        Release:
+          INFOPLIST_FILE: App/Info.plist
+        Debug-Manual:
+          INFOPLIST_FILE: App/Info-Manual.plist
+  NotificationService:
+    type: app-extension
+    platform: iOS
+    sources: [NotificationService]
+    dependencies:
+      - package: NottiSDK
+        product: NottiSDKExtension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: invalid.example.notti.app.NotificationService
+        INFOPLIST_FILE: NotificationService/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        APPLICATION_EXTENSION_API_ONLY: YES
