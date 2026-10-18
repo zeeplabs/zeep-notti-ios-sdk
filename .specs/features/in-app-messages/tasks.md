@@ -32,7 +32,7 @@ Implement these tasks with the `tlc-spec-driven` skill (pinned in `.claude/skill
 | Image loader (`NottiInAppImageLoader`) | unit | decode, caps, redirect, budget, no credentials | `Tests/NottiSDKTests/NottiInAppImageLoaderTests.swift` | same |
 | Runtime and core hooks | unit | edges reach the engine once, adopt does not, replacement core keeps the engine | `Tests/NottiSDKTests/NottiInAppWiringTests.swift`, existing `NottiCoreTests` untouched | same |
 | Public shell, facade, ObjC | unit + ObjC compile check | `trackEvent`, listener, payload keys | `Tests/NottiSDKTests/NottiInAppPublicApiTests.swift`, `Tests/NottiSDKObjCTests/*.m` | same, `NottiSDKObjCTests` |
-| Localized strings | unit | both languages resolve through `NottiSDKResources.bundle` | `Tests/NottiSDKTests/NottiInAppStringsTests.swift` | same |
+| Accessibility label table | unit | `en`, `pt-BR`, fallback English, no resource lookup | `Tests/NottiSDKTests/NottiInAppStringsTests.swift` | same |
 | View hierarchy (`NottiInAppMessageView`, layouts) | unit (UIKit in the test host) | bounds per layout and size, gestures, verbatim text, a11y, Dynamic Type | `Tests/NottiSDKTests/NottiInAppLayout*Tests.swift` | same |
 | Presenter and window | unit | non-key window, pass-through, scene move, Reduce Motion | `Tests/NottiSDKTests/NottiInAppPresenterTests.swift` | same |
 | Privacy and source greps | unit | sentinels over every path, banned APIs in sources | `Tests/NottiSDKTests/NottiInAppPrivacyTests.swift` | same |
@@ -290,6 +290,7 @@ No `[P]` task.
 **Done when**:
 
 - [ ] 201 and 200 remove the record and continue; 404 and 422 remove it and continue; 401 and 403 stop and keep everything; each is a separate test with the exact status
+- [ ] On 403 the captured logger has exactly one `.warn` with the fixed text `Notti: in-app messages are inactive on this device until the next registration (HTTP 403)`, even when several flush passes hit 403 in the same session, and it contains no id, token, URL or body (sentinels in the stub response)
 - [ ] 503 on the head: `.full` retries the same record with the delays 2, 4, 8, 16 s on the fake scheduler, the **same `event_id` in all five bodies**, then stops with the queue intact; `.singleAttempt` stops after one attempt
 - [ ] A failing head is never skipped: with impression then click queued and the impression failing, the click is never sent
 - [ ] 429 with `Retry-After: 30` pauses all sends until the fake clock passes 30 s, then resumes; a value of 0 is clamped to 1 and 9999 to 300; no header gives 60
@@ -317,7 +318,7 @@ No `[P]` task.
 - [ ] Session signal then registration signal gives one `eligible`; registration then session gives one; a second registration (token refresh) or a second `sessionStarted` of the same session adds none; `sessionEnded` then `sessionStarted` gives a second call
 - [ ] The first session-start message is handed to the presenter; an event message is held and handed only on a matching `trackEvent`; nothing is sent to the server for `trackEvent` (asserted on the stub's request list)
 - [ ] With a non-empty queue the flush request precedes the `eligible` request and a failing flush does not prevent `eligible`
-- [ ] 401, 403, 422 stop with no retry; 429 waits `Retry-After` on the fake scheduler, at most 3 waits; 503 retries with 2/4/8/16 s then stops; a late response after `sessionEnded` is ignored; a held event message is gone after `sessionEnded`
+- [ ] 403 on `eligible` logs exactly one `.warn` with the fixed text `Notti: in-app messages are inactive on this device until the next registration (HTTP 403)` (captured logger, sentinel-free) and the engine stays inactive for the session; 401, 403, 422 stop with no retry; 429 waits `Retry-After` on the fake scheduler, at most 3 waits; 503 retries with 2/4/8/16 s then stops; a late response after `sessionEnded` is ignored; a held event message is gone after `sessionEnded`
 - [ ] A new engine over the same suite shows the same message again (no persisted shown state)
 - [ ] `configure` with a different appId, clientKey or baseUrl resets held messages and ignores an in-flight response
 - [ ] The test asserts the engine never runs its network or storage work on the main thread
@@ -448,25 +449,25 @@ No `[P]` task.
 
 ---
 
-### T13: Localized strings
+### T13: Accessibility label table
 
-**What**: `NottiInApp.strings` for `en` and `pt-BR` (close, image link), `defaultLocalization: "en"` in `Package.swift`, the lproj resources for the `NottiSDK` target, the pod's `resource_bundles`, and an accessor through `NottiSDKResources.bundle`.
-**Where**: `Sources/NottiSDK/Resources/en.lproj/NottiInApp.strings` (and `pt-BR.lproj`, accessor in `Sources/NottiSDK/InApp/UI/NottiInAppStrings.swift`, `Package.swift`, `NottiSDK.podspec`), `Tests/NottiSDKTests/NottiInAppStringsTests.swift`
+**What**: `NottiInAppStrings`: an in-code table with the close and image-link labels for `en` and `pt-BR`, selected from `Locale.preferredLanguages` (primary subtag), fallback English. No `.strings`, no lproj, no `defaultLocalization`, no `resource_bundles`, no change to `Package.swift` or the podspecs (design D11).
+**Where**: `Sources/NottiSDK/InApp/UI/NottiInAppStrings.swift`, `Tests/NottiSDKTests/NottiInAppStringsTests.swift`
 **Depends on**: None
-**Reuses**: `NottiSDKResources.bundle`
-**Requirement**: IAM-38 (labels), IAM-45 (packaging)
+**Reuses**: nothing
+**Requirement**: IAM-38 (labels)
 
 **Done when**:
 
-- [ ] Both languages resolve to their own text; an unknown language falls back to English; a missing key falls back to the key
-- [ ] `pod lib lint NottiSDK.podspec --platforms=ios` passes on the three linkages and a hosted check (or an `Example` hosted test where available) proves the lookup in the pod bundle ([Incerto] until run)
-- [ ] `scripts/check-package-graph.sh` and `check-version.sh` pass; the extension pod is untouched
-- [ ] Gate check passes: quick plus `pod lib lint` (all linkages)
+- [ ] `en` and `pt-BR` (also `pt-PT` and `pt` by primary subtag) return their own text; an unknown language and an empty list fall back to English
+- [ ] The labels are asserted as literals; the file has no `NSLocalizedString`, `Bundle`, `LocalizedStringKey` (grep test)
+- [ ] `Package.swift` and both podspecs are unchanged by this task (no `pod lib lint` is needed for it; the full gate runs later)
+- [ ] Gate check passes: quick
 - [ ] Test count: at least 4 new, total at least 718
 
 **Tests**: unit
 **Gate**: quick
-**Commit**: `feat(inapp): localized accessibility strings`
+**Commit**: `feat(inapp): in-code accessibility labels`
 
 ---
 
@@ -475,7 +476,7 @@ No `[P]` task.
 **What**: `NottiInAppLayout` (pure bounds), `NottiInAppAppearance` (tokens to colors and fonts, defaults of OQ-5), and the part of `NottiInAppMessageView` shared by all layouts: title and body labels (plain text, text alignment), the scrolling text region, the 44 pt close control, buttons with the shared or default styling, optional image, accessibility identifiers and traits, Dynamic Type.
 **Where**: `Sources/NottiSDK/InApp/UI/NottiInAppMessageView.swift` (with `NottiInAppLayout.swift`, `NottiInAppAppearance.swift`), `Tests/NottiSDKTests/NottiInAppMessageViewTests.swift`
 **Depends on**: T2, T13
-**Reuses**: `NottiInAppStyle`, the strings accessor
+**Reuses**: `NottiInAppStyle`, the label table
 **Requirement**: IAM-14, IAM-17, IAM-20, IAM-21, IAM-22, IAM-23, IAM-38 (element side), IAM-39
 
 **Done when**:
@@ -612,7 +613,7 @@ No `[P]` task.
 
 ### T20: Docs, traceability and status
 
-**What**: README section (what In-App does, `trackEvent`, the click listener and the sentence that without it no link opens, Dynamic Type and accessibility notes, a data collection line), `CHANGELOG.md` `[Unreleased]`, `TESTING.md` (new layers and counts), `PROJECT.md` (remove the In-App out-of-scope line, add the scope item), `ROADMAP.md` status, `traceability.md` for IAM-01..48, spec statuses.
+**What**: README section (what In-App does, `trackEvent`, the click listener and the sentence that without it no link opens, Dynamic Type and accessibility notes, a data collection line), `CHANGELOG.md` `[Unreleased]` (the feature, and the divergence: on `403` the SDK does not re-register as the server contract says, it warns and stays inactive until the next registration), `TESTING.md` (new layers and counts), `PROJECT.md` (remove the In-App out-of-scope line, add the scope item), `ROADMAP.md` status, `traceability.md` for IAM-01..48, spec statuses.
 **Where**: `.specs/features/in-app-messages/traceability.md`, `README.md`, `CHANGELOG.md`, `.specs/codebase/TESTING.md`, `.specs/project/PROJECT.md`, `.specs/project/ROADMAP.md`, `.specs/features/in-app-messages/spec.md`
 **Depends on**: T18, T19
 **Reuses**: `nse-rich-media/traceability.md` as the template
@@ -621,6 +622,7 @@ No `[P]` task.
 **Done when**:
 
 - [ ] Every IAM-xx has at least one named test or check in `traceability.md`; the total matches the real count
+- [ ] `CHANGELOG.md` `[Unreleased]` contains the 403 divergence line
 - [ ] `validate_spec.py` and `validate_tasks.py` pass (the open-questions warning aside); `AGENTS.md` layout line mentions `Sources/NottiSDK/InApp/`
 - [ ] Gate check passes: **full**
 - [ ] Test count at least the baseline plus the minimums above, none removed
@@ -725,7 +727,7 @@ Use synthetic content; one message per line where needed. Record device, iOS ver
 | IAM-42 | T8 |
 | IAM-43 | T18 |
 | IAM-44 | T11, T12 |
-| IAM-45 | T13, T18 |
+| IAM-45 | T18 |
 | IAM-46 | T18 |
 | IAM-47 | T19, T20 |
 | IAM-48 | T21 |

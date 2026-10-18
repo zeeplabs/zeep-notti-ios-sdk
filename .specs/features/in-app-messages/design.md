@@ -55,7 +55,7 @@ Everything new is app-only under `Sources/NottiSDK/InApp/`. `NottiShared` and `N
 | `check-no-url-open.sh` bans the text `UIApplication.shared.open`, `.open(_:options` and `openURL` under `Sources/NottiSDK`, **comments included** (plain grep) | `scripts/check-no-url-open.sh:13,24-27` [Certo] | The new sources must not contain those strings anywhere, also in doc comments. SwiftUI's `openURL` environment value would trip it too (one more reason for UIKit) |
 | `check-public-surface.sh` fails for a new top-level public type in `Sources/NottiSDK` without `@available(iOSApplicationExtension, unavailable)` unless named in `ext_safe_types` | `scripts/check-public-surface.sh:36-41` [Certo] | `NottiInAppClick` and `NottiInAppAction` are plain values: add them to the allowlist in the same task |
 | `PrivacyInfo.xcprivacy` declares UserDefaults `CA92.1` and Product Interaction (analytics, linked); no boot-time or file-timestamp API in `NottiSDK` | `Sources/NottiSDK/Resources/PrivacyInfo.xcprivacy` [Certo] | No manifest key change if the new code stays off those APIs (IAM-46). `ProcessInfo.systemUptime` is a required-reason API [Provável, Apple's list]: use `Date` |
-| Resources are reached through `NottiSDKResources.bundle` (SPM `.module`; CocoaPods bundle `NottiSDK_Privacy`) | `Sources/NottiSDK/NottiSDKResources.swift:1-25`, `Package.swift:21-24`, `NottiSDK.podspec` `resource_bundles` [Certo] | Localized strings for the close control need `defaultLocalization` in `Package.swift`, lproj files in the SPM resources and in the pod's resource bundle (T13) |
+| Resources are reached through `NottiSDKResources.bundle` (SPM `.module`; CocoaPods bundle `NottiSDK_Privacy`) | `Sources/NottiSDK/NottiSDKResources.swift:1-25` [Certo] | Not used by this feature: the close label is an in-code table (D11), so no resource, `Package.swift` or podspec change |
 
 ---
 
@@ -73,6 +73,7 @@ Everything new is app-only under `Sources/NottiSDK/InApp/`. `NottiShared` and `N
 | D8 | Timer by wall-clock remaining time (`Date`), paused and resumed by lifecycle events, scheduled through the injected scheduler | `ProcessInfo.systemUptime` and `mach_absolute_time` are required-reason APIs (privacy manifest). A wall-clock jump during a few seconds of countdown is acceptable | `systemUptime` (manifest change), a `Timer` with no remaining-time bookkeeping (cannot pause) |
 | D9 | The engine, not the view, decides "impression": the presenter reports `becameVisible(displayId)` once per presentation; the engine records `impression` on the first report for that display id and ignores repeats | The "exactly once" invariant lives in one place and is tested without UIKit. Rotation or re-layout cannot create an impression because views never write events | Reporting from `viewDidAppear` (can be called again on scene re-attachment) |
 | D10 | Image preload before presentation with a 3 s budget; failure or timeout shows the message without the image | OQ-8 | Show first and fill later (layout jump, tap target moves) |
+| D11 | Accessibility labels from an in-code table (`en`, `pt-BR`, fallback English), no resources | Removes the packaging risk of lproj resolution inside CocoaPods resource bundles and the `defaultLocalization` change. Two short strings do not justify a resource pipeline | `.strings` files and `resource_bundles` |
 
 ---
 
@@ -207,7 +208,7 @@ All of it is `@available(iOSApplicationExtension, unavailable)`.
 
 - Title and body are one `accessibilityLabel` on a container element (`title. body`), `accessibilityTraits = .staticText`, so VoiceOver reads them in order in one swipe; buttons are individual `.button` elements; the image is `isAccessibilityElement = false` unless it has an `image_action` (then `.button` with the label from the strings table, "Image link" / "Link da imagem", since the contract has no alt text) [Provável: the contract has no alt-text field; recorded as a limitation].
 - `center` and `full` set `accessibilityViewIsModal = true` on the card container and post `UIAccessibility.post(notification: .screenChanged, argument: titleElement)`; `top` and `bottom` do not trap focus and post `.announcement` with the title and body.
-- Close control labels from a string table (`NottiInApp.strings`: `en`, `pt-BR`) through `NottiSDKResources.bundle`. Packaging: `defaultLocalization: "en"` in `Package.swift`, `Resources/en.lproj` and `Resources/pt-BR.lproj` processed as resources, and added to the pod's `resource_bundles` (T13). [Incerto] that CocoaPods resolves the lproj inside the `NottiSDK_Privacy` bundle on all three linkages: proved by a hosted test in T12.
+- Close control and image-link labels come from an in-code table (`NottiInAppStrings`: `en` and `pt-BR` dictionaries, selected by the primary subtag of `Locale.preferredLanguages`, fallback English; D11, Julio 2026-10-18). No `Localizable.strings`, no lproj, no `defaultLocalization`, no `resource_bundles`, so nothing depends on CocoaPods resolving a resource bundle on any linkage.
 - Dynamic Type: `UIFont.preferredFont(forTextStyle:)` with `adjustsFontForContentSizeCategory = true` (title `headline`, body `body`, buttons `body` semibold); layouts rely on the scroll region, so the largest accessibility sizes cannot clip content.
 - Reduce Motion: `UIAccessibility.isReduceMotionEnabled` selects a 0.15 s cross-fade for entrance and exit and removes the swipe slide-out (the dismissal still happens).
 - Dark mode: default colors are semantic, so they follow `traitCollection`; the window does not override the user interface style. Server colors are fixed.
@@ -258,8 +259,8 @@ Objective-C mirror (API-12/13 precedent, `NottiObjC.swift`): `+[Notti trackEvent
 
 ## Impact on guards and packaging
 
-- `Package.swift`: `defaultLocalization: "en"`, `.process("Resources/en.lproj")`, `.process("Resources/pt-BR.lproj")` for `NottiSDK` (T13). New test files only in existing targets (`NottiSDKTests`, `NottiSDKObjCTests`).
-- `NottiSDK.podspec`: add the lproj files to `resource_bundles`; sources glob already covers `Sources/NottiSDK/**/*.swift`. `NottiSDKExtension.podspec` is not touched (no new file under `NottiShared`).
+- `Package.swift` and the podspecs: no change (the label table is code). New test files only in existing targets (`NottiSDKTests`, `NottiSDKObjCTests`).
+- `NottiSDKExtension.podspec` is not touched (no new file under `NottiShared`); `NottiSDK.podspec` already globs `Sources/NottiSDK/**/*.swift`.
 - `scripts/check-public-surface.sh`: allowlist (above). `scripts/check-no-url-open.sh`: unchanged (the new sources comply). A new script is not needed; the privacy and plain-text greps are unit tests over the sources (T18), so they run in the normal test gate.
 - `PrivacyInfo.xcprivacy`: comment text only (T18). `PrivacyManifestTests` unchanged.
 - SwiftLint: new files stay under the default limits; the engine is split by responsibility (selector, flusher, client, store) so no file approaches `file_length`.
@@ -306,7 +307,8 @@ Status after Julio's decisions (2026-10-18, including the retry, flush and 403 r
 | 8 | Image budget, fallback, size cap | 3 s then no image and no image action; **5 MiB**; no credentials | **Diverges today**: RN A11 says 2 MiB; Julio: RN aligns to 5 MiB. 3 s agrees |
 | 9 | Retry constants | 5 attempts, 2/4/8/16 s; `429`: clamp 1...300 s, 60 s default, up to 3 waits; queue cap 100, 7 day drop. Decided by Julio 2026-10-18; constants are tunable (one place in the code) | Aligned by decision (RN adopts; its current text of a 30 s single wait for `eligible` is to be replaced) |
 | 10 | Pre-fetch flush failure | Single-attempt flush, then call `eligible` even if it failed. Decided by Julio 2026-10-18 | Aligned by decision (RN adopts; its current OQ-4 text is to be replaced) |
-| 11 | `401/403/404/422` | `401`/`403` stop and keep the queue, no forced re-registration (decided by Julio 2026-10-18); `404`/`422` drop | Aligned |
+| 11 | `401/403/404/422` | `401`/`403` stop and keep the queue, no forced re-registration; on `403` (eligible and events) one fixed `.warn` without ids or values saying In-App is inactive on this device until the next registration (at most once per session per route); the CHANGELOG records the divergence from the contract's "re-register" (Julio 2026-10-18); `404`/`422` drop | Aligned by decision (RN mirrors the warning wording and the CHANGELOG note) |
+| 16 | Close control label | In-code table `en`, `pt-BR`, fallback English, no resource bundle | Aligned by decision (RN: per-platform table, no resources) |
 | 12 | Body tap on bars with no buttons; unknown action type | Not tappable; unknown type: `action` nil in the callback | RN has the first part (SDKIAM-34); the second is new in iOS because the SDK does not open links |
 | 13 | Renderable rules and the 100 / 500 character limits | IAM-16, no truncation | Compare to RN SDKIAM-14 |
 | 14 | Link safety allowlist | iOS delivers the value untouched and the integrator decides; RN SDKIAM-32 validates before opening | Revisit when RN adopts the listener: the allowlist rules (https, custom scheme) would move to the integrator docs |
@@ -343,7 +345,7 @@ Status after Julio's decisions (2026-10-18, including the retry, flush and 403 r
 | A listener-less host | Links never open | README states it first; the engine logs a `.warn` once; the Example registers a listener |
 | Event queue head blocked by a persistent 5xx | Later events wait (bounded by the 7 day drop and the cap) | Accepted for ordering; documented as a known limit; metrics lost are bounded by the cap |
 | `ProcessInfo.systemUptime` or timestamp APIs creeping in | Privacy manifest rejection | D8; the privacy task greps for them |
-| Localized strings through CocoaPods resource bundles | Missing label on one linkage | Hosted test on three linkages in T13; fallback to the English key |
+| A close label missing for an unsupported language | VoiceOver reads the English label | Fallback to English in the table; unit test per language and for an unknown language |
 | Server serves `modal` / `banner` (older release) | Rendered as `center` | By the unknown-format rule; OQ-6 |
 
 ---
