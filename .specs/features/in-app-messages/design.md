@@ -292,16 +292,16 @@ Mutants for the Verifier: drop the `impressed` flag; swap the order of impressio
 
 ## Parity checklist with the React Native spec
 
-Status after Julio's decisions (2026-10-18, including the retry, flush and 403 rules, and OQ-3, OQ-4, OQ-9 aligned with RN) and a read of `zeep-notti-react-native/.specs/features/in-app-messages/spec.md` (same day). **Aligned**: items 1 to 4, 6, 9 to 11 and the decided parts of 5, 7 and 8. The RN spec text had **not** yet been updated when read, so its current wording diverges where noted (RN is to adopt the decisions).
+Status after Julio's decisions (2026-10-18, including the retry, flush and 403 rules, and OQ-3, OQ-4, OQ-7, OQ-9 closed and aligned with RN) and a read of `zeep-notti-react-native/.specs/features/in-app-messages/spec.md` (same day). **Aligned**: items 1 to 4, 6, 9 to 11 and the decided parts of 5, 7 and 8. The RN spec text had **not** yet been updated when read, so its current wording diverges where noted (RN is to adopt the decisions).
 
 | # | Item | iOS spec | Status |
 | --- | --- | --- | --- |
-| 1 | Session definition and fetch trigger (registered in this process AND session open) | SDK foreground session, `tryOpen()` | Aligned (RN A5, A6); OQ-3 (granularity) still open on both sides |
+| 1 | Session definition and fetch trigger (registered in this process AND session open) | SDK foreground session, `tryOpen()` | Aligned (RN A5, A6); OQ-3 closed: every foreground is a session in both SDKs; a background-time threshold is a future change for both together |
 | 2 | `trackEvent` before the fetch completes | Remember distinct names of the session, limit **32**, re-evaluate on arrival (OQ-2 closed) | Aligned (RN SDKIAM-13 says 32) |
-| 3 | Extra `session_start` messages | Only the first, not queued (OQ-4, still open) | Aligned (RN edge case) |
-| 4 | Visible message when a new session starts (OQ-9, still open) | Display kept, id skipped next session, `session_start` candidates dropped | Aligned (RN SDKIAM-15) |
+| 3 | Extra `session_start` messages | Only the first, not queued; the others generate no impression and stay eligible next session (OQ-4 closed) | Aligned (RN edge case) |
+| 4 | Visible message when a new session starts (OQ-9 closed) | Display kept, id skipped next session, `session_start` candidates dropped | Aligned (RN SDKIAM-15) |
 | 5 | Link delivery | The integrator handles `url` / `deeplink` through `Notti.InAppMessages.addClickListener` -> `NottiInAppClick` (`messageId`, `buttonId`, `action.type`, `action.value`); SDK never opens; click always reported; click closes without `dismiss`; no listener: click reported, nothing opens, one `.warn`, README warning (OQ-1 closed) | **Diverges today**: RN spec A9/OQ-1/SDKIAM-32 has the native layer open links via the OS and A8 has no JS callbacks. RN must add a JS listener mirroring this name and payload (Julio: RN adopts the same model); the iOS SDK cannot open URLs (DEL-18) |
-| 6 | `trackEvent` name and location | `Notti.trackEvent(_:)` (OQ-7) | Aligned (RN SDKIAM-58) |
+| 6 | `trackEvent` name and location | `Notti.trackEvent(_:)` at the top level in both SDKs (OQ-7 closed) | Aligned (RN SDKIAM-58) |
 | 7 | Default palette (OQ-5 closed), fonts, secondary button style, thumbnail, close look | Semantic system colors | Palette aligned by decision; visual details to compare on device |
 | 8 | Image budget, fallback, size cap | 3 s then no image and no image action; **5 MiB**; no credentials | **Diverges today**: RN A11 says 2 MiB; Julio: RN aligns to 5 MiB. 3 s agrees |
 | 9 | Retry constants | 5 attempts, 2/4/8/16 s; `429`: clamp 1...300 s, 60 s default, up to 3 waits; queue cap 100, 7 day drop. Decided by Julio 2026-10-18; constants are tunable (one place in the code) | Aligned by decision (RN adopts; its current text of a 30 s single wait for `eligible` is to be replaced) |
@@ -337,7 +337,7 @@ Status after Julio's decisions (2026-10-18, including the retry, flush and 403 r
 | --- | --- | --- |
 | Window level interplay with the keyboard, Control Center, PiP, host system alerts | A bar could be covered or cover a host dialog | [Incerto]: device checklist records it; the level is one constant |
 | Legacy app without `UIScene` | No `connectedScenes`, nothing shown | Screen-sized window fallback; device checklist with a non-scene app |
-| Session granularity (OQ-3) | `eligible` on every resume, more traffic | Server limits and frequency; the decision belongs to the owner and both SDKs |
+| Session granularity (OQ-3, closed: keep) | `eligible` on every resume, more traffic | Server limits and frequency; a background threshold is future work for both SDKs. Originally: the decision belongs to the owner and both SDKs |
 | Default palette (OQ-5) | Visual mismatch with RN or the dashboard preview | Owner review per layout on device, as the server spec's success criterion asks |
 | Hooks in `NottiCore` | A ported file changes | Three call sites with a no-op default; existing `NottiCoreTests` stay untouched and green |
 | A listener-less host | Links never open | README states it first; the engine logs a `.warn` once; the Example registers a listener |
@@ -350,4 +350,4 @@ Status after Julio's decisions (2026-10-18, including the retry, flush and 403 r
 
 ## Open items for Julio
 
-OQ-7 (`trackEvent` placement) before the public API task (T11); OQ-2, OQ-4, OQ-9 (selection nuances) before the engine task (T7); OQ-5 (defaults) before the view tasks (T14..T16); OQ-3, OQ-6, OQ-8 can be answered during Execute with the recommended defaults. All have a recommended default in the spec, so Execute can start from them if Julio confirms with "go".
+None. All open questions were closed by Julio on 2026-10-18 (OQ-1 to OQ-5, OQ-7 to OQ-9). OQ-6 (the `zeep-notti` release that serves the IARM payload) stays only as a dependency.

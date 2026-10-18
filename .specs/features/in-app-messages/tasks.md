@@ -4,7 +4,7 @@
 **Spec**: `.specs/features/in-app-messages/spec.md`
 **Testing**: `.specs/codebase/TESTING.md`
 **Depends on feature**: `example-and-release` done and `0.1.0` tagged (the `Example/` app is edited in T19); a `zeep-notti` release that serves the IARM payload (OQ-6)
-**Status**: Draft, waiting for approval (OQ-7 before T11; OQ-2, OQ-4, OQ-9 before T7 and T9; OQ-5 before T14)
+**Status**: Draft, waiting for approval. All open questions are closed (Julio, 2026-10-18); OQ-6 (server release with the IARM payload) is only a dependency
 
 ---
 
@@ -214,7 +214,7 @@ No `[P]` task.
 **Where**: `Sources/NottiSDK/InApp/Engine/NottiInAppSelector.swift`, `Tests/NottiSDKTests/NottiInAppSelectorTests.swift`
 **Depends on**: T1
 **Reuses**: the model types
-**Requirement**: IAM-07, IAM-08, IAM-09, IAM-11, IAM-12 (OQ-2, OQ-4, OQ-9 decide the last three rows; update the rows if Julio answers differently)
+**Requirement**: IAM-07, IAM-08, IAM-09, IAM-11, IAM-12 (OQ-2, OQ-4, OQ-9 closed by Julio, 2026-10-18)
 
 **Done when**:
 
