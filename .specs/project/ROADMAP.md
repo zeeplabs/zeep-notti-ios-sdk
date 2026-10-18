@@ -76,12 +76,13 @@
 **nse-shared-state** - PLANNED: App Group (configurable), `received` reported from the NSE, badge increment
 **notification-action-buttons** - PLANNED: parity with the RN `SDKACT-` spec, once that spec is done
 **queue-resilience** - PLANNED: per-event TTL, `Retry-After`, no head-of-line blocking
+**in-app-messages** - SPECIFIED (2026-10-18, waiting for approval; `.specs/features/in-app-messages/`, AD-013): fetch once per session, four native layouts, `trackEvent`, click listener for link actions, own persistent event queue. Needs M1 tagged and a `zeep-notti` release with the IARM payload
 
 ---
 
 ## Future Considerations
 
 - Binary xcframework distribution
-- Live Activities, In-App Messages
+- Live Activities (In-App Messages moved to M3, see `in-app-messages`)
 - Mac Catalyst
 - Flutter wrapper consuming this SDK (`zeep-notti-flutter`)
