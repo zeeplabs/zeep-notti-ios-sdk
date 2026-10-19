@@ -122,7 +122,7 @@ Fetch rule: `maybeFetch()` runs after `sessionStarted` and after `deviceRegister
 
 Config change (D13, IAM-06): `configure` with a config different from the stored one calls `resetForNewConfig()`: bump `sessionGeneration`, `selector.reset()` (early names included), `fetchState = .idle`, clear `eligibleWaits`, `eligiblePauseUntil` and the flusher's `429` deadline and 401/403 session halts, cancel scheduled retries, tear down a visible display **without recording any event** (`display = nil`, presenter `dismiss`, no `impression`, no `dismiss`, no `click`), then `store.purge(keepingAppId:)`. The first `configure` of the process also purges records of other apps and sets `awaitingFirstSession` unless a session has already opened. `configure` with the same config changes nothing (a re-initialize never re-arms `awaitingFirstSession`). When the session is still open and the device registers again under the new config, `maybeFetch()` fetches for the new app.
 
-Fetch sequence: `flush(mode: .singleAttempt)` then `client.eligible(...)`. Failure policy as IAM-04 through the scheduler (`schedule(after:)`), never `Thread.sleep`:
+Fetch sequence: `flush(mode: .singleAttempt)` then `client.eligible(...)`, except that when the flush ended in `401` (the flusher's session halt) `eligible` is skipped for the session, with no request and no extra log (the flusher already logged the generic code); a `403` in the flush does not skip it (decided 2026-10-19, parity with RN SDKIAM-04). Failure policy as IAM-04 through the scheduler (`schedule(after:)`), never `Thread.sleep`:
 
 | Result | Engine action |
 | --- | --- |
