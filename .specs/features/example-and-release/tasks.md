@@ -292,10 +292,10 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Every device-only todo in `STATE.md` appears exactly once (list of the todos matched in the commit body)
-- [ ] Each item has a pass/fail box, an observable expected result and no secret
-- [ ] The README links to it
-- [ ] Gate check passes: quick
+- [x] Every device-only todo in `STATE.md` appears exactly once (list of the todos matched in the commit body)
+- [x] Each item has a pass/fail box, an observable expected result and no secret
+- [x] The README links to it
+- [x] Gate check passes: quick
 
 **Tests**: none
 **Gate**: quick
