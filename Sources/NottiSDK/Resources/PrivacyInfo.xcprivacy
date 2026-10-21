@@ -25,11 +25,54 @@
 	  CoreLocation fix (SEGTEL-10..15). Off by default. AD-005.
 	  Product Interaction: session telemetry (first/last session, count,
 	  time) and received/opened/clicked events. AD-005.
+	  Device ID: the APNs push token and the backend device id, sent on
+	  registration and on every device PATCH. App Functionality only.
+	  Other Diagnostic Data: app_version, sdk_version, device_os, device_model,
+	  timezone_id, language and the OS push-permission status (DPF-01..13).
+	  Other Data Types: tags set by the host app (free-form key/values).
+	  The last two categories are a best-fit choice for fields Apple's list does
+	  not name; confirm with privacy/legal before 0.1.0. Declared 2026-10-21.
 	  All linked to the device record (and to the user after login); none
 	  used for tracking.
 	-->
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeDeviceID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeOtherDiagnosticData</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeOtherDataTypes</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeUserID</string>
