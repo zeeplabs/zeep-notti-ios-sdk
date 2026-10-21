@@ -245,6 +245,7 @@ jobs:
         run: |
           flags="$(xcodebuild -project NottiExample.xcodeproj -target NottiExample -configuration Debug-NoAdaptor -showBuildSettings | sed -nE 's/^ *SWIFT_ACTIVE_COMPILATION_CONDITIONS = (.*)$/\1/p')"
           echo "Debug-NoAdaptor flags: $flags"
+          [[ "$flags" == *DEBUG* ]] || { echo "::error::could not read the compilation conditions"; exit 1; }
           if grep -qw USE_ADAPTOR <<<"$flags"; then
             echo "::error::Debug-NoAdaptor still compiles with USE_ADAPTOR"; exit 1
           fi

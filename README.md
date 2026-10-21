@@ -137,7 +137,7 @@ final class NotificationService: UNNotificationServiceExtension {
 
 ## Delegate integration and the swizzling opt-out
 
-By default the SDK installs itself at launch and observes the push callbacks on your app delegate and on `UNUserNotificationCenter`'s delegate, so no forwarding code is needed. It works with a UIKit delegate and with SwiftUI `@UIApplicationDelegateAdaptor`.
+By default the SDK installs itself at launch and observes the push callbacks on your app delegate and on `UNUserNotificationCenter`'s delegate, so no forwarding code is needed. It works with a UIKit delegate and with SwiftUI `@UIApplicationDelegateAdaptor`. A SwiftUI app **without** the adaptor is not supported by swizzling: see [Known limitations](#known-limitations).
 
 To turn that off, add this key to your app's `Info.plist`. Only a Boolean `true` counts; a string or a number is ignored and the SDK logs one warning.
 
@@ -266,6 +266,7 @@ This README describes what the SDK does. It is not legal advice and does not sta
 ## Known limitations
 
 - **Rich media on a device only.** The Notification Service Extension is not exercised in the Simulator by this repo. Media rendering and the expiry fallback are unproven until the device checklist passes.
+- **SwiftUI without `@UIApplicationDelegateAdaptor`.** The SDK does not swizzle SwiftUI's internal app delegate. It logs one warning and does not see the APNs token, so the device never registers through the SDK. Use `@UIApplicationDelegateAdaptor` with your own delegate, or set `NottiDisableSwizzling` and forward the five calls yourself.
 - **Double observation.** If your own delegate overrides a push callback and calls `super`, the SDK can observe the same callback twice.
 - **No `received` for visible pushes without `notification_id`.** A push from another sender, or one without that field, is not reported as `received`.
 - **No consent API in 0.1.0.** There is no call to hold collection until the user consents. Gate `Notti.initialize` and `Notti.login` yourself.
