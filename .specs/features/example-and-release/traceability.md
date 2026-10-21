@@ -73,7 +73,7 @@ Closing the matching `STATE.md` todo is a post-checklist step (EXR-16). None is 
 | APNs registration, permission prompt, geocoder, `UIDevice` fields | D01 to D04 | core-port T8 |
 | Rich media image, video, audio, expiry fallback | D05 to D07 | nse-rich-media, device |
 | SwiftUI delegate check with and without the adaptor, manual forwarding, CocoaPods static and dynamic | D08 to D10, D12, D13 | delegate-integration, device |
-| Late-install launch hook path | D11 | delegate-integration Verifier r1 N5/N7/N9 |
+| Late-install launch hook path | D11 (needs another host app; no example scheme exercises it) | delegate-integration Verifier r1 N5/N7/N9 |
 | Cold-start click, silent and background `received` | D14 to D16 | none (new) |
 | App Store validation: manifests and C617.1 | D17 | nse-rich-media D9 |
 | Privacy labels and legal wording | D18 | core-port Verifier r1 N7 |

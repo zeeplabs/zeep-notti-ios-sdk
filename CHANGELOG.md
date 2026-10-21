@@ -24,6 +24,7 @@ First release. It is a native port of `react-native-notti` 0.6.0 for iOS, with t
 
 - Several behaviors are not proven on a physical device. See [docs/DEVICE_CHECKLIST.md](docs/DEVICE_CHECKLIST.md).
 - The Notification Service Extension is not exercised in the Simulator by this repo.
+- A SwiftUI app without `@UIApplicationDelegateAdaptor`: the SDK does not swizzle SwiftUI's internal app delegate, logs one warning and does not receive the APNs token. Use the adaptor or the manual forwarding API.
 - If your own delegate overrides a push callback and calls `super`, the SDK can observe the same callback twice.
 - A visible push without `notification_id` (for example from another SDK) is not reported as `received`.
 - There is no consent API: gate `Notti.initialize` and `Notti.login` yourself.
