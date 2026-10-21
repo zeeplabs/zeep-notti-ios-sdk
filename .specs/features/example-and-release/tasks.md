@@ -247,12 +247,12 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] `pod install` + hosted tests pass with `use_frameworks! :linkage => :static`, with static libraries (`use_modular_headers!`) and with dynamic frameworks (`use_frameworks!`; S6 is fixed by AD-012)
-- [ ] App uses `pod 'NottiSDK'` and NSE uses `pod 'NottiSDKExtension'` only (NSE imports `NottiSDKExtension`, as in SPM; no conditional import)
-- [ ] The bundles `NottiSDK_Privacy` and `NottiSDKExtension_Privacy` are found in the products of each linkage
-- [ ] Hook counts equal 1 in each linkage (static libraries covered, which `check-hook-linked.sh pod` did not)
-- [ ] `PKG-06` independent test result and the CocoaPods `Resources` todo are noted in `STATE.md` as closed or narrowed
-- [ ] Gate check passes: Example on the three linkages
+- [x] `pod install` + hosted tests pass with `use_frameworks! :linkage => :static`, with static libraries (`use_modular_headers!`) and with dynamic frameworks (`use_frameworks!`; S6 is fixed by AD-012)
+- [x] App uses `pod 'NottiSDK'` and NSE uses `pod 'NottiSDKExtension'` only (NSE imports `NottiSDKExtension`, as in SPM; no conditional import)
+- [x] The bundles `NottiSDK_Privacy` and `NottiSDKExtension_Privacy` are found in the products of each linkage
+- [x] Hook counts equal 1 in each linkage (static libraries covered, which `check-hook-linked.sh pod` did not)
+- [x] `PKG-06` independent test result and the CocoaPods `Resources` todo are noted in `STATE.md` as closed or narrowed
+- [x] Gate check passes: Example on the three linkages
 
 **Tests**: integration (hosted)
 **Gate**: Example

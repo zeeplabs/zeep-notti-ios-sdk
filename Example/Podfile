@@ -1,0 +1,33 @@
+# CocoaPods variant of the example (EXR-17). Generate the project first:
+#   xcodegen generate --spec project-pods.yml
+#   NOTTI_LINKAGE=static|libs|dynamic pod install
+#
+#   static   use_frameworks! :linkage => :static   (static frameworks)
+#   libs     use_modular_headers!                  (static libraries)
+#   dynamic  use_frameworks!                       (dynamic frameworks)
+#
+# The app uses the root pod NottiSDK, the extension the root pod NottiSDKExtension (AD-012).
+platform :ios, '15.0'
+
+linkage = ENV.fetch('NOTTI_LINKAGE', 'static')
+case linkage
+when 'static' then use_frameworks! :linkage => :static
+when 'libs' then use_modular_headers!
+when 'dynamic' then use_frameworks!
+else raise "NOTTI_LINKAGE must be static, libs or dynamic (got #{linkage})"
+end
+
+project 'NottiExample.xcodeproj'
+
+target 'NottiExample' do
+  pod 'NottiSDK', :path => '..'
+
+  # The hosted tests import the app module, which imports NottiSDK: search paths only, no second copy of the pod.
+  target 'NottiExampleTests' do
+    inherit! :search_paths
+  end
+end
+
+target 'NotificationService' do
+  pod 'NottiSDKExtension', :path => '..'
+end
