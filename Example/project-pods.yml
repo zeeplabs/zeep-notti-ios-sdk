@@ -1,0 +1,63 @@
+name: NottiExample
+options:
+  bundleIdPrefix: invalid.example.notti
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+configFiles:
+  Debug: Config/Example.xcconfig
+  Release: Config/Example.xcconfig
+configs:
+  Debug: debug
+  Release: release
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    TARGETED_DEVICE_FAMILY: "1"
+    SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) USE_ADAPTOR NOTTI_PODS"
+schemes:
+  NottiExample:
+    build:
+      targets:
+        NottiExample: all
+    test:
+      config: Debug
+      targets: [NottiExampleTests]
+    run:
+      config: Debug
+targets:
+  NottiExample:
+    type: application
+    platform: iOS
+    sources: [App]
+    dependencies:
+      - target: NotificationService
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: invalid.example.notti.app
+        CODE_SIGN_ENTITLEMENTS: App/App.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: App/Info.plist
+  NotificationService:
+    type: app-extension
+    platform: iOS
+    sources: [NotificationService]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: invalid.example.notti.app.NotificationService
+        INFOPLIST_FILE: NotificationService/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        APPLICATION_EXTENSION_API_ONLY: YES
+  NottiExampleTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: NottiExample
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: invalid.example.notti.tests
+        GENERATE_INFOPLIST_FILE: YES
