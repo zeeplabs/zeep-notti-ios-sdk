@@ -205,10 +205,10 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Both scripts pass on the tree
-- [ ] Mutation evidence in the commit body: remove one call from `ExampleModel` (fails), change one key in only one plist (fails), put a non-`fixture` value in the sample (fails)
-- [ ] The allowlist of non-callable public names has a reason per line
-- [ ] Gate check passes: quick
+- [x] Both scripts pass on the tree
+- [x] Mutation evidence in the commit body: remove one call from `ExampleModel` (fails), change one key in only one plist (fails), put a non-`fixture` value in the sample (fails)
+- [x] The allowlist of non-callable public names has a reason per line
+- [x] Gate check passes: quick
 
 **Tests**: none (script, mutation evidence)
 **Gate**: quick
