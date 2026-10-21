@@ -120,7 +120,7 @@
 
 ## Active Blockers
 
-_none_
+- **GitHub Actions does not start any job (found 2026-10-21).** Every job of PR #11 failed in 3 to 7 s with no steps: "The job was not started because recent account payments have failed or your spending limit needs to be increased" (run `39647738829`). Not a code failure. PR #11 was merged with `--admin` knowing CI had not run. Nothing from `example-and-release` has run in CI: the `example` job, `check-example-coverage.sh`, `check-example-config.sh`, `check-readme-snippets.sh` and the CHANGELOG check in `check-version.sh`. Julio fixes billing (Settings > Billing and plans); then `gh run rerun 39647738829`, and run CI on PR #12 and on `main`. Whether it is a refused payment or a spending limit, and whether other repos are affected, is [Incerto].
 
 ---
 
@@ -223,6 +223,13 @@ delegate-integration Verifier round 1 (candidate lessons, not yet in `.specs/LES
 - [ ] (nse-rich-media, Verifier r2 N6) Mutant w3 (one-shot deadline extension by time to first byte) survives; tighter bound would be flaky. Non-blocking.
 - [ ] (nse-rich-media, Verifier r2 N7) No test redirects https to https to http; guard is stateless per hop. Add a two-hop test.
 - [ ] (nse-rich-media, Verifier r1 N1/N2/N3) l4 job-level URL-extension fallback wiring and t8 live URLSession config untested; `check-nse-logging.sh` false negatives (`//` in string, `let f = print`, `fputs`, `os.Logger`) and no committed test. Doc snippet says `import NottiSDKExtension` (SPM name; CocoaPods module is `NottiSDK`).
+
+- [ ] (example-and-release T10, CI) The `example` job and the three new guards have never run in CI (Active Blockers). Until they do, `tasks.md` T10 stays open, and no todo is closed on CI evidence. The SPM leg's shell logic was run locally.
+- [ ] (example-and-release T9, example gap) The example has no `NSLocationWhenInUseUsageDescription` and never requests location permission, so `DEVICE_CHECKLIST` D03 (geocoder and location sharing) cannot run in it. Add a usage string and a request button to the example (host-side code; the SDK never asks), or run D03 in another host app, or carry it as an unproven limitation.
+- [ ] (example-and-release T9, example gap) `Example/project.yml` and `project-pods.yml` hard-code `invalid.example.notti.app` bundle ids and an empty team, and target settings override an xcconfig, so a device run needs a local Xcode edit that regenerating resets. Consider reading both from `Example.local.xcconfig`.
+- [ ] (example-and-release T10, tooling) XcodeGen is pinned by `brew install xcodegen` plus a version assertion (`XCODEGEN_VERSION` in `ci.yml`), so the job fails when Homebrew serves a newer one. Switch to a pinned release asset with a checksum if that gets noisy.
+- [ ] (example-and-release T8, docs) The Objective-C block in `README.md` is not compiled by CI (the example has no ObjC target); the names come from `@objc(...)` in `NottiObjC.swift`. Add an ObjC target or a compile check if the block drifts.
+- [ ] (example-and-release T11, release) `CHANGELOG.md` `[0.1.0]` has the date `TBD`; `check-version.sh` rejects `TBD` on a tag build. Set the date on release day. EXR-22 (release PR text with the pre-tag gates) is not written yet.
 
 ## Preferences
 

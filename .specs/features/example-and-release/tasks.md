@@ -354,10 +354,10 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Every EXR id maps to a file, a script or a test (or to the checklist, for device-only items)
-- [ ] `STATE.md` closes only the todos the CI proved; device todos stay open until Julio runs the checklist
-- [ ] `validate_tasks.py` and `validate_state.py` pass
-- [ ] Gate check passes: Full
+- [x] Every EXR id maps to a file, a script or a test (or to the checklist, for device-only items)
+- [x] `STATE.md` closes only the todos the CI proved; device todos stay open until Julio runs the checklist
+- [x] `validate_tasks.py` and `validate_state.py` pass
+- [ ] Gate check passes: Full (pending CI; Verifier not run)
 
 **Tests**: none
 **Gate**: Full
