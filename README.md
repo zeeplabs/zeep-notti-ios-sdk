@@ -2,12 +2,13 @@
 
 Native iOS SDK for [Zeep Notti](https://github.com/zeeplabs) push notifications: device registration, user identity, tags, engagement events (`received` / `opened` / `clicked`) and rich media in a Notification Service Extension.
 
-> **Status: pre-release.** Nothing is published yet. The first release (`0.1.0`) targets behavior parity with `react-native-notti` 0.6.0 on iOS. Do not depend on this repo in production.
+> **Status: pre-release.** Nothing is published yet. The first release (`0.1.0`) targets behavior parity with `react-native-notti` 0.6.0 on iOS. Do not depend on this repo in production. Several behaviors are not yet proven on a physical device: see [Known limitations](#known-limitations) and [docs/DEVICE_CHECKLIST.md](docs/DEVICE_CHECKLIST.md).
 
 ## Requirements
 
 - iOS 15.0+
 - Xcode 15+ (Swift 5.9)
+- An Apple Developer account with push notifications and an APNs key configured in your Notti app
 
 ## Installation
 
@@ -35,6 +36,246 @@ end
 ```
 
 Linking `NottiSDKExtension` into the app target builds, but exposes no app API. Use `NottiSDK` there. In the extension, `import NottiSDKExtension`, the same line as with SPM. Both pods work with dynamic frameworks, static frameworks and static libraries.
+
+## Capabilities
+
+In the app target, under **Signing & Capabilities**:
+
+- **Push Notifications**
+- **Background Modes → Remote notifications** (needed for silent pushes)
+
+The Notification Service Extension needs no capability of its own.
+
+## Quick start
+
+Call `Notti.initialize` once at launch with your app id and client key, then ask for permission when it makes sense for your user. `requestPermission` returns whether the user granted it.
+
+<!-- snippet:init -->
+```swift
+Notti.initialize(appId: "YOUR_APP_ID", clientKey: "YOUR_CLIENT_KEY")
+
+Task {
+    let granted = await Notti.Notifications.requestPermission()
+    print("push permission granted: \(granted)")
+}
+```
+
+Without options the SDK talks to the production host `https://app.zeepnotti.app`. To target another host, pass `Notti.Options(baseUrl:)`. The SDK never requests location permission.
+
+## Identity and tags
+
+`login` links the device to your own user id. Email, phone and tags are optional and are sent only when you set them. `logout` clears the link.
+
+<!-- snippet:identity -->
+```swift
+Notti.login("user-123")
+Notti.User.setEmail("person@example.invalid")
+Notti.User.addTags(["plan": "premium", "locale": "pt-BR"])
+Notti.User.removeTag("locale")
+
+Notti.logout()
+```
+
+Other calls: `Notti.User.setPhone`, `clearEmail`, `clearPhone`, `addTag`, `removeTags`, `Notti.User.setSubscription(_:)` and `Notti.setLocationSharingEnabled(_:)` (off by default, see [Data the SDK handles](#data-the-sdk-handles)).
+
+## Listeners
+
+Listeners receive the payload of a push that arrived while the app runs (`received`) and of a tap (`clicked`). The SDK never opens a URL: the push `data` reaches your code untouched and you decide what a link means.
+
+<!-- snippet:listeners -->
+```swift
+let received = Notti.Notifications.addReceivedListener { payload in
+    print("received with \(payload.data.count) data keys")
+}
+let clicked = Notti.Notifications.addClickedListener { payload in
+    // `payload.data` is the push data, untouched. Decide what a link means here.
+    print("clicked with \(payload.data.count) data keys")
+}
+
+// A tap that launched the app is kept until you take it.
+if let initial = Notti.Notifications.takeInitialClick() {
+    print("launched from a push: \(initial.data.count) data keys")
+}
+
+received.remove()
+clicked.remove()
+```
+
+Remove a listener with `remove()` on the returned subscription. `Notti.addDeviceIdChangedListener` calls your handler on the main thread each time the device id changes, and is removed the same way.
+
+## Rich media (Notification Service Extension)
+
+Add a Notification Service Extension target, link `NottiSDKExtension`, and forward both callbacks. The extension downloads the media URL carried by the push (key `notti_image_url`, never part of `payload.data`) and attaches it. If the time budget runs out it delivers the content it already has.
+
+<!-- snippet:nse -->
+```swift
+import NottiSDKExtension
+import UserNotifications
+
+@objc(NotificationService)
+final class NotificationService: UNNotificationServiceExtension {
+    private var contentHandler: ((UNNotificationContent) -> Void)?
+    private var bestAttemptContent: UNNotificationContent?
+
+    override func didReceive(
+        _ request: UNNotificationRequest,
+        withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void
+    ) {
+        self.contentHandler = contentHandler
+        bestAttemptContent = request.content
+        NottiNotificationServiceExtension.didReceive(request, withContentHandler: contentHandler)
+    }
+
+    override func serviceExtensionTimeWillExpire() {
+        guard let contentHandler else { return }
+        NottiNotificationServiceExtension.serviceExtensionTimeWillExpire(
+            for: bestAttemptContent, contentHandler: contentHandler
+        )
+    }
+}
+```
+
+## Delegate integration and the swizzling opt-out
+
+By default the SDK installs itself at launch and observes the push callbacks on your app delegate and on `UNUserNotificationCenter`'s delegate, so no forwarding code is needed. It works with a UIKit delegate and with SwiftUI `@UIApplicationDelegateAdaptor`.
+
+To turn that off, add this key to your app's `Info.plist`. Only a Boolean `true` counts; a string or a number is ignored and the SDK logs one warning.
+
+```xml
+<key>NottiDisableSwizzling</key>
+<true/>
+```
+
+With the key set, you set the notification-center delegate yourself and forward these five callbacks:
+
+<!-- snippet:manual-forwarding -->
+```swift
+final class ForwardingAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        Notti.Notifications.didRegisterForRemoteNotifications(deviceToken: deviceToken)
+    }
+
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        Notti.Notifications.didFailToRegisterForRemoteNotifications(error: error)
+    }
+
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
+        completionHandler(Notti.Notifications.didReceiveRemoteNotification(userInfo))
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler(Notti.Notifications.willPresent(notification))
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        Notti.Notifications.didReceive(response)
+        completionHandler()
+    }
+}
+```
+
+## Objective-C
+
+The SDK is usable from Objective-C through the same module. The names below come from `@objc(...)` declarations in `Sources/NottiSDK/Public/ObjC/NottiObjC.swift`. This block is **not** compiled by CI (the example app has no Objective-C target); the Swift snippets above are.
+
+```objc
+@import NottiSDK;
+
+[Notti initializeWithAppId:@"YOUR_APP_ID" clientKey:@"YOUR_CLIENT_KEY" baseUrl:nil];
+[NottiNotifications requestPermission:^(BOOL granted) { /* ... */ }];
+[Notti login:@"user-123"];
+[NottiUser addTag:@"plan" value:@"premium"];
+NottiSubscription *sub = [NottiNotifications addClickedListener:^(NSDictionary *payload) { /* ... */ }];
+[sub remove];
+```
+
+## Data the SDK handles
+
+This section is derived from the code. Re-read it against `Sources/` before each release.
+
+### Sent to the Notti backend
+
+The base URL is the production host named in [Quick start](#quick-start) unless you pass `Notti.Options(baseUrl:)`. Requests go to `/v1/apps/<appId>/devices` and `/v1/apps/<appId>/notifications/<id>/events`, authenticated with your client key.
+
+| When | Fields |
+|---|---|
+| Registration | `token` (APNs push token), `platform` (`ios`) |
+| `login` | `external_user_id` |
+| `setEmail`, `setPhone` | `email`, `phone` |
+| `addTag`, `addTags`, `removeTag`, `removeTags` | `tags` (your own key/value pairs) |
+| Permission and `setSubscription` | `permission_status`, `subscribed`, `last_unsubscribed_at` |
+| Device profile, synced when changed | `app_version`, `sdk_version`, `device_os`, `device_model`, `timezone_id`, `language` |
+| Sessions | `first_session_at`, `last_session_at`, `session_count`, `session_time_seconds` |
+| Location sharing on, and your app already holds location permission | `country` only |
+| A push is received, opened or clicked | `delivery_id`, `type` (`received`, `opened`, `clicked`), `token`, reported under the notification id |
+
+Do not put personal data in tag keys or values unless your own basis for processing covers it.
+
+Country is resolved on the device by reverse-geocoding a location fix that your app already holds. The SDK never asks for location permission, and only the country code is sent. Reverse geocoding itself is performed by Apple's service.
+
+### Stored on the device
+
+`UserDefaults` suite `notti_prefs`, unencrypted. The keys are:
+
+`notti_device_id`, `notti_last_token`, `notti_external_user_id`, `notti_subscribed`, `notti_tags`, `notti_app_version`, `notti_first_session_at_ms`, `notti_last_session_at_ms`, `notti_session_count`, `notti_session_time_ms`, `notti_session_started_at_ms`, `notti_session_last_seen_at_ms`, `notti_location_sharing_enabled`, `notti_pending_country_clear`, `notti_last_synced_country`, `notti_last_synced_device_os`, `notti_last_synced_device_model`, `notti_last_synced_sdk_version`, `notti_last_synced_timezone_id`, `notti_last_synced_language`, `notti_last_synced_permission_status`, `notti_last_unsubscribed_at_ms`, `notti_pending_unsubscribe_at_ms`, `notti_pending_permission_unsubscribe_at_ms`, `notti_email`, `notti_phone`, `notti_last_synced_email`, `notti_last_synced_phone`, `notti_profile_field_ack_migrated`, `notti_pending_events`.
+
+The keys are the same as in `react-native-notti` 0.6.0 (AD-002 in `.specs/project/STATE.md`).
+
+Logs go through one logger, default level `error`. They never contain email, phone, push token, external user id or tag values, and errors are logged as `domain#code`.
+
+### Privacy manifests
+
+`NottiSDK` ships `PrivacyInfo.xcprivacy` with `NSPrivacyTracking` false and no tracking domains. It declares the required-reason API `UserDefaults` (`CA92.1`) and these collected data types, all linked and none used for tracking: Device ID, User ID, Email Address, Phone Number, Coarse Location, Product Interaction, Other Diagnostic Data and Other Data Types. Purposes are App Functionality; Coarse Location and Product Interaction also declare Analytics. `NottiSDKExtension` ships its own manifest with no collected data and no required-reason API.
+
+Other Diagnostic Data and Other Data Types are a best-fit choice for fields Apple's list does not name. Confirm them with your privacy owner.
+
+### What your app declares in App Store Connect
+
+Your app's privacy answers must cover what the SDK collects in your configuration, in addition to your own collection. Based on the manifest above: Device ID; User ID if you call `login`; Email and Phone if you set them; Coarse Location only if you enable location sharing; Product Interaction; Other Diagnostic Data; and Other Data Types if you set tags. Linked to the user: yes. Used for tracking: no.
+
+### LGPD
+
+This README describes what the SDK does. It is not legal advice and does not state that your use is compliant with the LGPD. Before shipping, have your legal and privacy teams review the data above, the legal basis, the notice shown to users, and retention and deletion in your Notti backend.
+
+## Known limitations
+
+- **Rich media on a device only.** The Notification Service Extension is not exercised in the Simulator by this repo. Media rendering and the expiry fallback are unproven until the device checklist passes.
+- **Double observation.** If your own delegate overrides a push callback and calls `super`, the SDK can observe the same callback twice.
+- **No `received` for visible pushes without `notification_id`.** A push from another sender, or one without that field, is not reported as `received`.
+- **No consent API in 0.1.0.** There is no call to hold collection until the user consents. Gate `Notti.initialize` and `Notti.login` yourself.
+- **Personal data in `UserDefaults`.** Email, phone, external user id and tags are stored unencrypted in the `notti_prefs` suite.
+- **No `Retry-After`.** Failed requests are retried up to 5 times with a fixed 2, 4, 8 and 16 second backoff. The header is ignored.
+- **Not yet proven on a device:** APNs registration and token delivery, permission prompt states, geocoder and location sharing, device profile fields, cold-start click, silent and background `received`, the launch hook in a CocoaPods app, and an App Store Connect validation upload. See [docs/DEVICE_CHECKLIST.md](docs/DEVICE_CHECKLIST.md).
+
+## Example app
+
+`Example/` is a SwiftUI app and a Notification Service Extension that call every public member. Build it through SPM (`project.yml`) or CocoaPods (`project-pods.yml`, `NOTTI_LINKAGE=static|libs|dynamic`). It needs an `Example.local.xcconfig` with your own app id and key; without it the app reads `fixture` and never calls the SDK. The README snippets are excerpts of files under `Example/`, checked by `scripts/check-readme-snippets.sh`.
 
 ## License
 
