@@ -37,12 +37,27 @@ final class PrivacyManifestTests: XCTestCase {
             "NSPrivacyCollectedDataTypeEmailAddress",
             "NSPrivacyCollectedDataTypePhoneNumber",
             "NSPrivacyCollectedDataTypeCoarseLocation",
-            "NSPrivacyCollectedDataTypeProductInteraction"
+            "NSPrivacyCollectedDataTypeProductInteraction",
+            "NSPrivacyCollectedDataTypeDeviceID",
+            "NSPrivacyCollectedDataTypeOtherDiagnosticData",
+            "NSPrivacyCollectedDataTypeOtherDataTypes"
         ])
         for entry in collected {
             XCTAssertEqual(entry["NSPrivacyCollectedDataTypeLinked"] as? Bool, true)
             XCTAssertEqual(entry["NSPrivacyCollectedDataTypeTracking"] as? Bool, false)
         }
+    }
+
+    func test_deviceIdIsDeclaredForAppFunctionalityOnly() throws {
+        let manifest = try loadManifest()
+        let collected = try XCTUnwrap(manifest["NSPrivacyCollectedDataTypes"] as? [[String: Any]])
+        let deviceId = collected.first {
+            $0["NSPrivacyCollectedDataType"] as? String == "NSPrivacyCollectedDataTypeDeviceID"
+        }
+        XCTAssertEqual(
+            deviceId?["NSPrivacyCollectedDataTypePurposes"] as? [String],
+            ["NSPrivacyCollectedDataTypePurposeAppFunctionality"]
+        )
     }
 
     func test_userIdIsDeclaredForAppFunctionalityOnly() throws {
