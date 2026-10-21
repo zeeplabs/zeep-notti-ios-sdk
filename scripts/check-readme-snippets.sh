@@ -65,6 +65,21 @@ snippet() {
 
 fail=0
 
+# A marker that does not match the strict form is ignored by the id scan, so reject it, and reject a repeated id
+# (only the first block would be compared).
+loose="$(grep -nE '<!--[[:space:]]*snippet' "$readme" | grep -vE '^[0-9]+:<!-- snippet:[a-z0-9-]+ -->$' || true)"
+if [[ -n "$loose" ]]; then
+  echo "error: README.md has a snippet marker that is not '<!-- snippet:<id> -->' (lowercase, digits, hyphen):" >&2
+  echo "$loose" >&2
+  fail=1
+fi
+dups="$(grep -oE '^<!-- snippet:[a-z0-9-]+ -->$' "$readme" | sort | uniq -d || true)"
+if [[ -n "$dups" ]]; then
+  echo "error: README.md repeats a snippet id:" >&2
+  echo "$dups" >&2
+  fail=1
+fi
+
 readme_ids="$(grep -oE '^<!-- snippet:[a-z0-9-]+ -->$' "$readme" | sed -E 's/^<!-- snippet:(.*) -->$/\1/' | sort)"
 region_ids="$(grep -rhoE '// README:begin [a-z0-9-]+' "$root/Example" --include='*.swift' | sed -E 's|// README:begin ||' | sort)"
 

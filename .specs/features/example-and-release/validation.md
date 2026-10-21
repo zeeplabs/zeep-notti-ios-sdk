@@ -1,6 +1,6 @@
-# Validation: example-and-release - FAIL ❌ (round 3 conditional; fixes applied, round 4 pending)
+# Validation: example-and-release - FAIL ❌ (round 4: 1 Major, fixed; no round 5)
 
-**Status**: the feature is not marked done. Three independent Verifier rounds ran on 2026-10-21; round 3 was a conditional FAIL and its findings are fixed in the commit that adds this file, but no round 4 ran. CI has never run for any of this work (GitHub Actions billing), and the device checklist has not been run, so no EXR is proven beyond "Local" (see `traceability.md`).
+**Status**: the feature is not marked done. Four independent Verifier rounds ran on 2026-10-21; round 4 found no Blocker and one Major, fixed after the report, and no round 5 ran. CI has never run for any of this work (GitHub Actions billing), and the device checklist has not been run, so no EXR is proven beyond "Local" (see `traceability.md`).
 
 Method: each round ran in an isolated worktree, did not trust the author's notes, re-derived claims from `Sources/`, `Example/` and the scripts, and mutation-tested the guards.
 
@@ -21,16 +21,23 @@ Method: each round ran in an isolated worktree, did not trust the author's notes
 - **M2** D11 exercised the early install path, not the late one in the STATE todo. Fixed: D11 is reworded, says a Pass does not tick that todo, and needs another host app.
 - m1 (D11 prerequisite: neither fetch method), m2 (D12 and D13 no longer repeat D11), m3 (README and CHANGELOG say the warning is invisible at the default level; D01 names its scheme), m4 (release text: run `39647738829` only documents the billing block; D11 "Not run" is carried into the changelog step). Fixed.
 
+## Round 4 (FAIL: 1 Major, no Blocker)
+
+- **M1** D09 could not tell whether the SwiftUI class-name check works, yet closed the todo about it: over-install keeps the stored device id and the notification-center delegate delivers `received` and `clicked` either way. Fixed: D09 has a part B (fresh install, "Device id" must stay none, otherwise Fail).
+- m1 D17 to D19 cited todos already ticked: wording now "append the result"; new STATE todo for the owner confirmations. m2 D03 has a "Not run" box and keeps the core-port T8 todo open. m3 README and checklist no longer say a SwiftUI app can forward by hand (the fix is the adaptor). m4 D15 needs both `notification_id` and `delivery_id`. m5 README and CHANGELOG state the legacy-only delegate limitation, the SDK-assigned notification-center delegate, and the NSE limits (https, 10 MiB, jpg/png/gif/mp4/mp3). m6 release step lists the stale "not proven" text. m7 key count 30. m8 stale S6 follow-up todo ticked. m10 D10 UI string, static libraries note.
+- m9 guard hardening: `check-readme-snippets.sh` rejects malformed and repeated snippet ids; `check-example-config.sh` rejects a repeated sample key, scans `CHANGELOG.md`, matches `CK_`/`RK_` and `NOTTI_APP_ID:`; `check-version.sh` rejects an impossible date. Seven new mutations are killed.
+- **Still open (low):** `check-example-coverage.sh` does not understand nested block comments, `"""` strings, `#if false` or an uncalled private function, and `IntegrationSnippets.swift` also satisfies several members, so the guard does not prove a screen reaches the SDK for those; the README snippet guard ignores markers inside `#if false`; `check-version.sh` does not check the README banner on a tag build; `grep -F "iPhone 17"` also matches "iPhone 17 Pro"; the XcodeGen pin follows Homebrew.
+
 ## Confirmed by the Verifiers (own runs)
 
 - All `scripts/check-*.sh` pass locally and under ubuntu:24.04 with mawk for the text guards.
 - Hosted tests: 34 per leg on SPM, pods static, libs and dynamic; the NoAdaptor scheme passes; strict device builds pass.
 - Guard mutations are killed (snippets, version, config, coverage).
-- README fields, endpoints, retry rule, manifest declarations and the 31 `notti_*` keys match the code.
+- README fields, endpoints, retry rule, manifest declarations and the 30 `notti_*` keys match the code.
 - No PII, real ids or keys, and no AI co-author lines; every commit is authored by Julio Sousa.
 
 ## Not proven
 
 - Everything in CI (the `example` job, the new guards, the NoAdaptor step): billing blocks Actions.
 - Every `DEVICE_CHECKLIST.md` item, and the Objective-C README block.
-- To finish: fix billing and read a green CI run, run the checklist, run a round 4 Verifier on the final state, then mark the feature DONE.
+- To finish: fix billing and read a green CI run, run the checklist, run a last Verifier on the final state, then mark the feature DONE.
