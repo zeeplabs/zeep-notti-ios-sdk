@@ -66,6 +66,10 @@ jobs:
       - name: Example config (EXR-04, EXR-06)
         run: scripts/check-example-config.sh
 
+      # README snippets equal the example sources they are cut from, and those sources are compiled (EXR-13).
+      - name: README snippets (EXR-13)
+        run: scripts/check-readme-snippets.sh
+
   test:
     runs-on: macos-26
     steps:
