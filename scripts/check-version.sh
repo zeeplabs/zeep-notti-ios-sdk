@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Fails when the SDK version drifts between the Swift constant, the two podspecs
-# (NottiSDK and NottiSDKExtension) and (on tag builds) the git tag. PKG-14/15, PODS-05.
+# (NottiSDK and NottiSDKExtension), the top released CHANGELOG section and (on tag builds) the git tag.
+# PKG-14/15, PODS-05, EXR-21.
+#
+# The top released section is the first `## [x.y.z] - <date>` heading; `## [Unreleased]` is skipped. Its date is
+# `YYYY-MM-DD`, or `TBD` until release day; a tag build requires a real date.
 #
 # Usage: scripts/check-version.sh [repo-root]
 # Reads GITHUB_REF (e.g. refs/tags/0.1.0) when set.
@@ -33,11 +37,38 @@ if [[ "$swift_version" != "$ext_version" ]]; then
   exit 1
 fi
 
+changelog="$root/CHANGELOG.md"
+if [[ ! -f "$changelog" ]]; then
+  echo "error: CHANGELOG.md not found" >&2
+  exit 1
+fi
+top_heading="$(grep -m1 -E '^## \[[0-9]+\.[0-9]+\.[0-9]+[^]]*\]' "$changelog" || true)"
+if [[ -z "$top_heading" ]]; then
+  echo "error: CHANGELOG.md has no released section (expected '## [x.y.z] - YYYY-MM-DD')" >&2
+  exit 1
+fi
+changelog_version="$(sed -E 's/^## \[([^]]+)\].*/\1/' <<<"$top_heading")"
+changelog_date="$(sed -nE 's/^## \[[^]]+\][[:space:]]+-[[:space:]]+(.*[^[:space:]])[[:space:]]*$/\1/p' <<<"$top_heading")"
+
+if [[ "$swift_version" != "$changelog_version" ]]; then
+  echo "error: version drift: NottiSDKVersion.current=$swift_version, top CHANGELOG section=$changelog_version" >&2
+  exit 1
+fi
+
+if [[ ! "$changelog_date" =~ ^([0-9]{4}-[0-9]{2}-[0-9]{2}|TBD)$ ]]; then
+  echo "error: top CHANGELOG section '$top_heading' needs a date (YYYY-MM-DD) or TBD" >&2
+  exit 1
+fi
+
 ref="${GITHUB_REF:-}"
 if [[ "$ref" == refs/tags/* ]]; then
   tag="${ref#refs/tags/}"
   if [[ "$tag" != "$swift_version" ]]; then
     echo "error: version drift: tag=$tag, NottiSDKVersion.current=$swift_version" >&2
+    exit 1
+  fi
+  if [[ "$changelog_date" == "TBD" ]]; then
+    echo "error: tag $tag needs a dated CHANGELOG section (found TBD)" >&2
     exit 1
   fi
 fi
