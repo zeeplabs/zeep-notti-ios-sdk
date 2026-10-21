@@ -169,6 +169,7 @@ jobs:
   # on its own runner and its steps run one after another, so no two xcodebuild processes share a checkout.
   example:
     runs-on: macos-26
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -237,6 +238,16 @@ jobs:
             CODE_SIGNING_ALLOWED=NO SWIFT_TREAT_WARNINGS_AS_ERRORS=YES GCC_TREAT_WARNINGS_AS_ERRORS=YES -quiet
           plist="$(find "$RUNNER_TEMP/dd-device" -path '*NottiExample.app/Info.plist' | head -1)"
           ../scripts/check-example-config.sh --built "$plist" default
+
+      # Debug-NoAdaptor must build without USE_ADAPTOR, or the "without @UIApplicationDelegateAdaptor" check proves nothing.
+      - name: NoAdaptor configuration has no adaptor
+        if: matrix.leg == 'spm'
+        run: |
+          flags="$(xcodebuild -project NottiExample.xcodeproj -target NottiExample -configuration Debug-NoAdaptor -showBuildSettings | sed -nE 's/^ *SWIFT_ACTIVE_COMPILATION_CONDITIONS = (.*)$/\1/p')"
+          echo "Debug-NoAdaptor flags: $flags"
+          if grep -qw USE_ADAPTOR <<<"$flags"; then
+            echo "::error::Debug-NoAdaptor still compiles with USE_ADAPTOR"; exit 1
+          fi
 
       # Debug-Manual turns swizzling off through Info.plist; the built plist must hold a Boolean true (EXR-04).
       - name: Device build, Debug-Manual
