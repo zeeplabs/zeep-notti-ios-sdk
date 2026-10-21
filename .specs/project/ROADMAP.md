@@ -31,19 +31,21 @@
 - `@objc` interop surface usable by ObjC hosts and the future RN bridge
 - Debug log level (off by default in release, no PII)
 
-**delegate-integration** - Execute done (2026-10-11; T1-T14 on branch `feat/delegate-integration`; 465 tests); Verifier pending
+**delegate-integration** - DONE (2026-10-11; T1-T14; Verifier PASS round 2, `validation.md`; merged to `main`)
 
 - Swizzle `UIApplicationDelegate` APNs callbacks and the `UNUserNotificationCenterDelegate` (`willPresent`, `didReceive`), forwarding to the host's originals, with a double-swizzle guard
 - Info.plist opt-out key; manual forwarding API (`didRegisterForRemoteNotifications`, `willPresent`, `didReceive`) for opted-out or multi-SDK hosts
 - Cold-start click capture before `initialize`
 - Silent-push `received` reporting; deep-link passthrough (no URL opening); ObjC launch hook target `NottiSDKBootstrap`, proved by CI scripts
 
-**nse-rich-media** - Execute done (2026-10-11; T1-T16 on branch `feat/nse-rich-media`; 586 tests); Verifier round 1 FAIL (test strength B1-B3), round 2 PASS; push/PR pending
+**nse-rich-media** - DONE (2026-10-11; T1-T16; 586 tests; Verifier round 1 FAIL on test strength B1-B3, round 2 PASS, `validation.md`; merged to `main`)
 
 - NSE product: `didReceive` / `serviceExtensionTimeWillExpire` helpers, `notti_image_url` attachment (https, 10MB cap, jpg/png/gif/mp4/mp3)
 - async download within the NSE budget; deliver best attempt on expiry
 
-**example-and-release** - PLANNED
+**pod-split** - DONE (2026-10-12; PR #8, AD-012): two root pods, `NottiSDK` and `NottiSDKExtension`, no subspecs; fixes CocoaPods dynamic frameworks
+
+**example-and-release** - Execute done except the CI proof (2026-10-21; T1-T12; T3-T7 are PR #12, T8-T12 on branch `docs/readme-and-checklist`); Verifier pending, CI blocked by billing, device checklist (`docs/DEVICE_CHECKLIST.md`) not run
 
 - SwiftUI example app plus an NSE target exercising every public method
 - README (setup via SPM/CocoaPods, capabilities, swizzling opt-out, data collection, storage keys, LGPD note, known limitations), CHANGELOG
