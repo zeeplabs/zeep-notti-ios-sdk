@@ -58,6 +58,14 @@ jobs:
       - name: Extension logging (NSE-13)
         run: scripts/check-nse-logging.sh
 
+      # Every public member in scope is called by the example app (EXR-02).
+      - name: Example coverage (EXR-02)
+        run: scripts/check-example-coverage.sh
+
+      # The two Info.plists differ only by NottiDisableSwizzling; no real key or app id is committed (EXR-04, EXR-06).
+      - name: Example config (EXR-04, EXR-06)
+        run: scripts/check-example-config.sh
+
   test:
     runs-on: macos-26
     steps:
