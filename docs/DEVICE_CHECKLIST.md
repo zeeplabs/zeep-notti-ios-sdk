@@ -40,7 +40,7 @@ Result:
 
 ## D02. Permission prompt states
 
-**Closes:** same todo as D01 (permission prompt part). Tick that todo once, after D01 to D04 pass.
+**Closes:** same todo as D01 (permission prompt part). Tick that todo once, after D01 to D04 pass; D03 "Not run" keeps it open.
 **Prerequisites:** D01 passed. Be ready to reset the app's notification setting in iOS Settings.
 **Steps:** The example starts uninitialized after every launch, and the SDK drops an APNs token or permission result it receives without an initialized core, so tap **Initialize** first each time.
 1. Delete the app, reinstall, **Initialize**, **Request permission (completion)**. Choose **Don't Allow**.
@@ -53,7 +53,7 @@ Result:
 - [ ] Pass  - [ ] Fail
 Result:
 
-## D03. Geocoder and location sharing
+## D03. Geocoder and location sharing (needs another host app)
 
 **Closes:** same todo as D01 (`CLGeocoder` part).
 **Prerequisites:** D01 passed. **Known gap:** the example has no `NSLocationWhenInUseUsageDescription` and never asks for location permission, so iOS will not list it under Location Services and this item cannot run in the example as it is. The SDK also never asks (it only reads the country when your app already holds permission). Run this item in a host app that requests When-In-Use location and integrates the SDK, or mark it "not proven" and carry it into the `0.1.0` known limitations. Network on.
@@ -67,7 +67,7 @@ Result:
 - Step 3: the backend device shows a `country` code matching where you are.
 - Step 4: the `country` is cleared in the backend.
 
-- [ ] Pass  - [ ] Fail
+- [ ] Pass  - [ ] Fail  - [ ] Not run (carried as unproven; then do **not** tick the core-port T8 todo)
 Result:
 
 ## D04. `UIDevice` profile fields
@@ -126,17 +126,18 @@ Result:
 
 ## D09. SwiftUI app without `@UIApplicationDelegateAdaptor`
 
-**Closes:** same todo as D08 (the class-name check on SwiftUI's internal delegate).
-**What the SDK does here:** it does **not** swizzle SwiftUI's internal app delegate. It logs one warning ("use @UIApplicationDelegateAdaptor or the manual API") and leaves the APNs token callbacks alone, so the token needs the manual forwarding API (`NottiDisableSwizzling` path, D10). Only the `UNUserNotificationCenter` swizzle still applies. This is a documented limitation, not a bug to fix.
-**Prerequisites:** D01 passed on the default scheme, so the device is already registered. Scheme `NottiExample-NoAdaptor`. Its `Debug-NoAdaptor` configuration has no `USE_ADAPTOR` flag (asserted in CI, and checked locally with `xcodebuild -showBuildSettings`), so SwiftUI supplies its own internal delegate. Install the build **over** the existing one (no delete): a fresh install would never get a token through the SDK here.
-**Steps:**
-1. Run the app. **Setup** → **Initialize**. **Push** → **Add listeners**.
+**Closes:** same todo as D08 (the class-name check on SwiftUI's internal delegate). Only part B below proves that check; part A alone does not.
+**What the SDK does here:** it does **not** swizzle SwiftUI's internal app delegate. It logs one warning and leaves the APNs token callbacks alone, so the device never registers through the SDK (the fix for an integrator is to add `@UIApplicationDelegateAdaptor`). Only the `UNUserNotificationCenter` swizzle still applies. This is a documented limitation, not a bug to fix.
+**Prerequisites:** D01 passed on the default scheme, so the device is already registered. Scheme `NottiExample-NoAdaptor`. Its `Debug-NoAdaptor` configuration has no `USE_ADAPTOR` flag (asserted in CI, and checked locally with `xcodebuild -showBuildSettings`), so SwiftUI supplies its own internal delegate.
+**Steps, part A (over-install: `received` and `clicked`):**
+1. Install the NoAdaptor build **over** the existing app (no delete). **Setup** → **Initialize**. **Push** → **Add listeners**.
 2. Send a push in the foreground, then background the app and tap a push.
+**Steps, part B (fresh install: the class-name check):**
+3. Delete the app. Install the NoAdaptor build. **Setup** → **Initialize**. **Push** → **Request permission (async)** and allow. Wait about a minute, then tap **Refresh device id**.
 **Expected:**
-- No crash, on launch or on any step.
-- `received` (foreground) and `clicked` (tap) still arrive in the Log, through the notification-center path.
-- On a **fresh** install under this scheme, "Device id" stays "none": record that as the expected limitation, not as a failure.
-- The "use @UIApplicationDelegateAdaptor or the manual API" warning is **not** a pass criterion: the SDK emits it once, at launch, at level `warn`, and the default level is `error`, so you will not see it. (Seeing it needs a launch-time log level, which the SDK does not have; see the STATE todo.)
+- Part A: no crash, and `received` (foreground) and `clicked` (tap) arrive in the Log through the notification-center path.
+- Part B (the pass criterion for the class-name check): "Device id" stays "none". If a device id **does** appear, the SDK swizzled SwiftUI's internal delegate, which means the name check missed its real class: record that as a **Fail**.
+- The "use @UIApplicationDelegateAdaptor or the manual API" warning is **not** a criterion: the SDK emits it once, at launch, at level `warn`, and the default level is `error`, so you will not see it (see the STATE todo on a launch-time log level).
 
 - [ ] Pass  - [ ] Fail
 Result:
@@ -145,7 +146,7 @@ Result:
 
 **Closes:** same todo as D08 (manual path). New device proof from EXR-04.
 **Prerequisites:** D01 passed. Scheme `NottiExample-Manual` (`NottiDisableSwizzling` is `true`).
-**Steps:** **Setup** shows "Swizzling: off". Repeat D08.
+**Steps:** **Setup** shows "Swizzling: off (manual forwarding)". Repeat D08.
 **Expected:** `received` and `clicked` once each, delivered through the five forwarded calls.
 
 - [ ] Pass  - [ ] Fail
@@ -173,6 +174,8 @@ Result:
 - [ ] Pass  - [ ] Fail
 Result:
 
+Static libraries (`NOTTI_LINKAGE=libs`) are proven by the hosted simulator tests and strict device builds only; no device item covers them. Add one run of D08 with `libs` if you want device proof.
+
 ## D13. Launch hook in a CocoaPods app, dynamic frameworks
 
 **Closes:** same todo as D12 (dynamic half).
@@ -196,7 +199,7 @@ Result:
 ## D15. Silent push `received`
 
 **Closes:** none (new item from EXR-15).
-**Prerequisites:** D01 passed. A silent push (`content-available`) with a `delivery_id`, sent through the Notti worker.
+**Prerequisites:** D01 passed. A silent push (`content-available`) carrying both `notification_id` and `delivery_id` (the SDK reports an event only when both are present), sent through the Notti worker.
 **Steps:** App in the foreground with listeners added. Send the silent push.
 **Expected:** One `received` in the Log, and one `received` event for that delivery in the backend.
 
@@ -215,7 +218,7 @@ Result:
 
 ## D17. App Store Connect validation upload: privacy manifest and `C617.1`
 
-**Closes:** STATE todo "(nse-rich-media, D9 …) `PrivacyInfo.xcprivacy` over-declaration" (App Store validation part; AD-014 D2).
+**Closes:** the open part of STATE todo "(nse-rich-media, D9 …) `PrivacyInfo.xcprivacy` over-declaration" (App Store validation; AD-014 D2). That todo is already ticked for the code change: append the validation result to it.
 **Prerequisites:** An Archive of the example (or a throwaway host app) with the extension, signed for distribution, and an App Store Connect record. Upload with Xcode **Validate App** (no release needed).
 **Steps:** Archive, **Validate App**, read the report. Check the privacy report in Organizer (**Generate Privacy Report**).
 **Expected:** Validation accepts both manifests with no warning about a missing or unjustified required-reason API in `NottiSDKExtension`, and no ITMS error about `PrivacyInfo.xcprivacy`.
@@ -225,7 +228,7 @@ Result:
 
 ## D18. App Store Connect: privacy labels match the manifest
 
-**Closes:** STATE todo "(core-port Verifier r1 N7, LGPD) `NSPrivacyCollectedDataTypeUserID` declared … Device ID" (label text confirmation). Needs legal or privacy review: this item records the review, it does not replace it.
+**Closes:** the open part of STATE todo "(core-port Verifier r1 N7, LGPD) `NSPrivacyCollectedDataTypeUserID` declared … Device ID" (label text confirmation). The todo is already ticked: append the review result to it. Needs legal or privacy review: this item records the review, it does not replace it.
 **Prerequisites:** D17 passed. The privacy report from D17.
 **Steps:** Compare the report with the README section "What your app declares in App Store Connect".
 **Expected:** The report lists Device ID, User ID, Email Address, Phone Number, Coarse Location, Product Interaction, Other Diagnostic Data and Other Data Types, linked and not used for tracking. Legal or privacy confirmed the wording of the **Other** categories and of User ID before `0.1.0`.
@@ -235,7 +238,7 @@ Result (reviewer and date):
 
 ## D19. App Store acceptance of the dynamic-framework layout
 
-**Closes:** STATE todo "(example-and-release T1 spike S6 …)" (the [Incerto] part: an extension that loads a framework from the host app).
+**Closes:** the open part of STATE todo "(example-and-release T1 spike S6 …)" (the [Incerto] part: an extension that loads a framework from the host app). The todo is already ticked: append the App Store result to it.
 **Prerequisites:** D13 passed. An Archive built with `NOTTI_LINKAGE=dynamic`.
 **Steps:** **Validate App** on that archive.
 **Expected:** No error about the extension's `@executable_path/../../Frameworks` rpath or embedded frameworks. If Apple rejects it, record the message: the `NottiSDKExtension` pod then needs a different packaging before `0.1.0`.

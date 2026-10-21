@@ -81,6 +81,10 @@ fi
 
 # 2. Sample values.
 for key in NOTTI_APP_ID NOTTI_CLIENT_KEY; do
+  if [[ "$(grep -cE "^${key}[[:space:]]*=" "$sample")" -ne 1 ]]; then
+    echo "error: $sample must set $key exactly once (xcconfig uses the last value)" >&2
+    exit 1
+  fi
   value="$(grep -E "^${key}[[:space:]]*=" "$sample" | head -n 1 | sed -E 's/^[^=]*=[[:space:]]*//; s/[[:space:]]+$//')"
   if [[ "$value" != "fixture" ]]; then
     echo "error: $sample must set $key = fixture (got: ${value:-missing})" >&2
@@ -90,12 +94,12 @@ done
 
 # 3. No real config in tracked files. git ls-files skips the git-ignored local xcconfig.
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  files="$(git ls-files Example README.md docs 2>/dev/null || true)"
+  files="$(git ls-files Example README.md CHANGELOG.md docs 2>/dev/null || true)"
 else
-  files="$(find Example README.md docs -type f 2>/dev/null | grep -v 'Example.local.xcconfig' || true)"
+  files="$(find Example README.md CHANGELOG.md docs -type f 2>/dev/null | grep -v 'Example.local.xcconfig' || true)"
 fi
-key_pattern='(^|[^[:alnum:]_])(ck|rk)_[0-9a-fA-F]{64}([^[:alnum:]_]|$)'
-uuid_pattern='NOTTI_APP_ID[[:space:]]*=[[:space:]]*[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
+key_pattern='(^|[^[:alnum:]_])([cC][kK]|[rR][kK])_[0-9a-fA-F]{64}([^[:alnum:]_]|$)'
+uuid_pattern='NOTTI_APP_ID[[:space:]]*[=:][[:space:]]*["'"'"']?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
 leaks=""
 while IFS= read -r f; do
   [[ -z "$f" || ! -f "$f" ]] && continue
