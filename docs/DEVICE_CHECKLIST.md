@@ -42,9 +42,9 @@ Result:
 
 **Closes:** same todo as D01 (permission prompt part). Tick that todo once, after D01 to D04 pass.
 **Prerequisites:** D01 passed. Be ready to reset the app's notification setting in iOS Settings.
-**Steps:**
+**Steps:** The example starts uninitialized after every launch, and the SDK drops an APNs token or permission result it receives without an initialized core, so tap **Initialize** first each time.
 1. Delete the app, reinstall, **Initialize**, **Request permission (completion)**. Choose **Don't Allow**.
-2. In iOS Settings → the app → Notifications, turn **Allow Notifications** on. Reopen the app.
+2. In iOS Settings → the app → Notifications, turn **Allow Notifications** on. Reopen the app and tap **Initialize** again.
 3. Call **Request permission (async)** again.
 **Expected:**
 - Step 1: the **Push** section title reads `Permission: denied` and the Log has `permission: denied`.
@@ -102,12 +102,12 @@ Result:
 - [ ] Pass  - [ ] Fail
 Result:
 
-## D07. Notification Service Extension expiry fallback
+## D07. Notification Service Extension deadline fallback
 
-**Closes:** same todo as D05 (expiry path). New item from EXR-15, no earlier todo.
+**Closes:** same todo as D05, for the 20 second deadline path only. The OS expiry callback (`serviceExtensionTimeWillExpire`, about 30 seconds) is **not** reached by this item, because the SDK's own 20 second deadline always ends the job first. Carry the expiry callback as unproven on a device unless you find a way to exceed the deadline.
 **Prerequisites:** D05 passed. A media URL that is slow or never finishes (a host you control that stalls).
 **Steps:** Send a push pointing at the stalling URL. Wait about 30 seconds.
-**Expected:** The notification still appears with its title and body, without the media, after the extension's time runs out. No stuck or missing notification.
+**Expected:** The notification still appears with its title and body, without the media, once the 20 second deadline passes. No stuck or missing notification.
 
 - [ ] Pass  - [ ] Fail
 Result:
@@ -117,7 +117,7 @@ Result:
 **Closes:** STATE todo "(delegate-integration, device) The SwiftUI-internal app delegate check … is a class-name check".
 **Prerequisites:** D01 passed. Scheme `NottiExample` (the adaptor is on through `USE_ADAPTOR`).
 **Steps:**
-1. Run the app. **Push** tab → **Add listeners**.
+1. Run the app. **Setup** tab → **Initialize**. **Push** tab → **Add listeners** (both are needed on every launch: the example keeps no state).
 2. With the app in the foreground, send a push. Then background the app and tap a push.
 **Expected:** The Log shows `received` once per foreground push and `clicked` once per tap, with no duplicates. The Log lists key names only, never values.
 
@@ -127,7 +127,7 @@ Result:
 ## D09. SwiftUI delegate check, without `@UIApplicationDelegateAdaptor`
 
 **Closes:** same todo as D08.
-**Prerequisites:** D01 passed. Scheme `NottiExample-NoAdaptor`.
+**Prerequisites:** D01 passed. Scheme `NottiExample-NoAdaptor`. Its `Debug-NoAdaptor` configuration has no `USE_ADAPTOR` flag (asserted in CI and checked locally with `xcodebuild -showBuildSettings`), so SwiftUI supplies its own internal delegate.
 **Steps:** Repeat D08 with this scheme.
 **Expected:** Same as D08: `received` and `clicked` once each. If the SDK cannot attach, record exactly what is missing; this is the case the class-name check guards.
 
@@ -147,9 +147,9 @@ Result:
 ## D11. Late install path of the launch hook
 
 **Closes:** STATE todo "(delegate-integration Verifier r1 N5/N7/N9, notes)" (late-install path, device-only, [Incerto]).
-**Prerequisites:** D01 passed.
-**Steps:** Cold-launch the app from a tap on a push (app fully quit first). Check the Log.
-**Expected:** The tap is reported as `clicked` once, with no missing callback and no crash during launch.
+**Prerequisites:** D01 and D09 passed. Scheme `NottiExample-NoAdaptor`: only there does the SDK have to add missing callbacks to SwiftUI's internal delegate, which is the path this todo is about. (`ExampleAppDelegate` implements all five callbacks, so the adaptor build cannot exercise it.)
+**Steps:** Quit the app. Tap a push to launch it cold. Tap **Initialize**, then **Add listeners** and **Take initial click**. Check the Log.
+**Expected:** One `clicked` row (key names only), and no crash during launch. Record whether the tap was also reported by the SDK's own callback path without your help.
 
 - [ ] Pass  - [ ] Fail
 Result:
@@ -178,7 +178,7 @@ Result:
 
 **Closes:** none (new item from EXR-15).
 **Prerequisites:** D01 passed.
-**Steps:** Quit the app. Tap a push to launch it. Open **Push** → **Take initial click**.
+**Steps:** Quit the app. Tap a push to launch it. Tap **Initialize**, then open **Push** → **Take initial click**.
 **Expected:** The Log has one `clicked` row (key names only). Pressing **Take initial click** a second time adds no new `clicked` row, because the click is taken once.
 
 - [ ] Pass  - [ ] Fail
