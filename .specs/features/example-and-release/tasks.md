@@ -305,7 +305,7 @@ All match. No `[P]` task.
 
 ### T10: CI `example` job
 
-**What**: Matrix job `spm | pods-static | pods-libs` on `macos-26` with a pinned XcodeGen, per leg: generate, (pod install), test, generic device build (warnings as errors, NSE with `APPLICATION_EXTENSION_API_ONLY=YES`); SPM leg also builds `Debug-Manual`.
+**What**: Matrix job `spm | pods-static | pods-libs | pods-dynamic` (dynamic added by AD-012) on `macos-26` with a pinned XcodeGen, per leg: generate, (pod install), test, generic device build (warnings as errors, NSE with `APPLICATION_EXTENSION_API_ONLY=YES`); SPM leg also builds `Debug-Manual`.
 **Where**: `.github/workflows/ci.yml`
 **Depends on**: T7, T9
 **Reuses**: existing `test` and `pod-lint` job steps
@@ -313,9 +313,9 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Draft PR CI runs the legs green (link recorded)
-- [ ] A generated project or `Pods/` is never committed by a leg
-- [ ] Gate check passes: Full
+- [ ] Draft PR CI runs the legs green (link recorded). **Blocked 2026-10-21:** GitHub Actions billing; no job starts. The SPM leg's commands were run locally instead (generate, device build, `Debug-Manual`, `--built` plist checks).
+- [x] A generated project or `Pods/` is never committed by a leg (step `Nothing generated is tracked`)
+- [ ] Gate check passes: Full (pending the CI run above)
 
 **Tests**: none (CI)
 **Gate**: Full
