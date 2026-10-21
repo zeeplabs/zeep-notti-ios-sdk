@@ -221,7 +221,7 @@ This section is derived from the code. Re-read it against `Sources/` before each
 
 ### Sent to the Notti backend
 
-The base URL is the production host named in [Quick start](#quick-start) unless you pass `Notti.Options(baseUrl:)`. Requests go to `/v1/apps/<appId>/devices` and `/v1/apps/<appId>/notifications/<id>/events`, authenticated with your client key.
+The base URL is the production host named in [Quick start](#quick-start) unless you pass `Notti.Options(baseUrl:)`. Requests go to `/v1/apps/<appId>/devices` (registration), `/v1/apps/<appId>/devices/<deviceId>` (every later update, so the device id travels in the path) and `/v1/apps/<appId>/notifications/<id>/events`, authenticated with your client key. Every device update also carries the push `token`.
 
 | When | Fields |
 |---|---|
@@ -232,7 +232,7 @@ The base URL is the production host named in [Quick start](#quick-start) unless 
 | Permission and `setSubscription` | `permission_status`, `subscribed`, `last_unsubscribed_at` |
 | Device profile, synced when changed | `app_version`, `sdk_version`, `device_os`, `device_model`, `timezone_id`, `language` |
 | Sessions | `first_session_at`, `last_session_at`, `session_count`, `session_time_seconds` |
-| Location sharing on, and your app already holds location permission | `country` only |
+| Location sharing on, and your app already holds location permission | `country` only (`null` when you turn sharing off) |
 | A push is received, opened or clicked | `delivery_id`, `type` (`received`, `opened`, `clicked`), `token`, reported under the notification id |
 
 Do not put personal data in tag keys or values unless your own basis for processing covers it.
@@ -251,7 +251,7 @@ Logs go through one logger, default level `error`. They never contain email, pho
 
 ### Privacy manifests
 
-`NottiSDK` ships `PrivacyInfo.xcprivacy` with `NSPrivacyTracking` false and no tracking domains. It declares the required-reason API `UserDefaults` (`CA92.1`) and these collected data types, all linked and none used for tracking: Device ID, User ID, Email Address, Phone Number, Coarse Location, Product Interaction, Other Diagnostic Data and Other Data Types. Purposes are App Functionality; Coarse Location and Product Interaction also declare Analytics. `NottiSDKExtension` ships its own manifest with no collected data and no required-reason API.
+`NottiSDK` ships `PrivacyInfo.xcprivacy` with `NSPrivacyTracking` false and no tracking domains. It declares the required-reason API `UserDefaults` (`CA92.1`) and these collected data types, all linked and none used for tracking: Device ID, User ID, Email Address, Phone Number, Coarse Location, Product Interaction, Other Diagnostic Data and Other Data Types. Purposes are App Functionality for every type except Product Interaction, which declares Analytics only; Coarse Location declares both. `NottiSDKExtension` ships its own manifest with no collected data and no required-reason API.
 
 Other Diagnostic Data and Other Data Types are a best-fit choice for fields Apple's list does not name. Confirm them with your privacy owner.
 
@@ -270,12 +270,12 @@ This README describes what the SDK does. It is not legal advice and does not sta
 - **No `received` for visible pushes without `notification_id`.** A push from another sender, or one without that field, is not reported as `received`.
 - **No consent API in 0.1.0.** There is no call to hold collection until the user consents. Gate `Notti.initialize` and `Notti.login` yourself.
 - **Personal data in `UserDefaults`.** Email, phone, external user id and tags are stored unencrypted in the `notti_prefs` suite.
-- **No `Retry-After`.** Failed requests are retried up to 5 times with a fixed 2, 4, 8 and 16 second backoff. The header is ignored.
+- **No `Retry-After`.** A request is tried up to 5 times, with 2, 4, 8 and 16 second waits between attempts. Only network errors, 5xx, 408 and 429 are retried; other 4xx are final. A `Retry-After` header is ignored.
 - **Not yet proven on a device:** APNs registration and token delivery, permission prompt states, geocoder and location sharing, device profile fields, cold-start click, silent and background `received`, the launch hook in a CocoaPods app, and an App Store Connect validation upload. See [docs/DEVICE_CHECKLIST.md](docs/DEVICE_CHECKLIST.md).
 
 ## Example app
 
-`Example/` is a SwiftUI app and a Notification Service Extension that call every public member. Build it through SPM (`project.yml`) or CocoaPods (`project-pods.yml`, `NOTTI_LINKAGE=static|libs|dynamic`). It needs an `Example.local.xcconfig` with your own app id and key; without it the app reads `fixture` and never calls the SDK. The README snippets are excerpts of files under `Example/`, checked by `scripts/check-readme-snippets.sh`.
+`Example/` is a SwiftUI app and a Notification Service Extension that call every public member. It needs [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`). From `Example/`, run `xcodegen generate --spec project.yml` for SPM, or `xcodegen generate --spec project-pods.yml` and `NOTTI_LINKAGE=static|libs|dynamic pod install` for CocoaPods, and open the project or the `.xcworkspace`. The app starts uninitialized: tap **Initialize** on the Setup tab. It needs an `Example.local.xcconfig` with your own app id and key; without it the app reads `fixture` and never calls the SDK. The README snippets are excerpts of files under `Example/`, checked by `scripts/check-readme-snippets.sh`.
 
 ## License
 

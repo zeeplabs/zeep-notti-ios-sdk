@@ -28,7 +28,7 @@ First release. It is a native port of `react-native-notti` 0.6.0 for iOS, with t
 - A visible push without `notification_id` (for example from another SDK) is not reported as `received`.
 - There is no consent API: gate `Notti.initialize` and `Notti.login` yourself.
 - Email, phone, external user id and tags are stored unencrypted in `UserDefaults` (suite `notti_prefs`).
-- Failed requests are retried up to 5 times with a fixed 2, 4, 8 and 16 second backoff; `Retry-After` is ignored.
+- A request is tried up to 5 times with 2, 4, 8 and 16 second waits; only network errors, 5xx, 408 and 429 are retried, and `Retry-After` is ignored.
 - Location sharing needs your app to hold location permission; the SDK never requests it.
 
 ### Migration notes from `react-native-notti` 0.6.0
