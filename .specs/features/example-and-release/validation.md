@@ -1,4 +1,4 @@
-# Validation: example-and-release - NOT PASSED (3 rounds, fixes applied after round 3)
+# Validation: example-and-release - FAIL ❌ (round 3 conditional; fixes applied, round 4 pending)
 
 **Status**: the feature is not marked done. Three independent Verifier rounds ran on 2026-10-21; round 3 was a conditional FAIL and its findings are fixed in the commit that adds this file, but no round 4 ran. CI has never run for any of this work (GitHub Actions billing), and the device checklist has not been run, so no EXR is proven beyond "Local" (see `traceability.md`).
 
