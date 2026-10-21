@@ -161,11 +161,11 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Empty, `fixture` and unsubstituted `$(...)` values give `isConfigured == false`; a real-looking synthetic value gives true
-- [ ] A host `h.example.invalid` becomes `https://h.example.invalid`; empty host gives nil (SDK default)
-- [ ] `ExampleLog` has no API taking an arbitrary string from SDK data; a sentinel passed to every `LogEvent` constructor never appears in `rows`
-- [ ] Gate check passes: Example (tests)
-- [ ] Test count: at least 8 hosted tests
+- [x] Empty, `fixture` and unsubstituted `$(...)` values give `isConfigured == false`; a real-looking synthetic value gives true
+- [x] A host `h.example.invalid` becomes `https://h.example.invalid`; empty host gives nil (SDK default)
+- [x] `ExampleLog` has no API taking an arbitrary string from SDK data; a sentinel passed to every `LogEvent` constructor never appears in `rows`
+- [x] Gate check passes: Example (tests)
+- [x] Test count: at least 8 hosted tests (15: 8 config, 7 log)
 
 **Tests**: unit (hosted)
 **Gate**: Example
