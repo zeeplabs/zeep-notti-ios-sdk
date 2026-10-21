@@ -9,8 +9,8 @@ Paste this as the description of the release PR. The PR itself only sets the CHA
 Do not tag until every box is ticked.
 
 **Proof**
-- [ ] CI is green on this PR and on `main` (GitHub Actions billing fixed; the earlier PR #11 run was `39647738829`, re-run it with `gh run rerun`). The `example` job, `check-example-coverage.sh`, `check-example-config.sh`, `check-readme-snippets.sh` and the CHANGELOG check in `check-version.sh` have never run in CI before this PR.
-- [ ] `docs/DEVICE_CHECKLIST.md` D01..D20 run on a physical device; each Fail is fixed or carried into the CHANGELOG as a known limitation. D03 (location sharing) runs in a separate host app, the example cannot request location permission.
+- [ ] CI is green on this PR and on `main` (GitHub Actions billing fixed; push the PR branch and read the new run. Run `39647738829` belongs to the merged PR #11 and only documents the billing block). The `example` job, `check-example-coverage.sh`, `check-example-config.sh`, `check-readme-snippets.sh` and the CHANGELOG check in `check-version.sh` have never run in CI before this PR.
+- [ ] `docs/DEVICE_CHECKLIST.md` D01..D20 run on a physical device; each Fail is fixed or carried into the CHANGELOG as a known limitation. D03 (location sharing) and D11 (fetch callback added to a delegate that lacks it) run in a separate host app; the example cannot do either. If they are not run, carry them into the CHANGELOG as unproven.
 - [ ] STATE todos cited by the checklist ticked after it passes (EXR-16).
 - [ ] `pod lib lint NottiSDK.podspec --platforms=ios` and `pod lib lint NottiSDKExtension.podspec --platforms=ios` pass (also `--use-libraries`).
 
