@@ -126,7 +126,30 @@ if [[ -n "$unmarked" ]]; then
   exit 1
 fi
 
-# 3. The API surface equals the committed file.
+# 3. The ObjC launch hook header is the only public ObjC header and declares only
+# `NottiBootstrap`. It must be public for the module map (SPM and CocoaPods) but
+# it is an implementation detail outside semver (AD-014), so it is not in the
+# surface file; this guard keeps anything else from slipping in through it.
+bootstrap_include="Sources/NottiSDKBootstrap/include"
+if [[ ! -d "$bootstrap_include" ]]; then
+  echo "error: expected directory not found: $bootstrap_include" >&2
+  exit 1
+fi
+bootstrap_headers="$(find "$bootstrap_include" -type f | LC_ALL=C sort)"
+if [[ "$bootstrap_headers" != "$bootstrap_include/NottiBootstrap.h" ]]; then
+  echo "error: $bootstrap_include must contain only NottiBootstrap.h (found:" >&2
+  echo "$bootstrap_headers" >&2
+  echo "). A new public ObjC header is public API: move it to the surface check first." >&2
+  exit 1
+fi
+bootstrap_decls="$(grep -E '^[[:space:]]*@(interface|protocol)[[:space:]]' "$bootstrap_include/NottiBootstrap.h" \
+  | sed -E 's/^[[:space:]]*@(interface|protocol)[[:space:]]+([A-Za-z0-9_]+).*/\1 \2/' || true)"
+if [[ "$bootstrap_decls" != "interface NottiBootstrap" ]]; then
+  echo "error: NottiBootstrap.h must declare only 'interface NottiBootstrap' (found: ${bootstrap_decls:-nothing})" >&2
+  exit 1
+fi
+
+# 4. The API surface equals the committed file.
 current="$(scan "${api_dirs[@]}" | LC_ALL=C sort)"
 
 if [[ $update -eq 1 ]]; then
