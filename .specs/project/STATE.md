@@ -229,7 +229,7 @@ delegate-integration Verifier round 1 (candidate lessons, not yet in `.specs/LES
 - [ ] (example-and-release T9, example gap) `Example/project.yml` and `project-pods.yml` hard-code `invalid.example.notti.app` bundle ids and an empty team, and target settings override an xcconfig, so a device run needs a local Xcode edit that regenerating resets. Consider reading both from `Example.local.xcconfig`.
 - [ ] (example-and-release T10, tooling) XcodeGen is pinned by `brew install xcodegen` plus a version assertion (`XCODEGEN_VERSION` in `ci.yml`), so the job fails when Homebrew serves a newer one. Switch to a pinned release asset with a checksum if that gets noisy.
 - [ ] (example-and-release T8, docs) The Objective-C block in `README.md` is not compiled by CI (the example has no ObjC target); the names come from `@objc(...)` in `NottiObjC.swift`. Add an ObjC target or a compile check if the block drifts.
-- [ ] (example-and-release T11, release) `CHANGELOG.md` `[0.1.0]` has the date `TBD`; `check-version.sh` rejects `TBD` on a tag build. Set the date on release day. EXR-22 (release PR text with the pre-tag gates) is not written yet.
+- [ ] (example-and-release T11, release) `CHANGELOG.md` `[0.1.0]` has the date `TBD`; `check-version.sh` rejects `TBD` on a tag build. Set the date on release day. The release PR text with the pre-tag gates is in `.specs/features/example-and-release/release-pr.md`.
 
 ## Preferences
 
