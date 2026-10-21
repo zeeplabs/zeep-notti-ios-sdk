@@ -124,12 +124,18 @@ Result:
 - [ ] Pass  - [ ] Fail
 Result:
 
-## D09. SwiftUI delegate check, without `@UIApplicationDelegateAdaptor`
+## D09. SwiftUI app without `@UIApplicationDelegateAdaptor`
 
-**Closes:** same todo as D08.
-**Prerequisites:** D01 passed. Scheme `NottiExample-NoAdaptor`. Its `Debug-NoAdaptor` configuration has no `USE_ADAPTOR` flag (asserted in CI and checked locally with `xcodebuild -showBuildSettings`), so SwiftUI supplies its own internal delegate.
-**Steps:** Repeat D08 with this scheme.
-**Expected:** Same as D08: `received` and `clicked` once each. If the SDK cannot attach, record exactly what is missing; this is the case the class-name check guards.
+**Closes:** same todo as D08 (the class-name check on SwiftUI's internal delegate).
+**What the SDK does here:** it does **not** swizzle SwiftUI's internal app delegate. It logs one warning ("use @UIApplicationDelegateAdaptor or the manual API") and leaves the APNs token callbacks alone, so the token needs the manual forwarding API (`NottiDisableSwizzling` path, D10). Only the `UNUserNotificationCenter` swizzle still applies. This is a documented limitation, not a bug to fix.
+**Prerequisites:** D01 passed on the default scheme, so the device is already registered. Scheme `NottiExample-NoAdaptor`. Its `Debug-NoAdaptor` configuration has no `USE_ADAPTOR` flag (asserted in CI, and checked locally with `xcodebuild -showBuildSettings`), so SwiftUI supplies its own internal delegate. Install the build **over** the existing one (no delete): a fresh install would never get a token through the SDK here. Set **Log level** to `warn` and watch the Xcode console.
+**Steps:**
+1. Run the app. **Setup** → **Initialize**. **Push** → **Add listeners**.
+2. Send a push in the foreground, then background the app and tap a push.
+**Expected:**
+- The console shows the SwiftUI warning once, and there is no crash. This is the pass criterion for the class-name check: the name test matched the real SwiftUI delegate.
+- `received` (foreground) and `clicked` (tap) still arrive in the Log, through the notification-center path.
+- On a **fresh** install under this scheme, "Device id" stays "none": record that as the expected limitation, not as a failure.
 
 - [ ] Pass  - [ ] Fail
 Result:
@@ -144,14 +150,15 @@ Result:
 - [ ] Pass  - [ ] Fail
 Result:
 
-## D11. Late install path of the launch hook
+## D11. Late install path of the launch hook (needs another host app)
 
 **Closes:** STATE todo "(delegate-integration Verifier r1 N5/N7/N9, notes)" (late-install path, device-only, [Incerto]).
-**Prerequisites:** D01 and D09 passed. Scheme `NottiExample-NoAdaptor`: only there does the SDK have to add missing callbacks to SwiftUI's internal delegate, which is the path this todo is about. (`ExampleAppDelegate` implements all five callbacks, so the adaptor build cannot exercise it.)
-**Steps:** Quit the app. Tap a push to launch it cold. Tap **Initialize**, then **Add listeners** and **Take initial click**. Check the Log.
-**Expected:** One `clicked` row (key names only), and no crash during launch. Record whether the tap was also reported by the SDK's own callback path without your help.
+**Not provable with the example.** The todo is about the SDK adding a callback that the host's app delegate lacks, after UIKit already read the delegate's capabilities. `ExampleAppDelegate` implements every callback, and under SwiftUI without the adaptor the SDK adds nothing (D09), so no example scheme exercises this path. Run it in the separate test app you plan to build, or carry it as unproven.
+**Prerequisites:** A host app with a UIKit app delegate that does **not** implement `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)`, with the SDK linked and `Notti.initialize` called. D01 passed.
+**Steps:** Cold-launch the app, then send a silent push (as in D15) with the app in the foreground.
+**Expected:** One `received` for the silent push and no crash. Record whether the SDK-added callback ran, and whether UIKit still called it after the late install.
 
-- [ ] Pass  - [ ] Fail
+- [ ] Pass  - [ ] Fail  - [ ] Not run (carried as unproven)
 Result:
 
 ## D12. Launch hook in a CocoaPods app, static frameworks
