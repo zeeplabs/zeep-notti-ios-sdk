@@ -183,11 +183,11 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Every member in scope of EXR-02 is called from `ExampleModel` and reachable from a screen
-- [ ] In the unconfigured state no screen action calls the SDK and the UI says "not configured"
-- [ ] A hosted test drives `ExampleModel` with sentinel email, phone and key and finds none in the log rows
-- [ ] The `Debug-Manual` configuration builds; the manual path forwards the five calls and the default path forwards none
-- [ ] Gate check passes: Example
+- [x] Every member in scope of EXR-02 is called from `ExampleModel` and reachable from a screen
+- [x] In the unconfigured state no screen action calls the SDK and the UI says "not configured"
+- [x] A hosted test drives `ExampleModel` with sentinel email, phone and key and finds none in the log rows
+- [x] The `Debug-Manual` configuration builds; the manual path forwards the five calls and the default path forwards none
+- [x] Gate check passes: Example
 
 **Tests**: unit (hosted)
 **Gate**: Example
