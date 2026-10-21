@@ -111,6 +111,13 @@
 
 ---
 
+### AD-014: Pre-0.1.0 owner calls on privacy and public contract (2026-10-21)
+
+**Decision:** (D1) The `NottiSDK` manifest also declares Device ID (push token and backend device id), Other Diagnostic Data (app/sdk version, OS, model, timezone, language, push-permission status) and Other Data Types (host tags), all linked, no tracking, App Functionality. Declaring Device ID confirmed by Julio. (D2) `NottiSDKExtension` drops `NSPrivacyAccessedAPICategoryFileTimestamp` C617.1: the code uses `fileSizeKey` only and no timestamp API remains (grep of `Sources`). (D3) `NottiBootstrap.h` stays public (the module map needs it), outside semver; `check-public-surface.sh` fails if another public ObjC header or any other `@interface`/`@protocol` appears there. (D4) Proposed, awaiting Julio: keep the Info.plist key `NottiDisableSwizzling`; accept that a visible push without `notification_id` is no longer emitted as `received`; warnings-as-errors on library builds (device and simulator) in the `example` CI job, not yet on test targets.
+**Reason:** Under-declared data is an App Store review and LGPD transparency risk; an unused required-reason declaration is inaccurate; the surface script scans Swift only, so the ObjC header was unguarded.
+**Trade-off:** The two "Other" categories are a best fit for fields Apple's list does not name [Incerto]; privacy/legal should confirm. Dropping C617.1 relies on App Store validation of a real build (to check in `example-and-release`).
+**Impact:** both `PrivacyInfo.xcprivacy` and their tests, `scripts/check-public-surface.sh`, CHANGELOG notes for D4.
+
 ## Active Blockers
 
 _none_
@@ -209,7 +216,7 @@ delegate-integration Verifier round 1 (candidate lessons, not yet in `.specs/LES
 - [ ] (delegate-integration Verifier r1 N5/N7/N9, notes) `NottiDeepLinkTests.test_noCallbackOfEitherSwizzlerOpensAURL` is tautological (the script is the real guard); `NottiBootstrap.h` is public in the pod but not in `PUBLIC_SURFACE.txt` (confirm acceptable); late-install path where UIKit may read the app delegate's capabilities before the SDK adds a missing callback is [Incerto] and device-only.
 - [ ] (nse-rich-media, device) End to end on a real device with a real push: `notti_image_url`, the `@objc(NotificationService)` wiring and the two forwarding calls. An NSE does not run in the Simulator; add to the `example-and-release` checklist.
 - [ ] (nse-rich-media, known limit) A process killed mid-download leaves an orphan file in `temporaryDirectory/notti-media`. The OS purges the temp area; no cleanup sweep exists (it would need file dates).
-- [ ] (nse-rich-media, D9) `PrivacyInfo.xcprivacy` over-declaration: `NSPrivacyAccessedAPICategoryFileTimestamp` C617.1 stays declared although the code now uses `fileSizeKey`. Confirm in App Store validation of a real build (`example-and-release`) that it is accepted, or drop the declaration if no file-timestamp API remains.
+- [x] (nse-rich-media, D9; resolved 2026-10-21, AD-014 D2: declaration dropped; App Store validation of a real build still to confirm) `PrivacyInfo.xcprivacy` over-declaration: `NSPrivacyAccessedAPICategoryFileTimestamp` C617.1 stays declared although the code now uses `fileSizeKey`. Confirm in App Store validation of a real build (`example-and-release`) that it is accepted, or drop the declaration if no file-timestamp API remains.
 - [ ] (nse-rich-media, CI) The new `checks` step `check-nse-logging.sh` and the new `NottiSDKExtensionObjCTests` target have not run in CI yet; `check-hook-linked.sh spm|pod` results are in the T16 commit.
 - [ ] (core, found 2026-10-12 via CI flake) `NottiRuntime.start` replacing the ensured core: if the old core's queue runs after the new core's registration resync, the held-email PATCH is skipped (email is persisted, but the PATCH goes out only on the next registration or `setEmail`, so DPF-19 convergence is late, not lost). Very unlikely in production (registration needs a network round trip). Reproduced only with an instant stub under CPU load. M1 is a port (AD-002): decide in a post-M1 spec. Other tests using `drain(runtime.core)` after a core replacement may have the same race (not audited).
 - [ ] (tests, lesson candidate) The first `UNNotificationAttachment` in a process on a clean simulator takes about 20 s; `JobTestCase` now warms it up once. Tests that wait on a first-use system service need a warm-up outside the timed wait.
