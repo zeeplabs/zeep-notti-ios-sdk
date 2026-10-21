@@ -26,6 +26,8 @@ targets:
     type: application
     platform: iOS
     sources: [App]
+    scheme:
+      testTargets: [NottiExampleTests]
     dependencies:
       - package: NottiSDK
         product: NottiSDK
@@ -56,3 +58,13 @@ targets:
         INFOPLIST_FILE: NotificationService/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         APPLICATION_EXTENSION_API_ONLY: YES
+  NottiExampleTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: NottiExample
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: invalid.example.notti.tests
+        GENERATE_INFOPLIST_FILE: YES
