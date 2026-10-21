@@ -226,10 +226,10 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] `loadCount == 1` and `installCount == 1` in the hosted app process
-- [ ] The app product contains a bundle with `PrivacyInfo.xcprivacy`, and the appex contains one for the extension, by exact name asserted as a literal
-- [ ] Removing the `NottiSDKBootstrap` dependency in `Package.swift` makes the hook test fail (mutation evidence in the commit body)
-- [ ] Gate check passes: Example
+- [x] `loadCount == 1` and `installCount == 1` in the hosted app process
+- [x] The app product contains a bundle with `PrivacyInfo.xcprivacy`, and the appex contains one for the extension, by exact name asserted as a literal
+- [x] Removing the `NottiSDKBootstrap` dependency in `Package.swift` makes the hook test fail (mutation evidence in the commit body)
+- [x] Gate check passes: Example
 
 **Tests**: integration (hosted)
 **Gate**: Example
