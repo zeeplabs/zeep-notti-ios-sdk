@@ -333,10 +333,10 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] `check-version.sh` fails when the CHANGELOG top section, `NottiSDKVersion.current` and `s.version` differ (mutation evidence), passes when equal at `0.1.0`
-- [ ] Migration notes cover storage keys and device id continuity
-- [ ] Gates for Julio listed in the PR text: device checklist, Device ID manifest decision, UserID text confirmed, `pod lib lint`, tag, GitHub Release, `pod trunk push`
-- [ ] Gate check passes: Full
+- [x] `check-version.sh` fails when the CHANGELOG top section, `NottiSDKVersion.current` and `s.version` differ (mutation evidence), passes when equal at `0.1.0`
+- [x] Migration notes cover storage keys and device id continuity
+- [ ] Gates for Julio listed in the PR text (written when the release PR is opened; not yet): device checklist, Device ID manifest decision, UserID text confirmed, `pod lib lint`, tag, GitHub Release, `pod trunk push`
+- [ ] Gate check passes: Full (guards and version script run locally; SDK sources untouched, full suite and CI pending billing)
 
 **Tests**: none (script)
 **Gate**: Full

@@ -2,7 +2,7 @@
 
 Native iOS SDK for [Zeep Notti](https://github.com/zeeplabs) push notifications: device registration, user identity, tags, engagement events (`received` / `opened` / `clicked`) and rich media in a Notification Service Extension.
 
-> **Status: pre-release.** Nothing is published yet. The first release (`0.1.0`) targets behavior parity with `react-native-notti` 0.6.0 on iOS. Do not depend on this repo in production. Several behaviors are not yet proven on a physical device: see [Known limitations](#known-limitations) and [docs/DEVICE_CHECKLIST.md](docs/DEVICE_CHECKLIST.md).
+> **Status: `0.1.0` release candidate.** The code is complete and tested in the Simulator, but the release is not tagged or published until the [device checklist](docs/DEVICE_CHECKLIST.md) passes. It ports `react-native-notti` 0.6.0 to iOS. Do not depend on it in production yet. See [Known limitations](#known-limitations) and the [CHANGELOG](CHANGELOG.md).
 
 ## Requirements
 

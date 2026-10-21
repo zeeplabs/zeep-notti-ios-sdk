@@ -234,6 +234,19 @@ Result (reviewer and date):
 - [ ] Pass  - [ ] Fail
 Result:
 
+## D20. Device id continuity from `react-native-notti` 0.6.0
+
+**Closes:** none (new item; backs the migration note in the CHANGELOG).
+**Prerequisites:** A test app built with `react-native-notti` 0.6.0 on iOS that has registered a device. D01 passed for the native SDK.
+**Steps:**
+1. Run the React Native build on the device, register, and note in the Notti backend that one device exists for the test user (do not write its id here).
+2. Replace the module with this SDK in the same app and bundle id, and install the new build **over** the old one (no delete).
+3. Run it. **Initialize**, then check the backend.
+**Expected:** The backend still shows one device for the test user (same device record), not two. **Setup** shows the "Device id" unchanged from step 1.
+
+- [ ] Pass  - [ ] Fail
+Result:
+
 ---
 
 ## After the checklist
