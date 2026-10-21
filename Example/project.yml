@@ -23,7 +23,6 @@ settings:
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
     TARGETED_DEVICE_FAMILY: "1"
-    SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) USE_ADAPTOR"
 schemes:
   NottiExample:
     build:
@@ -68,15 +67,18 @@ targets:
         CODE_SIGN_ENTITLEMENTS: App/App.entitlements
         GENERATE_INFOPLIST_FILE: NO
       configs:
+        # USE_ADAPTOR is set per configuration, never in base: Debug-NoAdaptor must build without it (checklist D09).
         Debug:
           INFOPLIST_FILE: App/Info.plist
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) USE_ADAPTOR"
         Release:
           INFOPLIST_FILE: App/Info.plist
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) USE_ADAPTOR"
         Debug-Manual:
           INFOPLIST_FILE: App/Info-Manual.plist
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) USE_ADAPTOR"
         Debug-NoAdaptor:
           INFOPLIST_FILE: App/Info.plist
-          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited)"
   NotificationService:
     type: app-extension
     platform: iOS

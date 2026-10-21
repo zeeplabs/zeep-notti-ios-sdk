@@ -17,6 +17,10 @@ set -euo pipefail
 if [[ "${1:-}" == "--built" ]]; then
   plist="${2:?usage: --built <Info.plist> manual|default}"
   mode="${3:?usage: --built <Info.plist> manual|default}"
+  if [[ ! -f "$plist" ]]; then
+    echo "error: built Info.plist not found: $plist" >&2
+    exit 1
+  fi
   if ! command -v plutil >/dev/null 2>&1; then
     echo "error: plutil not found (run --built on macOS)" >&2
     exit 1
