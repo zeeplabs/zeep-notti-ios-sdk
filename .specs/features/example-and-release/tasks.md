@@ -3,7 +3,7 @@
 **Design**: `.specs/features/example-and-release/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
 **Depends on feature**: `nse-rich-media` done (586 tests on `main`)
-**Status**: Draft
+**Status**: Execute done 2026-10-21 except the CI proof (T10, billing). Verifier round 1 FAIL, fixes applied; round 2 pending
 
 ---
 
@@ -139,11 +139,11 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] `xcodegen generate` then the simulator build succeeds with only the sample xcconfig
-- [ ] Generic device build succeeds with `SWIFT_TREAT_WARNINGS_AS_ERRORS=YES`, and the NSE with `APPLICATION_EXTENSION_API_ONLY=YES`
-- [ ] The NSE target links `NottiSDKExtension` and not `NottiSDK` (shown with the target's dependency list)
-- [ ] `git status` shows no generated project file
-- [ ] Gate check passes: Example (build)
+- [x] `xcodegen generate` then the simulator build succeeds with only the sample xcconfig
+- [x] Generic device build succeeds with `SWIFT_TREAT_WARNINGS_AS_ERRORS=YES`, and the NSE with `APPLICATION_EXTENSION_API_ONLY=YES`
+- [x] The NSE target links `NottiSDKExtension` and not `NottiSDK` (shown with the target's dependency list)
+- [x] `git status` shows no generated project file
+- [x] Gate check passes: Example (build)
 
 **Tests**: none (build), scaffold has no logic
 **Gate**: Example
