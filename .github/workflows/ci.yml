@@ -19,6 +19,8 @@ env:
   XCODE_APP: /Applications/Xcode_26.6.app
   NOTTI_SIM: iPhone 17
   SWIFTLINT_IMAGE: ghcr.io/realm/swiftlint:0.65.1
+  # The example project is generated, never committed (EXR-23). The job fails if brew serves another version.
+  XCODEGEN_VERSION: 2.46.0
 
 jobs:
   lint:
@@ -162,3 +164,97 @@ jobs:
       # Lints NottiSDK keeping the build, then checks the class is in the pod product (DEL-01).
       - name: Launch hook is in the pod product (DEL-01)
         run: scripts/check-hook-linked.sh pod
+
+  # Builds and tests the example app through SPM and the three CocoaPods linkages (EXR-17, EXR-23). Each leg runs
+  # on its own runner and its steps run one after another, so no two xcodebuild processes share a checkout.
+  example:
+    runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - leg: spm
+            spec: project.yml
+            linkage: ''
+          - leg: pods-static
+            spec: project-pods.yml
+            linkage: static
+          - leg: pods-libs
+            spec: project-pods.yml
+            linkage: libs
+          - leg: pods-dynamic
+            spec: project-pods.yml
+            linkage: dynamic
+    defaults:
+      run:
+        working-directory: Example
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s "$XCODE_APP"
+          xcodebuild -version
+          xcrun simctl list devices available | grep -F "$NOTTI_SIM" || {
+            echo "::error::Simulator '$NOTTI_SIM' not available on this runner"; exit 1; }
+
+      - name: Install XcodeGen
+        run: |
+          brew install xcodegen
+          actual="$(xcodegen --version | sed -E 's/[^0-9.]*([0-9.]+).*/\1/')"
+          [[ "$actual" == "$XCODEGEN_VERSION" ]] || {
+            echo "::error::XcodeGen $actual installed, workflow pins $XCODEGEN_VERSION. Update both together."; exit 1; }
+
+      - name: Generate the project
+        run: xcodegen generate --spec "${{ matrix.spec }}"
+
+      - name: Pod install
+        if: matrix.linkage != ''
+        env:
+          NOTTI_LINKAGE: ${{ matrix.linkage }}
+        run: pod install
+
+      # Hosted tests inside the app: privacy bundles, launch hook counts and the extension binary (EXR-18, EXR-19).
+      - name: Test
+        run: |
+          set -o pipefail
+          if [[ -n "${{ matrix.linkage }}" ]]; then container=(-workspace NottiExample.xcworkspace); else container=(-project NottiExample.xcodeproj); fi
+          xcodebuild test "${container[@]}" -scheme NottiExample \
+            -destination "platform=iOS Simulator,name=$NOTTI_SIM" \
+            -derivedDataPath "$RUNNER_TEMP/dd-test" \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Warnings fail the app and the extension (the extension target sets APPLICATION_EXTENSION_API_ONLY). Library
+      # builds only: the test target keeps its own warnings (AD-014 D4).
+      - name: Device build (warnings as errors)
+        run: |
+          set -o pipefail
+          if [[ -n "${{ matrix.linkage }}" ]]; then container=(-workspace NottiExample.xcworkspace); else container=(-project NottiExample.xcodeproj); fi
+          xcodebuild build "${container[@]}" -scheme NottiExample \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/dd-device" \
+            CODE_SIGNING_ALLOWED=NO SWIFT_TREAT_WARNINGS_AS_ERRORS=YES GCC_TREAT_WARNINGS_AS_ERRORS=YES -quiet
+          plist="$(find "$RUNNER_TEMP/dd-device" -path '*NottiExample.app/Info.plist' | head -1)"
+          ../scripts/check-example-config.sh --built "$plist" default
+
+      # Debug-Manual turns swizzling off through Info.plist; the built plist must hold a Boolean true (EXR-04).
+      - name: Device build, Debug-Manual
+        if: matrix.leg == 'spm'
+        run: |
+          set -o pipefail
+          xcodebuild build -project NottiExample.xcodeproj -scheme NottiExample-Manual -configuration Debug-Manual \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/dd-manual" \
+            CODE_SIGNING_ALLOWED=NO SWIFT_TREAT_WARNINGS_AS_ERRORS=YES GCC_TREAT_WARNINGS_AS_ERRORS=YES -quiet
+          plist="$(find "$RUNNER_TEMP/dd-manual" -path '*NottiExample.app/Info.plist' | head -1)"
+          ../scripts/check-example-config.sh --built "$plist" manual
+
+      # A leg must leave no generated project, workspace, Pods or lockfile in the tree that git tracks.
+      - name: Nothing generated is tracked
+        run: |
+          if git ls-files . | grep -E '\.xcodeproj/|\.xcworkspace/|^Example/Pods/|^Pods/|Podfile\.lock'; then
+            echo "::error::A generated file is tracked by git"; exit 1
+          fi
+          test -z "$(git status --porcelain --untracked-files=no .)" || {
+            git status --short .; echo "::error::The leg modified a tracked file"; exit 1; }
