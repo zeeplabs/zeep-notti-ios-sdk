@@ -8,10 +8,12 @@ configFiles:
   Debug: Config/Example.xcconfig
   Release: Config/Example.xcconfig
   Debug-Manual: Config/Example.xcconfig
+  Debug-NoAdaptor: Config/Example.xcconfig
 configs:
   Debug: debug
   Release: release
   Debug-Manual: debug
+  Debug-NoAdaptor: debug
 packages:
   NottiSDK:
     path: ..
@@ -21,13 +23,40 @@ settings:
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
     TARGETED_DEVICE_FAMILY: "1"
+    SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) USE_ADAPTOR"
+schemes:
+  NottiExample:
+    build:
+      targets:
+        NottiExample: all
+    test:
+      config: Debug
+      targets: [NottiExampleTests]
+    run:
+      config: Debug
+  NottiExample-Manual:
+    build:
+      targets:
+        NottiExample: all
+    test:
+      config: Debug-Manual
+      targets: [NottiExampleTests]
+    run:
+      config: Debug-Manual
+  NottiExample-NoAdaptor:
+    build:
+      targets:
+        NottiExample: all
+    test:
+      config: Debug-NoAdaptor
+      targets: [NottiExampleTests]
+    run:
+      config: Debug-NoAdaptor
 targets:
   NottiExample:
     type: application
     platform: iOS
     sources: [App]
-    scheme:
-      testTargets: [NottiExampleTests]
     dependencies:
       - package: NottiSDK
         product: NottiSDK
@@ -45,6 +74,9 @@ targets:
           INFOPLIST_FILE: App/Info.plist
         Debug-Manual:
           INFOPLIST_FILE: App/Info-Manual.plist
+        Debug-NoAdaptor:
+          INFOPLIST_FILE: App/Info.plist
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited)"
   NotificationService:
     type: app-extension
     platform: iOS

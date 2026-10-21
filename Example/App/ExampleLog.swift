@@ -15,6 +15,11 @@ enum ExampleCall: String, CaseIterable {
     case setLocationSharing
     case setSubscription
     case setLogLevel
+    case addTags
+    case removeTags
+    case addListeners
+    case removeListeners
+    case takeInitialClick
 }
 
 enum CallOutcome: String {
@@ -58,9 +63,10 @@ enum LogEvent {
 
 @MainActor
 final class ExampleLog: ObservableObject {
-    /// Payload keys the backend defines. A host or campaign can add any other key, whose
+    /// Payload keys the backend defines (`title` and `body` are the payload's own fields, shown as
+    /// presence only). A host or campaign can add any other key, whose
     /// name may itself carry data, so those are counted, not named.
-    nonisolated static let knownPayloadKeys: Set<String> = ["notification_id", "delivery_id"]
+    nonisolated static let knownPayloadKeys: Set<String> = ["notification_id", "delivery_id", "title", "body"]
     nonisolated static let maxRows = 200
 
     @Published private(set) var rows: [String] = []
