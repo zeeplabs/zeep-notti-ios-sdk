@@ -22,7 +22,7 @@ Do not tag until every box is ticked.
 - [ ] App Store Connect validation accepts both manifests (no C617.1 in the extension) and the dynamic-framework layout (D17, D19).
 
 **Release steps (Julio)**
-1. Flip the README banner from "release candidate" to the released wording, and set the CHANGELOG date: replace `[0.1.0] - TBD` with `[0.1.0] - YYYY-MM-DD`. `scripts/check-version.sh` rejects `TBD` on a tag build.
+1. Flip the README banner from "release candidate" to the released wording, remove the "Not yet proven on a device" bullet (or update it with what the checklist left unproven), update the CHANGELOG wording that says the date is set after the checklist and that device id continuity is not yet verified (D20), and set the CHANGELOG date: replace `[0.1.0] - TBD` with `[0.1.0] - YYYY-MM-DD`. `scripts/check-version.sh` rejects `TBD` on a tag build.
 2. Merge this PR.
 3. Tag `0.1.0` (no `v` prefix: `check-version.sh` compares the tag with `NottiSDKVersion.current`).
 4. Create the GitHub Release from the CHANGELOG section.
