@@ -270,11 +270,11 @@ All match. No `[P]` task.
 
 **Done when**:
 
-- [ ] Every section and limitation named in EXR-10..12 exists, with the CocoaPods import note for the NSE
-- [ ] The LGPD note recommends internal legal review and does not claim compliance; no host or key other than placeholders; production default host stated once
-- [ ] `check-readme-snippets.sh` passes, and fails when a snippet or its source region is edited (mutation evidence)
-- [ ] The listed fields and storage keys match the code (one grep per key recorded in the commit body)
-- [ ] Gate check passes: quick
+- [x] Every section and limitation named in EXR-10..12 exists, with the CocoaPods import note for the NSE
+- [x] The LGPD note recommends internal legal review and does not claim compliance; no host or key other than placeholders; production default host stated once
+- [x] `check-readme-snippets.sh` passes, and fails when a snippet or its source region is edited (mutation evidence)
+- [x] The listed fields and storage keys match the code (one grep per key recorded in the commit body)
+- [x] Gate check passes: quick
 
 **Tests**: none (script, mutation evidence)
 **Gate**: quick
