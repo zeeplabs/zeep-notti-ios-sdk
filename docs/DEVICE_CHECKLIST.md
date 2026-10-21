@@ -24,7 +24,7 @@ Test data: use a throwaway external user id such as `checklist-user` and an addr
 ## D01. APNs registration and token delivery
 
 **Closes:** STATE todo "(core-port T8) `NottiPlatformProviders.live()` closures … build-verified only" (APNs registration part).
-**Prerequisites:** Local xcconfig with real credentials; app installed on the device.
+**Prerequisites:** Local xcconfig with real credentials; app installed on the device, built with the default scheme `NottiExample`.
 **Steps:**
 1. Open the app, **Setup** tab. Check "Configured: yes".
 2. Tap **Initialize**. Tap **Push** tab → **Request permission (async)** and allow.
@@ -128,14 +128,15 @@ Result:
 
 **Closes:** same todo as D08 (the class-name check on SwiftUI's internal delegate).
 **What the SDK does here:** it does **not** swizzle SwiftUI's internal app delegate. It logs one warning ("use @UIApplicationDelegateAdaptor or the manual API") and leaves the APNs token callbacks alone, so the token needs the manual forwarding API (`NottiDisableSwizzling` path, D10). Only the `UNUserNotificationCenter` swizzle still applies. This is a documented limitation, not a bug to fix.
-**Prerequisites:** D01 passed on the default scheme, so the device is already registered. Scheme `NottiExample-NoAdaptor`. Its `Debug-NoAdaptor` configuration has no `USE_ADAPTOR` flag (asserted in CI, and checked locally with `xcodebuild -showBuildSettings`), so SwiftUI supplies its own internal delegate. Install the build **over** the existing one (no delete): a fresh install would never get a token through the SDK here. Set **Log level** to `warn` and watch the Xcode console.
+**Prerequisites:** D01 passed on the default scheme, so the device is already registered. Scheme `NottiExample-NoAdaptor`. Its `Debug-NoAdaptor` configuration has no `USE_ADAPTOR` flag (asserted in CI, and checked locally with `xcodebuild -showBuildSettings`), so SwiftUI supplies its own internal delegate. Install the build **over** the existing one (no delete): a fresh install would never get a token through the SDK here.
 **Steps:**
 1. Run the app. **Setup** → **Initialize**. **Push** → **Add listeners**.
 2. Send a push in the foreground, then background the app and tap a push.
 **Expected:**
-- The console shows the SwiftUI warning once, and there is no crash. This is the pass criterion for the class-name check: the name test matched the real SwiftUI delegate.
+- No crash, on launch or on any step.
 - `received` (foreground) and `clicked` (tap) still arrive in the Log, through the notification-center path.
 - On a **fresh** install under this scheme, "Device id" stays "none": record that as the expected limitation, not as a failure.
+- The "use @UIApplicationDelegateAdaptor or the manual API" warning is **not** a pass criterion: the SDK emits it once, at launch, at level `warn`, and the default level is `error`, so you will not see it. (Seeing it needs a launch-time log level, which the SDK does not have; see the STATE todo.)
 
 - [ ] Pass  - [ ] Fail
 Result:
@@ -150,13 +151,14 @@ Result:
 - [ ] Pass  - [ ] Fail
 Result:
 
-## D11. Late install path of the launch hook (needs another host app)
+## D11. Fetch callback added to a delegate that lacks it (needs another host app)
 
-**Closes:** STATE todo "(delegate-integration Verifier r1 N5/N7/N9, notes)" (late-install path, device-only, [Incerto]).
-**Not provable with the example.** The todo is about the SDK adding a callback that the host's app delegate lacks, after UIKit already read the delegate's capabilities. `ExampleAppDelegate` implements every callback, and under SwiftUI without the adaptor the SDK adds nothing (D09), so no example scheme exercises this path. Run it in the separate test app you plan to build, or carry it as unproven.
-**Prerequisites:** A host app with a UIKit app delegate that does **not** implement `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)`, with the SDK linked and `Notti.initialize` called. D01 passed.
+**Closes:** nothing by itself. The STATE todo "(delegate-integration Verifier r1 N5/N7/N9, notes)" is about the **late** install path (the SDK installs after UIKit already read the delegate's capabilities), which only happens when the launch hook did not run before the delegate was set. That is not a normal SPM or CocoaPods layout and no check here reaches it. A Pass here does **not** tick that todo; it stays open as unproven.
+**What it checks:** the early path. With the hook linked, the SDK adds `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)` to a delegate that has neither that method nor the legacy `application(_:didReceiveRemoteNotification:)`, before UIKit reads the delegate. (If the legacy method exists, the SDK adds nothing and a silent push gives no `received`.)
+**Not provable with the example:** `ExampleAppDelegate` implements every callback. Run it in the separate test app you plan to build, or carry it as unproven.
+**Prerequisites:** A host app with a UIKit app delegate that implements neither method above, the SDK linked, `Notti.initialize` called and a `received` listener added. D01 passed.
 **Steps:** Cold-launch the app, then send a silent push (as in D15) with the app in the foreground.
-**Expected:** One `received` for the silent push and no crash. Record whether the SDK-added callback ran, and whether UIKit still called it after the late install.
+**Expected:** One `received` for the silent push and no crash.
 
 - [ ] Pass  - [ ] Fail  - [ ] Not run (carried as unproven)
 Result:
@@ -165,7 +167,7 @@ Result:
 
 **Closes:** same todo as D08 (CocoaPods static half; tick it together with D08 and D09).
 **Prerequisites:** `NOTTI_LINKAGE=static`, `xcodegen --spec project-pods.yml`, `pod install`, open `NottiExample.xcworkspace`.
-**Steps:** Repeat D08 and D11.
+**Steps:** Repeat D08.
 **Expected:** Same results as SPM. Hook count in the app is 1 (the hosted tests assert it; here you confirm behavior on a device).
 
 - [ ] Pass  - [ ] Fail
@@ -175,7 +177,7 @@ Result:
 
 **Closes:** same todo as D12 (dynamic half).
 **Prerequisites:** `NOTTI_LINKAGE=dynamic`, regenerate and reinstall from scratch (`rm -rf Pods`).
-**Steps:** Repeat D08 and D11. Also run **D05** once.
+**Steps:** Repeat D08. Also run **D05** once.
 **Expected:** Same results. In this layout the extension reaches `NottiSDKExtension.framework` through the app's `Frameworks/`; D05 must still render.
 
 - [ ] Pass  - [ ] Fail
@@ -259,5 +261,5 @@ Result:
 ## After the checklist
 
 1. Tick the STATE todos cited above (one edit, with the date and the Pass results).
-2. Move every Fail into the `0.1.0` changelog as a known limitation, or fix it first.
+2. Move every Fail and every "Not run" (D03, D11) into the `0.1.0` changelog as a known limitation, or run it first.
 3. Julio decides the remaining pre-tag gates (see the release PR).
