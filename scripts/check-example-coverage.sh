@@ -35,9 +35,34 @@ if [[ ! -f "$surface" ]]; then
   exit 1
 fi
 
-# Example sources without line comments, so a commented-out call does not count.
+# Strips `//` and `/* */` comments and the text inside "..." string literals, keeping line breaks, so a
+# commented-out call or a call named inside a string does not count. Single-line strings only (no raw or
+# multi-line literals in the example).
+strip_swift() {
+  awk '
+    BEGIN { block = 0 }
+    {
+      out = ""; n = length($0); i = 1; str = 0
+      while (i <= n) {
+        c = substr($0, i, 1); d = substr($0, i, 2)
+        if (block) { if (d == "*/") { block = 0; i += 2 } else i++; continue }
+        if (str) {
+          if (c == "\\") { i += 2; continue }
+          if (c == "\"") { str = 0; out = out "\"" }
+          i++; continue
+        }
+        if (d == "//") break
+        if (d == "/*") { block = 1; i += 2; continue }
+        if (c == "\"") { str = 1; out = out "\""; i++; continue }
+        out = out c; i++
+      }
+      print out
+    }
+  ' "$1"
+}
+
 example_src="$(find "${example_dirs[@]}" -name '*.swift' -type f | LC_ALL=C sort | while IFS= read -r f; do
-  sed -E 's#//.*$##' "$f"
+  strip_swift "$f"
 done)"
 if [[ -z "$example_src" ]]; then
   echo "error: no Swift source found under ${example_dirs[*]}" >&2
@@ -99,6 +124,36 @@ if [[ ${#missing[@]} -gt 0 ]]; then
   echo "error: public members not called by the example app (EXR-02):" >&2
   printf '  %s\n' "${missing[@]}" >&2
   echo "Call each one from Example/App or Example/NotificationService, or list it in allowlist with a reason." >&2
+  exit 1
+fi
+
+# Every instance method of ExampleModel is reachable from a screen: the views call `model.<name>`.
+model_file="Example/App/ExampleModel.swift"
+views_file="Example/App/ExampleViews.swift"
+for f in "$model_file" "$views_file"; do
+  if [[ ! -f "$f" ]]; then
+    echo "error: expected file not found: $f" >&2
+    exit 1
+  fi
+done
+views_src="$(strip_swift "$views_file")"
+unwired=()
+model_methods="$(strip_swift "$model_file" | sed -nE 's/^[[:space:]]+(@MainActor[[:space:]]+)?func[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\2/p' | LC_ALL=C sort -u)"
+# `static`, `private` and `fileprivate` members are not matched by the pattern above only when they carry the keyword
+# before `func`; filter them explicitly from the source lines.
+public_methods=""
+while read -r name; do
+  [[ -z "$name" ]] && continue
+  if strip_swift "$model_file" | grep -qE "^[[:space:]]*(private|fileprivate|static)[^{]*func[[:space:]]+${name}\b"; then continue; fi
+  public_methods+="$name"$'\n'
+done <<<"$model_methods"
+while read -r name; do
+  [[ -z "$name" ]] && continue
+  grep -qE "model\.${name}([^A-Za-z0-9_]|\$)" <<<"$views_src" || unwired+=("$name")
+done <<<"$public_methods"
+if [[ ${#unwired[@]} -gt 0 ]]; then
+  echo "error: ExampleModel methods no screen calls (EXR-02):" >&2
+  printf '  %s\n' "${unwired[@]}" >&2
   exit 1
 fi
 
