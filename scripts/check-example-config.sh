@@ -68,7 +68,8 @@ if [[ "$(grep -c '<key>NottiDisableSwizzling</key>' "$manual_plist")" -ne 1 ]]; 
   echo "error: $manual_plist must carry NottiDisableSwizzling exactly once" >&2
   exit 1
 fi
-if ! grep -A1 '<key>NottiDisableSwizzling</key>' "$manual_plist" | tail -n 1 | grep -qE '^[[:space:]]*<true/>[[:space:]]*$'; then
+manual_value_line="$(grep -A1 '<key>NottiDisableSwizzling</key>' "$manual_plist" | tail -n 1)"
+if ! grep -qE '^[[:space:]]*<true/>[[:space:]]*$' <<<"$manual_value_line"; then
   echo "error: NottiDisableSwizzling in $manual_plist must be a Boolean <true/>" >&2
   exit 1
 fi
