@@ -109,6 +109,7 @@ final class NottiFacadeProfileTests: XCTestCase {
         XCTAssertEqual(store.getExternalUserId(), "user-fixture")
         StubURLProtocol.enqueue(.echoDevice())
         StubURLProtocol.enqueue(.echoDevice())
+        StubURLProtocol.enqueue(.echoDevice())
         let before = bodies("PATCH").count
 
         facade.logout()
@@ -120,6 +121,7 @@ final class NottiFacadeProfileTests: XCTestCase {
         let sent = Array(bodies("PATCH").dropFirst(before))
         XCTAssertTrue(sent.contains { $0["email"] is NSNull })
         XCTAssertTrue(sent.contains { $0["phone"] is NSNull })
+        XCTAssertEqual(sent.filter { $0["external_user_id"] is NSNull }.count, 1, "AD-015: logout unlinks on the backend")
     }
 
     func test_addTagsPatchesTheMergedMap() {
