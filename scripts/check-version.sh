@@ -71,6 +71,10 @@ if [[ "$ref" == refs/tags/* ]]; then
     echo "error: tag $tag needs a dated CHANGELOG section (found TBD)" >&2
     exit 1
   fi
+  if grep -qiE 'release candidate|pre-release' "$root/README.md"; then
+    echo "error: tag $tag but README.md still says release candidate or pre-release (flip the banner first)" >&2
+    exit 1
+  fi
 fi
 
 echo "version ok: $swift_version"

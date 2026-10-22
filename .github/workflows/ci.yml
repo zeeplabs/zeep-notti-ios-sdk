@@ -19,8 +19,10 @@ env:
   XCODE_APP: /Applications/Xcode_26.6.app
   NOTTI_SIM: iPhone 17
   SWIFTLINT_IMAGE: ghcr.io/realm/swiftlint:0.65.1
-  # The example project is generated, never committed (EXR-23). The job fails if brew serves another version.
+  # The example project is generated, never committed (EXR-23). XcodeGen comes from its GitHub release asset,
+  # checked against this SHA-256 (taken 2026-10-21 from the 2.46.0 xcodegen.zip). Update both together.
   XCODEGEN_VERSION: 2.46.0
+  XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
 
 jobs:
   lint:
@@ -89,7 +91,7 @@ jobs:
         run: |
           xcodebuild -list
           xcodebuild -showsdks | grep -i iphone
-          xcrun simctl list devices available | grep -F "$NOTTI_SIM" || {
+          xcrun simctl list devices available | grep -E "^[[:space:]]+$NOTTI_SIM \(" || {
             echo "::error::Simulator '$NOTTI_SIM' not available on this runner"; exit 1; }
 
       # `-retry-tests-on-failure` keeps infra noise from failing the build; the
@@ -197,15 +199,18 @@ jobs:
         run: |
           sudo xcode-select -s "$XCODE_APP"
           xcodebuild -version
-          xcrun simctl list devices available | grep -F "$NOTTI_SIM" || {
+          xcrun simctl list devices available | grep -E "^[[:space:]]+$NOTTI_SIM \(" || {
             echo "::error::Simulator '$NOTTI_SIM' not available on this runner"; exit 1; }
 
       - name: Install XcodeGen
         run: |
-          brew install xcodegen
-          actual="$(xcodegen --version | sed -E 's/[^0-9.]*([0-9.]+).*/\1/')"
-          [[ "$actual" == "$XCODEGEN_VERSION" ]] || {
-            echo "::error::XcodeGen $actual installed, workflow pins $XCODEGEN_VERSION. Update both together."; exit 1; }
+          # The release asset is pinned by version and checksum, so a new Homebrew formula cannot change it.
+          curl -fsSL -o "$RUNNER_TEMP/xcodegen.zip" \
+            "https://github.com/yonaskolb/XcodeGen/releases/download/$XCODEGEN_VERSION/xcodegen.zip"
+          echo "$XCODEGEN_SHA256  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/xcodegen/bin/xcodegen" --version
 
       - name: Generate the project
         run: xcodegen generate --spec "${{ matrix.spec }}"

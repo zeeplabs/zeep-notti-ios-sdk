@@ -35,24 +35,29 @@ if [[ ! -f "$surface" ]]; then
   exit 1
 fi
 
-# Strips `//` and `/* */` comments and the text inside "..." string literals, keeping line breaks, so a
-# commented-out call or a call named inside a string does not count. Single-line strings only (no raw or
-# multi-line literals in the example).
+# Strips `//` and nested `/* */` comments and the text inside "..." and """...""" string literals, keeping line
+# breaks, so a commented-out call or a call named inside a string does not count. Conditional compilation is not
+# evaluated: the example must not use `#if false` / `#if 0` (checked below), so every remaining call is compiled.
 strip_swift() {
   awk '
-    BEGIN { block = 0 }
+    BEGIN { depth = 0; multi = 0 }
     {
       out = ""; n = length($0); i = 1; str = 0
       while (i <= n) {
-        c = substr($0, i, 1); d = substr($0, i, 2)
-        if (block) { if (d == "*/") { block = 0; i += 2 } else i++; continue }
+        c = substr($0, i, 1); d = substr($0, i, 2); t = substr($0, i, 3)
+        if (multi) { if (t == "\"\"\"") { multi = 0; out = out "\"\""; i += 3 } else i++; continue }
+        if (depth > 0) {
+          if (d == "/*") { depth++; i += 2 } else if (d == "*/") { depth--; i += 2 } else i++
+          continue
+        }
         if (str) {
           if (c == "\\") { i += 2; continue }
           if (c == "\"") { str = 0; out = out "\"" }
           i++; continue
         }
         if (d == "//") break
-        if (d == "/*") { block = 1; i += 2; continue }
+        if (d == "/*") { depth = 1; i += 2; continue }
+        if (t == "\"\"\"") { multi = 1; out = out "\"\""; i += 3; continue }
         if (c == "\"") { str = 1; out = out "\""; i++; continue }
         out = out c; i++
       }
@@ -61,7 +66,17 @@ strip_swift() {
   ' "$1"
 }
 
-example_src="$(find "${example_dirs[@]}" -name '*.swift' -type f | LC_ALL=C sort | while IFS= read -r f; do
+# Dead conditional blocks would hide a call from the compiler but not from this text scan.
+dead="$(grep -rnE '^[[:space:]]*#if[[:space:]]+(false|0)([[:space:]]|$)' "${example_dirs[@]}" --include='*.swift' || true)"
+if [[ -n "$dead" ]]; then
+  echo "error: the example must not use '#if false' or '#if 0' (the coverage scan cannot see what is compiled):" >&2
+  echo "$dead" >&2
+  exit 1
+fi
+
+# IntegrationSnippets.swift holds README excerpts that are compiled but never called, so it cannot prove that a
+# screen reaches the SDK; it is checked by check-readme-snippets.sh instead.
+example_src="$(find "${example_dirs[@]}" -name '*.swift' -type f -not -name 'IntegrationSnippets.swift' | LC_ALL=C sort | while IFS= read -r f; do
   strip_swift "$f"
 done)"
 if [[ -z "$example_src" ]]; then
@@ -138,13 +153,15 @@ for f in "$model_file" "$views_file"; do
 done
 views_src="$(strip_swift "$views_file")"
 unwired=()
-model_methods="$(strip_swift "$model_file" | sed -nE 's/^[[:space:]]*([@A-Za-z_()]+[[:space:]]+)*func[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\2/p' | LC_ALL=C sort -u)"
+# Read once: `strip_swift | grep -q` under pipefail fails at random when grep exits early (SIGPIPE).
+model_src="$(strip_swift "$model_file")"
+model_methods="$(printf '%s\n' "$model_src" | sed -nE 's/^[[:space:]]*([@A-Za-z_()]+[[:space:]]+)*func[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\2/p' | LC_ALL=C sort -u)"
 # `static`, `private` and `fileprivate` members are not matched by the pattern above only when they carry the keyword
 # before `func`; filter them explicitly from the source lines.
 public_methods=""
 while read -r name; do
   [[ -z "$name" ]] && continue
-  if strip_swift "$model_file" | grep -qE "^[[:space:]]*(private|fileprivate|static)[^{]*func[[:space:]]+${name}\b"; then continue; fi
+  if grep -qE "^[[:space:]]*(private|fileprivate|static)[^{]*func[[:space:]]+${name}\b" <<<"$model_src"; then continue; fi
   public_methods+="$name"$'\n'
 done <<<"$model_methods"
 while read -r name; do
