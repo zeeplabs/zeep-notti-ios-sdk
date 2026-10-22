@@ -65,6 +65,14 @@ snippet() {
 
 fail=0
 
+# A region inside a dead conditional block would match the README without being compiled.
+dead="$(grep -nE '^[[:space:]]*#if[[:space:]]+(false|0)([[:space:]]|$)' "${sources[@]}" || true)"
+if [[ -n "$dead" ]]; then
+  echo "error: snippet sources must not use '#if false' or '#if 0':" >&2
+  echo "$dead" >&2
+  fail=1
+fi
+
 # A marker that does not match the strict form is ignored by the id scan, so reject it, and reject a repeated id
 # (only the first block would be compared).
 loose="$(grep -nE '<!--[[:space:]]*snippet' "$readme" | grep -vE '^[0-9]+:<!-- snippet:[a-z0-9-]+ -->$' || true)"
