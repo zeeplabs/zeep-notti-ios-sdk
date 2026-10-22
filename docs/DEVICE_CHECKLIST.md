@@ -231,7 +231,7 @@ Result:
 **Closes:** the open part of STATE todo "(core-port Verifier r1 N7, LGPD) `NSPrivacyCollectedDataTypeUserID` declared … Device ID" (label text confirmation). The todo is already ticked: append the review result to it. Needs legal or privacy review: this item records the review, it does not replace it.
 **Prerequisites:** D17 passed. The privacy report from D17.
 **Steps:** Compare the report with the README section "What your app declares in App Store Connect".
-**Expected:** The report lists Device ID, User ID, Email Address, Phone Number, Coarse Location, Product Interaction, Other Diagnostic Data and Other Data Types, linked and not used for tracking. Legal or privacy confirmed the wording of the **Other** categories and of User ID before `0.1.0`.
+**Expected:** The report lists Device ID, User ID, Email Address, Phone Number, Coarse Location, Product Interaction, Other Diagnostic Data and Other Data Types, linked and not used for tracking. The legal and privacy wording of the **Other** categories and of User ID was confirmed by Julio on 2026-10-22; this item only checks that the uploaded build reports the same categories.
 
 - [ ] Pass  - [ ] Fail
 Result (reviewer and date):

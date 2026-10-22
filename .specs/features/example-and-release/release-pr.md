@@ -17,7 +17,7 @@ Do not tag until every box is ticked.
 **Owner decisions**
 - [ ] `zeep-notti` with AD-039 (branch `fix/device-upsert-keeps-identity`) is merged and released, and the README names that version as the minimum for `logout` and re-registration (D21 run against it).
 - [ ] Device ID privacy-manifest declaration: decided 2026-10-21 (declare). Confirm it stands.
-- [ ] Legal or privacy confirms the wording of User ID, Other Diagnostic Data and Other Data Types (D18).
+- [x] Legal or privacy confirms the wording of User ID, Other Diagnostic Data and Other Data Types (Julio, 2026-10-22).
 - [ ] AD-014 D4 confirmed one by one: key name `NottiDisableSwizzling`; a visible push without `notification_id` is no longer emitted as `received`; warnings as errors on library builds only.
 - [ ] Backend confirms `https://app.zeepnotti.app` as the production default host (confirmed 2026-10-11 per the spec; the STATE todo is still unticked).
 - [ ] App Store Connect validation accepts both manifests (no C617.1 in the extension) and the dynamic-framework layout (D17, D19).
