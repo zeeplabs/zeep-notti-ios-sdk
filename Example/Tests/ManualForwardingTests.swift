@@ -58,4 +58,14 @@ final class ManualForwardingTests: XCTestCase {
         XCTAssertEqual(key, "NottiDisableSwizzling")
         XCTAssertFalse(ManualForwarding(bundle: Bundle(for: ManualForwardingTests.self), sink: CountingSink()).isEnabled)
     }
+
+    func test_onlyARealBooleanTrueTurnsManualForwardingOn() {
+        XCTAssertTrue(ManualForwarding.isTrueBoolean(true as NSNumber))
+        XCTAssertTrue(ManualForwarding.isTrueBoolean(kCFBooleanTrue))
+        XCTAssertFalse(ManualForwarding.isTrueBoolean(false as NSNumber))
+        XCTAssertFalse(ManualForwarding.isTrueBoolean(NSNumber(value: 1)))
+        XCTAssertFalse(ManualForwarding.isTrueBoolean(NSNumber(value: 1.0)))
+        XCTAssertFalse(ManualForwarding.isTrueBoolean("true"))
+        XCTAssertFalse(ManualForwarding.isTrueBoolean(nil))
+    }
 }
