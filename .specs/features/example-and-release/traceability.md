@@ -8,7 +8,7 @@ Test references use `Class.test_name`, all in `Example/Tests` (target `NottiExam
 
 **Status words.** *Local*: proved on the author's machine (Xcode 27.1, simulator iPhone 18 Pro), not yet in CI. *Device*: only a physical device or App Store Connect can prove it; it is a `docs/DEVICE_CHECKLIST.md` item and stays open until Julio runs it. *Pending*: not done yet.
 
-Hosted tests count 34 per leg (SPM, pods static, libs, dynamic). Mutation evidence for the scripts is in the commit bodies of T5, T6, T8 and T11.
+Hosted tests count 35 on the SPM leg (34 before `test_onlyARealBooleanTrueTurnsManualForwardingOn`); the three pods legs were last run at 34 and not re-run after that test. Mutation evidence for the scripts is in the commit bodies of T5, T6, T8 and T11.
 
 ---
 
@@ -30,12 +30,12 @@ Hosted tests count 34 per leg (SPM, pods static, libs, dynamic). Mutation eviden
 | EXR-12 | Known limitations list the required items | `README.md` "Known limitations" and `CHANGELOG.md` 0.1.0 "Known limitations" | Local (review only) |
 | EXR-13 | Every README snippet compiles and cannot drift | `Example/App/IntegrationSnippets.swift` (compiled into the app, never called), region `nse` in `NotificationService.swift`; `scripts/check-readme-snippets.sh` (7 mutations fail it, T8 commit); CI `checks` step "README snippets (EXR-13)". The Objective-C block is **not** compiled and says so | Local. CI never run. ObjC block unproven |
 | EXR-14 | Placeholders only; the production default host is stated once | `README.md`; `scripts/check-example-config.sh` scans `README.md` and `docs/`. The host `https://app.zeepnotti.app` appears once in the README | Local |
-| EXR-15 | The checklist lists each unproven item with prerequisites, steps, expected result and a pass/fail box | `docs/DEVICE_CHECKLIST.md` D01..D20 (the spec list plus D20, device id continuity from RN 0.6.0) | Written. Passing it: Device |
+| EXR-15 | The checklist lists each unproven item with prerequisites, steps, expected result and a pass/fail box | `docs/DEVICE_CHECKLIST.md` D01..D21 (the spec list plus D20, device id continuity from RN 0.6.0, and D21, link and tags after a relaunch) | Written. Passing it: Device |
 | EXR-16 | Items carried from `STATE.md` cite their todo; closing it is a post-checklist step | `docs/DEVICE_CHECKLIST.md` (each device todo cited once; list in the T9 commit body); "After the checklist" section | Written |
 | EXR-17 | `pod install` with local `:path` pods builds the app and NSE under static frameworks and static libraries (and dynamic frameworks, AD-012) | `Example/Podfile`, `Example/project-pods.yml`; hosted tests and strict device builds passed on the three legs; CI matrix legs `pods-static`, `pods-libs`, `pods-dynamic` | Local. CI never run |
 | EXR-18 | A test loads both resource bundles through the CocoaPods branch and finds the privacy manifest in each | `PI.test_appProductHoldsTheSdkPrivacyBundle`, `PI.test_extensionHoldsItsOwnPrivacyBundle`, `PI.test_theTwoProductsDoNotShareABundle` (bundle names chosen by `#if NOTTI_PODS`). They walk the built product for the two `*_Privacy.bundle` directories and read the manifest; none runs the `NottiSDKResources` or `NottiSDKExtensionResources` accessor | **Partial**, Local. See the narrowed STATE todo on CocoaPods resources |
 | EXR-19 | Launch hook present and `loadCount == installCount == 1` in the example, per linkage | `PI.test_launchHookRanOnceAndInstalledOnce` on every leg. Mutation: removing `NottiSDKBootstrap` from the `NottiSDK` target dependencies fails only this test (T6 commit) | Local. Behavior on a device: Device (D12, D13) |
-| EXR-20 | `CHANGELOG.md` has a dated 0.1.0 section (Added, Known limitations, Migration notes) and the README banner leaves pre-release | `CHANGELOG.md` `[0.1.0] - TBD` (the date is set on release day); README banner now "release candidate" | Done except the date: set it at release |
+| EXR-20 | `CHANGELOG.md` has a dated 0.1.0 section (Added, Known limitations, Migration notes) and the README banner leaves pre-release | `CHANGELOG.md` `[0.1.0] - TBD` (the date is set on release day); README banner now "release candidate" | Partial: the CHANGELOG section exists with the date `TBD`; the README banner is a release candidate and its flip is a release step (`release-pr.md`) |
 | EXR-21 | `check-version.sh` requires `NottiSDKVersion.current`, both `s.version` and the top CHANGELOG section to equal `0.1.0` | `scripts/check-version.sh` (7 mutations fail it, T11 commit); CI `checks` step "Version drift" | Local. CI never run |
 | EXR-22 | The release PR text lists the pre-tag gates for Julio | `.specs/features/example-and-release/release-pr.md` (text ready; the release PR itself is opened by Julio's decision) | Written |
 | EXR-23 | CI installs XcodeGen, generates and builds the example for simulator and device, builds the CocoaPods variant, and never runs `xcodebuild` twice at once on a checkout | `.github/workflows/ci.yml` job `example` (matrix of four legs, steps in sequence; step "Nothing generated is tracked"). The SPM leg's shell logic was run locally; the workflow parses as YAML | Written. **Never run**: billing |
@@ -73,12 +73,13 @@ Closing the matching `STATE.md` todo is a post-checklist step (EXR-16). None is 
 | APNs registration, permission prompt, geocoder, `UIDevice` fields | D01 to D04 | core-port T8 |
 | Rich media image, video, audio, expiry fallback | D05 to D07 | nse-rich-media, device |
 | SwiftUI delegate check with and without the adaptor, manual forwarding, CocoaPods static and dynamic | D08 to D10, D12, D13 | delegate-integration, device |
-| Late-install launch hook path | D11 (needs another host app; no example scheme exercises it) | delegate-integration Verifier r1 N5/N7/N9 |
+| Late-install launch hook path | D11 (early path only; needs another host app; it does not tick this todo) | delegate-integration Verifier r1 N5/N7/N9 |
 | Cold-start click, silent and background `received` | D14 to D16 | none (new) |
 | App Store validation: manifests and C617.1 | D17 | nse-rich-media D9 |
 | Privacy labels and legal wording | D18 | core-port Verifier r1 N7 |
 | Dynamic-framework layout accepted by the App Store | D19 | example-and-release T1 spike S6 |
 | Device id continuity from RN 0.6.0 | D20 | none (new) |
+| Link and tags after a relaunch | D21 | none (new) |
 
 ## 4. Known gaps found while writing the docs
 
