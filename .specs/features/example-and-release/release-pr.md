@@ -15,6 +15,7 @@ Do not tag until every box is ticked.
 - [ ] `pod lib lint NottiSDK.podspec --platforms=ios` and `pod lib lint NottiSDKExtension.podspec --platforms=ios` pass (also `--use-libraries`).
 
 **Owner decisions**
+- [ ] `zeep-notti` with AD-039 (branch `fix/device-upsert-keeps-identity`) is merged and released, and the README names that version as the minimum for `logout` and re-registration (D21 run against it).
 - [ ] Device ID privacy-manifest declaration: decided 2026-10-21 (declare). Confirm it stands.
 - [ ] Legal or privacy confirms the wording of User ID, Other Diagnostic Data and Other Data Types (D18).
 - [ ] AD-014 D4 confirmed one by one: key name `NottiDisableSwizzling`; a visible push without `notification_id` is no longer emitted as `received`; warnings as errors on library builds only.
