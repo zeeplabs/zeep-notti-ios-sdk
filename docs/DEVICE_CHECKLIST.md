@@ -260,15 +260,18 @@ Result:
 - [ ] Pass  - [ ] Fail
 Result:
 
-## D21. Link and tags after a relaunch
+## D21. Link and tags after a relaunch, and logout on the backend
 
-**Closes:** none (new item; backs the "launch registration may reset the link" limitation, [Provável]).
-**Prerequisites:** D01 passed. Credentials in the local xcconfig.
+**Closes:** none (new item; checks the `zeep-notti` AD-039 fix and the SDK's AD-015 logout).
+**Prerequisites:** D01 passed. The backend runs a `zeep-notti` release that includes AD-039 (if not, record which version, and expect the older behavior described in the README limitations).
 **Steps:**
 1. **Initialize**, **Login** with `checklist-user`, add the tag `checklist=1`. In the backend, confirm the device shows that external user id and tag.
-2. Force-quit the app and relaunch it. **Initialize** only (do not log in again, do not add the tag).
-3. Check the device in the backend again.
-**Expected:** Record whether the external user id and the tag are still there. Pass means they survive; if they are cleared, that is the limitation described in the README (call `login` and `addTags` at each launch), and the result goes to the backend team as a decision.
+2. Force-quit the app and relaunch it. **Initialize** only (do not log in again, do not add the tag). Check the backend.
+3. Tap **Logout**. Check the backend.
+**Expected:**
+- Step 2: the external user id and the tag are still there.
+- Step 3: the device has no external user id; the tag is still there (tags survive `logout` by design).
+- On a backend without AD-039: step 2 shows both cleared and step 3 leaves the user linked. Record the backend version and mark Fail.
 
 - [ ] Pass  - [ ] Fail
 Result:

@@ -65,7 +65,7 @@ Without options the SDK talks to the production host `https://app.zeepnotti.app`
 
 ## Identity and tags
 
-`login` links the device to your own user id. Email, phone and tags are optional and are sent only when you set them. `logout` clears the link kept on the device and clears email and phone on the backend. The backend keeps the device's `external_user_id` and its tags: see [Known limitations](#known-limitations).
+`login` links the device to your own user id. Email, phone and tags are optional and are sent only when you set them. `logout` clears the link on the device, sends `external_user_id: null` to unlink it on the backend, and clears email and phone; tags stay. Unlinking on the backend needs a `zeep-notti` release that includes its AD-039: see [Known limitations](#known-limitations).
 
 <!-- snippet:identity -->
 ```swift
@@ -267,8 +267,8 @@ This README describes what the SDK does. It is not legal advice and does not sta
 ## Known limitations
 
 - **Rich media on a device only.** The Notification Service Extension is not exercised in the Simulator by this repo. Media rendering and the expiry fallback are unproven until the device checklist passes.
-- **`logout` does not unlink the device on the backend.** It clears the link kept on the device and email and phone on the backend, but the backend does not support clearing `external_user_id` or tags. On a shared device, pushes aimed at the previous user's id can keep arriving after `logout`. Decide with your backend team before using `logout` on shared devices.
-- **A launch registration may reset the link on the backend [Provável].** The SDK registers the device at every `initialize` and sends only the push token and platform; in the backend source checked on 2026-10-21 that upsert sets `external_user_id` and `tags` to what it received. Until confirmed with the backend team, call `login` and `addTags` again at each launch, and do not rely on the link surviving a relaunch. `react-native-notti` 0.6.0 behaves the same way.
+- **Backend release needed for `logout` and re-registration.** Two fixes live in `zeep-notti` (AD-039, not yet released at the time of writing): `PATCH` with `external_user_id: null` unlinks the device, and a registration that omits `external_user_id` and `tags` keeps them. Against an older backend, `logout` answers 200 but the device stays linked to the previous user (pushes for that user can keep arriving on a shared device), and every launch registration resets `external_user_id` and tags, so call `login` and `addTags` again at each launch. `react-native-notti` 0.6.0 has the same limits on an older backend.
+- **Tags survive `logout`.** `logout` does not clear tags on the backend; clear them yourself (`removeTags`) if they describe the user.
 - **Backups can carry the device identity to another device.** The `notti_prefs` suite is part of an iOS device backup. Restoring it on a different phone can aim updates at the original device's record before the SDK re-registers. If that matters for your app, exclude it from backup.
 - **SwiftUI without `@UIApplicationDelegateAdaptor`.** The SDK does not swizzle SwiftUI's internal app delegate. It logs one warning (level `warn`, so you see nothing at the default `error` level) and does not see the APNs token, so the device never registers through the SDK. Use `@UIApplicationDelegateAdaptor` with your own delegate, or set `NottiDisableSwizzling` and forward the five calls yourself.
 - **Legacy-only delegates get no silent-push `received`.** A host app delegate that implements only `application(_:didReceiveRemoteNotification:)` (not the `fetchCompletionHandler` variant) is not given a replacement, so a silent push produces no `received` event. Implement the modern method or use the manual API.

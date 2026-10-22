@@ -8,7 +8,7 @@ Test references use `Class.test_name`, all in `Example/Tests` (target `NottiExam
 
 **Status words.** *Local*: proved on the author's machine (Xcode 27.1, simulator iPhone 18 Pro), not yet in CI. *Device*: only a physical device or App Store Connect can prove it; it is a `docs/DEVICE_CHECKLIST.md` item and stays open until Julio runs it. *Pending*: not done yet.
 
-Hosted tests count 35 on the SPM leg (34 before `test_onlyARealBooleanTrueTurnsManualForwardingOn`); the three pods legs were last run at 34 and not re-run after that test. Mutation evidence for the scripts is in the commit bodies of T5, T6, T8 and T11.
+Hosted tests count 35 per leg (SPM, pods static, libs and dynamic, re-run 2026-10-21 after `test_onlyARealBooleanTrueTurnsManualForwardingOn`). Mutation evidence for the scripts is in the commit bodies of T5, T6, T8 and T11.
 
 ---
 
