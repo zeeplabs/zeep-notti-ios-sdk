@@ -48,7 +48,14 @@ struct ManualForwarding {
     }
 
     init(bundle: Bundle = .main, sink: ForwardingSink = LiveForwardingSink()) {
-        self.init(isEnabled: bundle.object(forInfoDictionaryKey: Self.plistKey) as? Bool == true, sink: sink)
+        self.init(isEnabled: Self.isTrueBoolean(bundle.object(forInfoDictionaryKey: Self.plistKey)), sink: sink)
+    }
+
+    /// Only a real Boolean `true` counts, like the SDK's `NottiSwizzlingConfiguration`. `as? Bool` would also accept
+    /// `<integer>1</integer>`, and the example would forward by hand while the SDK still swizzles.
+    static func isTrueBoolean(_ value: Any?) -> Bool {
+        guard let number = value as? NSNumber, CFGetTypeID(number as CFTypeRef) == CFBooleanGetTypeID() else { return false }
+        return number.boolValue
     }
 
     func didRegister(deviceToken: Data) {

@@ -2,7 +2,7 @@
 # Fails when a README code snippet drifts from the example source it is cut from (EXR-13).
 #
 # Each snippet in README.md is a fenced block right after `<!-- snippet:<id> -->`. Its source is the
-# region between `// README:begin <id>` and `// README:end <id>` in exactly one file under Example/.
+# region between `// README:begin <id>` and `// README:end <id>` in exactly one file under Example/App or Example/NotificationService (the app and extension target sources).
 # The region is compared after removing its common indentation. The sources are compiled into the
 # example app, so a snippet that matches its region also compiles.
 #
@@ -24,7 +24,7 @@ for path in "$readme" "$root/Example"; do
 done
 
 sources=()
-while IFS= read -r file; do sources+=("$file"); done < <(find "$root/Example" -name '*.swift' -not -path '*/Pods/*' | sort)
+while IFS= read -r file; do sources+=("$file"); done < <(find "$root/Example/App" "$root/Example/NotificationService" -name '*.swift' | sort)
 
 # Lines of a region, indentation removed. Prints nothing when the region is absent.
 region() {
@@ -81,7 +81,7 @@ if [[ -n "$dups" ]]; then
 fi
 
 readme_ids="$(grep -oE '^<!-- snippet:[a-z0-9-]+ -->$' "$readme" | sed -E 's/^<!-- snippet:(.*) -->$/\1/' | sort)"
-region_ids="$(grep -rhoE '// README:begin [a-z0-9-]+' "$root/Example" --include='*.swift' | sed -E 's|// README:begin ||' | sort)"
+region_ids="$(grep -rhoE '// README:begin [a-z0-9-]+' "$root/Example/App" "$root/Example/NotificationService" --include='*.swift' | sed -E 's|// README:begin ||' | sort)"
 
 for id in "${required[@]}"; do
   if ! grep -qx "$id" <<<"$readme_ids"; then
