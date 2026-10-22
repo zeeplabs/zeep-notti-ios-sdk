@@ -138,7 +138,7 @@ for f in "$model_file" "$views_file"; do
 done
 views_src="$(strip_swift "$views_file")"
 unwired=()
-model_methods="$(strip_swift "$model_file" | sed -nE 's/^[[:space:]]+(@MainActor[[:space:]]+)?func[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\2/p' | LC_ALL=C sort -u)"
+model_methods="$(strip_swift "$model_file" | sed -nE 's/^[[:space:]]*([@A-Za-z_()]+[[:space:]]+)*func[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\2/p' | LC_ALL=C sort -u)"
 # `static`, `private` and `fileprivate` members are not matched by the pattern above only when they carry the keyword
 # before `func`; filter them explicitly from the source lines.
 public_methods=""
@@ -154,6 +154,12 @@ done <<<"$public_methods"
 if [[ ${#unwired[@]} -gt 0 ]]; then
   echo "error: ExampleModel methods no screen calls (EXR-02):" >&2
   printf '  %s\n' "${unwired[@]}" >&2
+  exit 1
+fi
+
+# Overloads share a name, so the member loop sees one entry: require the completion variant of requestPermission.
+if ! grep -qE 'Notti(\.[A-Za-z]+)*\.requestPermission\(completion:' <<<"$example_src"; then
+  echo "error: the example never calls requestPermission(completion:) (EXR-02)" >&2
   exit 1
 fi
 
