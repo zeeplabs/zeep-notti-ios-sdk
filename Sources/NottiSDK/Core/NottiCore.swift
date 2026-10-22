@@ -426,8 +426,11 @@ class NottiCore {
         }
     }
 
-    /// The backend does not support clearing `external_user_id` server-side
-    /// (spec Edge Case) - only the SDK's locally-held association is cleared.
+    /// SPEC_DEVIATION (AD-015, not in RN 0.6.0): the device is unlinked on the
+    /// backend too, with `{external_user_id: null}` sent through the same path as
+    /// `login` (queued until registration, not retried, dropped before
+    /// `initialize` like `login`). A backend before zeep-notti AD-039 answers 200
+    /// and keeps the value, so this is safe against an older server.
     /// The user's `email`/`phone` (PII) ARE cleared server-side, through the
     /// same durable path as `clearEmail`/`clearPhone`: held nil persisted now,
     /// `{email: null}`/`{phone: null}` enqueued, and a clear that fails or runs
@@ -438,6 +441,18 @@ class NottiCore {
         workQueue.async { [weak self] in
             guard let self = self else { return }
             self.deviceStore.setExternalUserId(nil)
+            if let client = self.apiClient {
+                self.performOrQueue(client, description: "logout") { [weak self] client, deviceId, token in
+                    let result = client.patchDevice(
+                        deviceId: deviceId,
+                        token: token,
+                        fields: ["external_user_id": NSNull()]
+                    )
+                    if case .failure(let message) = result {
+                        self?.logger(.error, "Notti.logout: PATCH failed (\(message)) - not retried")
+                    }
+                }
+            }
             self.clearEmailOnQueue()
             self.clearPhoneOnQueue()
         }

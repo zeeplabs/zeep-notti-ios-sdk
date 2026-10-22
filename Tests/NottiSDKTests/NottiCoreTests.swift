@@ -406,8 +406,9 @@ final class NottiCoreTests: XCTestCase {
         XCTAssertTrue(store.getSubscribed())
     }
 
-    func test_logoutClearsTheExternalUserIdLocallyOnlyAndEnqueuesEmailAndPhoneNullClears() {
+    func test_logoutUnlinksTheUserOnTheBackendAndEnqueuesEmailAndPhoneNullClears() {
         StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{}}"#)) // registration
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{}}"#)) // external_user_id null
         StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{}}"#)) // login
         StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{}}"#)) // email set
         StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{}}"#)) // phone set
@@ -426,13 +427,13 @@ final class NottiCoreTests: XCTestCase {
         core.logout()
         drain(core)
 
-        // external_user_id is a local-only clear (spec SDK-15: the backend has no
-        // support for clearing it server-side), but the PII email/phone ARE
-        // cleared server-side with explicit nulls (F2).
+        // AD-015: logout sends {external_user_id: null} once (zeep-notti AD-039
+        // clears it), and the PII email/phone are cleared with explicit nulls (F2).
         let requests = StubURLProtocol.recordedRequests()
-        XCTAssertEqual(requests.count, 6, "register + login + email/phone set + email/phone null")
+        XCTAssertEqual(requests.count, 7, "register + login + email/phone set + user/email/phone null")
         let logoutBodies = patchBodies(Array(requests.dropFirst(4)))
-        XCTAssertTrue(logoutBodies.allSatisfy { $0["external_user_id"] == nil })
+        XCTAssertEqual(logoutBodies.filter { $0["external_user_id"] is NSNull }.count, 1)
+        XCTAssertEqual(logoutBodies.first?["external_user_id"] is NSNull, true, "the unlink goes first")
         XCTAssertTrue(logoutBodies.contains { $0["email"] is NSNull })
         XCTAssertTrue(logoutBodies.contains { $0["phone"] is NSNull })
         XCTAssertNil(store.getExternalUserId())
@@ -462,6 +463,7 @@ final class NottiCoreTests: XCTestCase {
         let bodies = patchBodies(StubURLProtocol.recordedRequests())
         XCTAssertTrue(bodies.contains { $0["email"] is NSNull })
         XCTAssertTrue(bodies.contains { $0["phone"] is NSNull })
+        XCTAssertFalse(bodies.contains { $0["external_user_id"] != nil }, "AD-015: like login, a logout before initialize sends no unlink")
         XCTAssertNil(store.getLastSyncedEmail())
         XCTAssertNil(store.getLastSyncedPhone())
     }
