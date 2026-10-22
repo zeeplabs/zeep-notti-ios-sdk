@@ -25,8 +25,8 @@ First release. It is a native port of `react-native-notti` 0.6.0 for iOS, with t
 - Several behaviors are not proven on a physical device. See [docs/DEVICE_CHECKLIST.md](docs/DEVICE_CHECKLIST.md).
 - The Notification Service Extension is not exercised in the Simulator by this repo.
 - A SwiftUI app without `@UIApplicationDelegateAdaptor`: the SDK does not swizzle SwiftUI's internal app delegate, logs one warning (level `warn`, invisible at the default `error` level) and does not receive the APNs token. Use the adaptor or the manual forwarding API.
-- `logout` clears the link on the device and email and phone on the backend, but the backend keeps `external_user_id` and tags.
-- The launch registration may reset `external_user_id` and tags on the backend [Provável]: call `login` and `addTags` again at each launch.
+- `logout` and re-registration need a `zeep-notti` release with its AD-039. On an older backend, `logout` leaves the device linked to the previous user and every launch registration resets `external_user_id` and tags (call `login` and `addTags` at each launch). Tags always survive `logout`.
+- `logout` sends `external_user_id: null` to unlink the device on the backend. This differs from `react-native-notti` 0.6.0, which only cleared the link on the device.
 - The `notti_prefs` suite is included in iOS device backups and can carry the device identity to another device when restored.
 - A host app delegate that implements only the legacy `application(_:didReceiveRemoteNotification:)` gets no silent-push `received` event.
 - If your own delegate overrides a push callback and calls `super`, the SDK can observe the same callback twice.
