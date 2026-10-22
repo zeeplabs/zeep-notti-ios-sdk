@@ -25,6 +25,9 @@ First release. It is a native port of `react-native-notti` 0.6.0 for iOS, with t
 - Several behaviors are not proven on a physical device. See [docs/DEVICE_CHECKLIST.md](docs/DEVICE_CHECKLIST.md).
 - The Notification Service Extension is not exercised in the Simulator by this repo.
 - A SwiftUI app without `@UIApplicationDelegateAdaptor`: the SDK does not swizzle SwiftUI's internal app delegate, logs one warning (level `warn`, invisible at the default `error` level) and does not receive the APNs token. Use the adaptor or the manual forwarding API.
+- `logout` clears the link on the device and email and phone on the backend, but the backend keeps `external_user_id` and tags.
+- The launch registration may reset `external_user_id` and tags on the backend [Provável]: call `login` and `addTags` again at each launch.
+- The `notti_prefs` suite is included in iOS device backups and can carry the device identity to another device when restored.
 - A host app delegate that implements only the legacy `application(_:didReceiveRemoteNotification:)` gets no silent-push `received` event.
 - If your own delegate overrides a push callback and calls `super`, the SDK can observe the same callback twice.
 - A visible push without `notification_id` (for example from another SDK) is not reported as `received`.
@@ -36,7 +39,7 @@ First release. It is a native port of `react-native-notti` 0.6.0 for iOS, with t
 ### Migration notes from `react-native-notti` 0.6.0
 
 - **Storage.** The SDK keeps the same `UserDefaults` suite, `notti_prefs`, and the same key names as the iOS part of `react-native-notti` 0.6.0 (for example `notti_device_id`, `notti_last_token`, `notti_external_user_id`, `notti_tags`, `notti_pending_events`). No key was renamed or added for 0.1.0.
-- **Device id continuity.** An app that replaces the React Native module with this SDK keeps its install container, so it should keep its `notti_device_id` and not register a new device. This follows from the shared suite and keys and is **not yet verified on a device** (checklist item D20). Until it is, do not tell customers that device history is preserved.
+- **Device id continuity.** An app that replaces the React Native module with this SDK keeps its install container and its `notti_prefs` suite. The SDK does not send the stored `notti_device_id`: at registration it sends the push token and platform, and adopts the device id the backend returns for that token. So continuity depends on the APNs token not changing and on the backend upserting by token, and is **not yet verified on a device** (checklist item D20). Until it is, do not tell customers that device history is preserved.
 - **Behavior differences.**
   - A visible push without `notification_id` is no longer emitted as `received`.
   - In the Notification Service Extension, `didReceive(_:withContentHandler:)` and `serviceExtensionTimeWillExpire(for:contentHandler:)` take no `session:` or `logger:` argument.

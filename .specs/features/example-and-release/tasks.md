@@ -3,7 +3,7 @@
 **Design**: `.specs/features/example-and-release/design.md`
 **Testing**: `.specs/codebase/TESTING.md`
 **Depends on feature**: `nse-rich-media` done (586 tests on `main`)
-**Status**: Execute done 2026-10-21 except the CI proof (T10, billing). four Verifier rounds, findings fixed (`validation.md`)
+**Status**: Execute done 2026-10-21 except the CI proof (T10, billing). five review rounds, findings fixed or recorded (`validation.md`)
 
 ---
 
