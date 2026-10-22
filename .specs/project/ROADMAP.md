@@ -45,7 +45,7 @@
 
 **pod-split** - DONE (2026-10-12; PR #8, AD-012): two root pods, `NottiSDK` and `NottiSDKExtension`, no subspecs; fixes CocoaPods dynamic frameworks
 
-**example-and-release** - Execute done except the CI proof (2026-10-21; T1-T12; T3-T7 are PR #12, T8-T12 on branch `docs/readme-and-checklist`); Verifier pending, CI blocked by billing, device checklist (`docs/DEVICE_CHECKLIST.md`) not run
+**example-and-release** - Execute done except the CI proof (2026-10-21; T1-T12; T3-T7 are PR #12, T8-T12 on branch `docs/readme-and-checklist`); five review rounds (Verifier x4 and an Opus review; `validation.md`), findings fixed, no PASS yet; CI blocked by billing, device checklist (`docs/DEVICE_CHECKLIST.md`) not run
 
 - SwiftUI example app plus an NSE target exercising every public method
 - README (setup via SPM/CocoaPods, capabilities, swizzling opt-out, data collection, storage keys, LGPD note, known limitations), CHANGELOG

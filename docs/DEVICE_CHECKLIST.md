@@ -133,7 +133,7 @@ Result:
 1. Install the NoAdaptor build **over** the existing app (no delete). **Setup** → **Initialize**. **Push** → **Add listeners**.
 2. Send a push in the foreground, then background the app and tap a push.
 **Steps, part B (fresh install: the class-name check):**
-3. Delete the app. Install the NoAdaptor build. **Setup** → **Initialize**. **Push** → **Request permission (async)** and allow. Wait about a minute, then tap **Refresh device id**.
+3. Delete the app. Install the NoAdaptor build. **Setup** → **Initialize**. **Push** → **Request permission (async)** and allow. Wait about a minute, then tap **Refresh device id**. Check the Log shows `initialize: ok` and `permission: granted`, so a missing device id is not a network or backend failure.
 **Expected:**
 - Part A: no crash, and `received` (foreground) and `clicked` (tap) arrive in the Log through the notification-center path.
 - Part B (the pass criterion for the class-name check): "Device id" stays "none". If a device id **does** appear, the SDK swizzled SwiftUI's internal delegate, which means the name check missed its real class: record that as a **Fail**.
@@ -249,12 +249,26 @@ Result:
 ## D20. Device id continuity from `react-native-notti` 0.6.0
 
 **Closes:** none (new item; backs the migration note in the CHANGELOG).
-**Prerequisites:** A test app built with `react-native-notti` 0.6.0 on iOS that has registered a device. D01 passed for the native SDK.
+**What it checks:** the SDK does not send its stored device id. It registers with the push token and platform and adopts the id the backend returns, so continuity depends on the APNs token staying the same and on the backend upserting by token.
+**Prerequisites:** A test app built with `react-native-notti` 0.6.0 on iOS that has registered a device, and a copy of the same app built with this SDK in place of the module (same bundle id; your own host app, not the example). D01 passed.
 **Steps:**
-1. Run the React Native build on the device, register, and note in the Notti backend that one device exists for the test user (do not write its id here).
-2. Replace the module with this SDK in the same app and bundle id, and install the new build **over** the old one (no delete).
-3. Run it. **Initialize**, then check the backend.
-**Expected:** The backend still shows one device for the test user (same device record), not two. **Setup** shows the "Device id" unchanged from step 1.
+1. Run the React Native build on the device, register, and note in the Notti backend that one device row exists for this install (do not write its id here).
+2. Install the SDK build **over** it (no delete). Run it and call `Notti.initialize`.
+3. Check the backend again.
+**Expected:** Still one device row for this install, the same record, not two. Compare by the device record (and `Notti.deviceId`), not by the user: registration can reset the user link (see D21).
+
+- [ ] Pass  - [ ] Fail
+Result:
+
+## D21. Link and tags after a relaunch
+
+**Closes:** none (new item; backs the "launch registration may reset the link" limitation, [Provável]).
+**Prerequisites:** D01 passed. Credentials in the local xcconfig.
+**Steps:**
+1. **Initialize**, **Login** with `checklist-user`, add the tag `checklist=1`. In the backend, confirm the device shows that external user id and tag.
+2. Force-quit the app and relaunch it. **Initialize** only (do not log in again, do not add the tag).
+3. Check the device in the backend again.
+**Expected:** Record whether the external user id and the tag are still there. Pass means they survive; if they are cleared, that is the limitation described in the README (call `login` and `addTags` at each launch), and the result goes to the backend team as a decision.
 
 - [ ] Pass  - [ ] Fail
 Result:

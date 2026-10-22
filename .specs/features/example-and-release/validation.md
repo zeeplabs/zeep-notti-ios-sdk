@@ -1,6 +1,6 @@
-# Validation: example-and-release - FAIL ❌ (round 4: 1 Major, fixed; no round 5)
+# Validation: example-and-release - FAIL ❌ (round 5, Opus: 2 Majors, documented; no round 6)
 
-**Status**: the feature is not marked done. Four independent Verifier rounds ran on 2026-10-21; round 4 found no Blocker and one Major, fixed after the report, and no round 5 ran. CI has never run for any of this work (GitHub Actions billing), and the device checklist has not been run, so no EXR is proven beyond "Local" (see `traceability.md`).
+**Status**: the feature is not marked done. Five independent review rounds ran on 2026-10-21 (four Verifier rounds and one Opus review). Round 5 found no Blocker and two Majors; both are documented as limitations plus a backend decision, and no round 6 ran. CI has never run for any of this work (GitHub Actions billing), and the device checklist has not been run, so no EXR is proven beyond "Local" (see `traceability.md`).
 
 Method: each round ran in an isolated worktree, did not trust the author's notes, re-derived claims from `Sources/`, `Example/` and the scripts, and mutation-tested the guards.
 
@@ -27,6 +27,14 @@ Method: each round ran in an isolated worktree, did not trust the author's notes
 - m1 D17 to D19 cited todos already ticked: wording now "append the result"; new STATE todo for the owner confirmations. m2 D03 has a "Not run" box and keeps the core-port T8 todo open. m3 README and checklist no longer say a SwiftUI app can forward by hand (the fix is the adaptor). m4 D15 needs both `notification_id` and `delivery_id`. m5 README and CHANGELOG state the legacy-only delegate limitation, the SDK-assigned notification-center delegate, and the NSE limits (https, 10 MiB, jpg/png/gif/mp4/mp3). m6 release step lists the stale "not proven" text. m7 key count 30. m8 stale S6 follow-up todo ticked. m10 D10 UI string, static libraries note.
 - m9 guard hardening: `check-readme-snippets.sh` rejects malformed and repeated snippet ids; `check-example-config.sh` rejects a repeated sample key, scans `CHANGELOG.md`, matches `CK_`/`RK_` and `NOTTI_APP_ID:`; `check-version.sh` rejects an impossible date. Seven new mutations are killed.
 - **Still open (low):** `check-example-coverage.sh` does not understand nested block comments, `"""` strings, `#if false` or an uncalled private function, and `IntegrationSnippets.swift` also satisfies several members, so the guard does not prove a screen reaches the SDK for those; the README snippet guard ignores markers inside `#if false`; `check-version.sh` does not check the README banner on a tag build; `grep -F "iPhone 17"` also matches "iPhone 17 Pro"; the XcodeGen pin follows Homebrew.
+
+## Round 5 (Opus review: FAIL, 2 Majors, no Blocker)
+
+- **M1** README said `logout` "clears the link", but `NottiCore.logout` clears only the local link and email and phone on the backend; the backend keeps `external_user_id` and tags (LGPD risk on shared devices). Fixed in the docs: README line, Known limitations and CHANGELOG.
+- **M2** [Provável] every launch registration sends only token and platform, and the backend upsert (checked in `saas/zeep-notti`, main of 2026-10-21) resets `external_user_id` and tags; `react-native-notti` 0.6.0 behaves the same. Not fixable in M1 (port, AD-002): documented as a limitation, new checklist item D21, STATE todo for a backend decision.
+- m1 CHANGELOG device-id continuity reasoning (the SDK adopts the backend's id, it does not send the stored one) and D20 rewritten. m2 Xcode minimum (`nonisolated(unsafe)` needs Swift 5.10). m3 NSE unknown media type falls back to `jpg`. m4 retry rule completed. m5 backup disclosure added. m6 backend minimum versions added. m9 traceability, ROADMAP and EXR-20 status corrected. m10 D09 part B has a control (Log shows `initialize: ok` and `permission: granted`).
+- **m7 guards:** the coverage guard now requires the `requestPermission(completion:)` call and recognises any modifier before `func`; the snippet guard scans only `Example/App` and `Example/NotificationService`. Three new mutations are killed.
+- **m8 code:** `ManualForwarding` now requires a real Boolean like the SDK (`<integer>1</integer>` no longer turns manual forwarding on while the SDK still swizzles); new test `test_onlyARealBooleanTrueTurnsManualForwardingOn`. Hosted tests: 35 on the SPM leg.
 
 ## Confirmed by the Verifiers (own runs)
 
