@@ -143,12 +143,12 @@ class NottiCore {
     /// without limit.
     ///
     /// `coalesceKey` (review item 8) is non-nil for telemetry (session,
-    /// country, profile fields, permission status) and for email/phone: a newer
-    /// mutation with the same key *replaces* the queued one (each carries the
-    /// full latest value, so only it matters). Coalesced entries are bounded by
-    /// their distinct keys, so - as on Android - they never count against
-    /// `maxPendingMutations` and are never evicted; the cap applies only to
-    /// uncoalesced calls (login, tags, subscription), oldest dropped first.
+    /// country, profile fields, permission status), for email/phone and for
+    /// login/logout's external id: a newer mutation with the same key *replaces*
+    /// the queued one (each carries the full latest value, so only it matters).
+    /// Coalesced entries are bounded by their distinct keys, so - as on Android -
+    /// they never count against `maxPendingMutations` and are never evicted; the
+    /// cap applies only to uncoalesced calls (tags, subscription), oldest first.
     private struct PendingMutation {
         let description: String
         let coalesceKey: String?
@@ -408,10 +408,16 @@ class NottiCore {
         }
     }
 
+    /// Shares the `externalUserId` coalesce key with `logout`'s clear: before
+    /// the first registration a coalesced entry is replaced in place, so with
+    /// separate keys `logout`, `login("u2")`, `logout` would flush as
+    /// [clear, login u2] and leave the signed-out user linked. One key keeps
+    /// only the latest call (RN 3b063c4, AD-018).
     func login(_ externalUserId: String) {
         workQueue.async { [weak self] in
             guard let self = self, let client = self.apiClient else { return }
-            self.performOrQueue(client, description: "login") { [weak self] client, deviceId, token in
+            let key = TelemetryKey.externalUserId
+            self.performOrQueue(client, description: "login", coalesceKey: key) { [weak self] client, deviceId, token in
                 let result = client.patchDevice(
                     deviceId: deviceId,
                     token: token,
