@@ -263,16 +263,20 @@ Result:
 
 ## D21. Link and tags after a relaunch, and logout on the backend
 
-**Closes:** none (new item; checks the `zeep-notti` AD-039 fix and the SDK's AD-015 logout).
-**Prerequisites:** D01 passed. The backend runs a `zeep-notti` release that includes AD-039 (if not, record which version, and expect the older behavior described in the README limitations).
+**Closes:** none (new item; checks the `zeep-notti` AD-039 fix, the SDK's AD-015 logout and the durable unlink of AD-018).
+**Prerequisites:** D01 passed. The backend runs `zeep-notti` v0.24.0 or later, which includes AD-039 (if not, record which version, and expect the older behavior described in the README limitations).
 **Steps:**
 1. **Initialize**, **Login** with `checklist-user`, add the tag `checklist=1`. In the backend, confirm the device shows that external user id and tag.
 2. Force-quit the app and relaunch it. **Initialize** only (do not log in again, do not add the tag). Check the backend.
 3. Tap **Logout**. Check the backend.
+4. **Login** with `checklist-user` again and confirm the backend shows it. Turn on Airplane mode, tap **Logout**, wait one minute (the request fails after its retries). Check the backend from another device.
+5. Turn Airplane mode off, force-quit the app, relaunch it and tap **Initialize** only. Check the backend.
 **Expected:**
 - Step 2: the external user id and the tag are still there.
 - Step 3: the device has no external user id; the tag is still there (tags survive `logout` by design).
-- On a backend without AD-039: step 2 shows both cleared and step 3 leaves the user linked. Record the backend version and mark Fail.
+- Step 4: the device still shows `checklist-user` (the unlink has not reached the backend).
+- Step 5: the device has no external user id (the unlink kept on the device was sent at the registration); the tag is still there.
+- On a backend older than v0.24.0: step 2 shows both cleared and step 3 leaves the user linked. Record the backend version and mark Fail.
 
 - [ ] Pass  - [ ] Fail
 Result:
