@@ -166,6 +166,7 @@ class NottiCore {
         static let permissionStatus = "telemetry.permissionStatus"
         static let email = "telemetry.email"
         static let phone = "telemetry.phone"
+        static let externalUserId = "telemetry.externalUserId"
     }
     private static let maxPendingMutations = 32
     private var pendingMutations: [PendingMutation] = []
@@ -419,6 +420,8 @@ class NottiCore {
                 switch result {
                 case .success:
                     self?.deviceStore.setExternalUserId(externalUserId)
+                    // The new link supersedes a logout clear still owed to the server.
+                    self?.deviceStore.setPendingExternalUserIdClear(false)
                 case .failure(let message):
                     self?.logger(.error, "Notti.login: PATCH failed (\(message)) - not retried")
                 }
@@ -426,35 +429,41 @@ class NottiCore {
         }
     }
 
-    /// SPEC_DEVIATION (AD-015, not in RN 0.6.0): the device is unlinked on the
-    /// backend too, with `{external_user_id: null}` sent through the same path as
-    /// `login` (queued until registration, not retried, dropped before
-    /// `initialize` like `login`). A backend before zeep-notti AD-039 answers 200
-    /// and keeps the value, so this is safe against an older server.
-    /// The user's `email`/`phone` (PII) ARE cleared server-side, through the
-    /// same durable path as `clearEmail`/`clearPhone`: held nil persisted now,
-    /// `{email: null}`/`{phone: null}` enqueued, and a clear that fails or runs
-    /// before `initialize` is re-sent at the next registration. Runs on
-    /// `workQueue` like every mutation, so a `login` queued before this
-    /// `logout` still lands first.
+    /// Unlinks the device from the user on the backend too (`{external_user_id:
+    /// null}`, AD-015, RN 0.8.0 #40); tags and the subscription are kept, and
+    /// `email`/`phone` (PII) go through the durable `clearEmail`/`clearPhone` path.
+    /// The unlink is durable (AD-018): the pending flag is persisted before the
+    /// PATCH and dropped only on a 2xx (or a later successful `login`), and
+    /// registration re-sends it while set, so a logout before `initialize`,
+    /// offline, or whose PATCH failed still converges. An older server answers
+    /// 2xx and keeps the value, so the flag is dropped, no retry loop. Runs on
+    /// `workQueue`, so a `login` queued before this `logout` still lands first.
     func logout() {
         workQueue.async { [weak self] in
             guard let self = self else { return }
             self.deviceStore.setExternalUserId(nil)
+            self.deviceStore.setPendingExternalUserIdClear(true)
             if let client = self.apiClient {
-                self.performOrQueue(client, description: "logout") { [weak self] client, deviceId, token in
-                    let result = client.patchDevice(
-                        deviceId: deviceId,
-                        token: token,
-                        fields: ["external_user_id": NSNull()]
-                    )
-                    if case .failure(let message) = result {
-                        self?.logger(.error, "Notti.logout: PATCH failed (\(message)) - not retried")
-                    }
-                }
+                self.enqueueExternalUserIdClear(client, description: "logout")
             }
             self.clearEmailOnQueue()
             self.clearPhoneOnQueue()
+        }
+    }
+
+    /// workQueue-only. Not gated on the pending flag: with `login("u1")` and
+    /// then `logout()` both queued before registration, login's ack drops the
+    /// flag just before this runs, and skipping would leave "u1" linked
+    /// server-side. The ack also re-clears the local id login's ack re-persisted.
+    private func enqueueExternalUserIdClear(_ client: NottiApiClient, description: String) {
+        performOrQueue(client, description: description, coalesceKey: TelemetryKey.externalUserId) { [weak self] client, deviceId, token in
+            switch client.patchDevice(deviceId: deviceId, token: token, fields: ["external_user_id": NSNull()]) {
+            case .success:
+                self?.deviceStore.setExternalUserId(nil)
+                self?.deviceStore.setPendingExternalUserIdClear(false)
+            case .failure(let message):
+                self?.logger(.error, "Notti.\(description): PATCH failed (\(message)) - re-sent at the next registration")
+            }
         }
     }
 
@@ -738,6 +747,9 @@ class NottiCore {
             syncProfileFieldsIfNeeded(client)
             syncPermissionStatusIfNeeded()
             resyncHeldEmailAndPhone(client)
+            if deviceStore.getPendingExternalUserIdClear() {
+                enqueueExternalUserIdClear(client, description: "resyncLogout")
+            }
             flushEventQueue()
         case .failure(let message):
             registrationState = .failed
