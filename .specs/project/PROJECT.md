@@ -6,7 +6,7 @@
 
 ## Goals
 
-- **Behavior parity with `react-native-notti` 0.6.0 on iOS.** Same backend contract, same retry/queue/session semantics. Success: the ported XCTest suite (~210 tests in the RN repo) passes against the new SDK, and a device-level checklist matches the RN SDK's behavior.
+- **Behavior parity with `react-native-notti` 0.8.0 on iOS (AD-017; was 0.6.0 until 2026-10-24).** Same backend contract, same retry/queue/session semantics, In-App Messages included. Success: the ported XCTest suite (~210 tests in the RN repo) passes against the new SDK, and a device-level checklist matches the RN SDK's behavior.
 - **One-line integration for native apps.** `Notti.initialize(...)` plus capabilities and entitlement, with no AppDelegate edits (swizzling on by default). Success: the example app receives and clicks a push with only `initialize` called.
 - **Consumable by the RN SDK.** Published as a CocoaPod that `react-native-notti` can depend on. Success (Milestone 2): the RN repo deletes its `ios/*.swift` core and keeps only the Turbo Module bridge.
 
@@ -35,7 +35,7 @@
 
 ## Scope
 
-**v1 includes (parity with RN 0.6.0):**
+**v1 includes (parity with RN 0.8.0, AD-017):**
 
 - `initialize(appId, clientKey, baseUrl?)`; device registration (`POST /v1/apps/{appId}/devices`) and APNs token refresh
 - `login` / `logout`, tags (add/remove, merge cache), `setSubscription`, email/phone set/clear
@@ -49,21 +49,22 @@
 - NSE rich media (`notti_image_url`, https only, 10MB cap)
 - `PrivacyInfo.xcprivacy` for both products
 - Swift-first public API with `@objc` interop for ObjC hosts and the RN bridge
+- In-App Messages: session fetch, four native layouts, `trackEvent`, click listener, `push_permission` button, own event queue (`in-app-messages`, AD-013, AD-019)
 - Example app, CI, README
 
 **Explicitly out of scope (v1):**
 
-- In-App Messages, Live Activities, Location tracking beyond the opt-in country
+- Live Activities, Location tracking beyond the opt-in country
 - Android/Flutter (separate repos)
-- Backend contract changes (the SDK targets `zeep-notti` >= v0.11.0 as-is)
+- Backend contract changes (the SDK targets `zeep-notti` as-is: >= v0.11.0 for push, >= v0.23.0 for In-App, >= v0.24.0 for the AD-015/AD-039 logout behavior)
 - NSE reporting `received` in the background or App Group shared state (needs contract and design work; deferred)
 - Privacy consent gating API, Keychain storage for email/phone, Retry-After support (Milestone 3 candidates)
 - Binary xcframework distribution (source-only for v1)
 
 ## Constraints
 
-- **Technical:** the backend HTTP contract and UserDefaults keys must stay byte-compatible with RN 0.6.0. A device upgrading from an RN app to its native rewrite (or RN to RN-on-native-SDK) must not re-register as a new device.
+- **Technical:** the backend HTTP contract and UserDefaults keys must stay byte-compatible with RN 0.8.0. A device upgrading from an RN app to its native rewrite (or RN to RN-on-native-SDK) must not re-register as a new device.
 - **Technical:** the NSE has a strict memory and time budget, so the extension product has no dependency on the app module.
 - **Technical:** swizzling must never break the host's existing delegates. It forwards to the original implementations and guards against double-swizzling.
-- **Privacy/LGPD:** email, phone and country are personal data. Nothing beyond what RN 0.6.0 collects; no PII in logs; logs off by default in release.
+- **Privacy/LGPD:** email, phone and country are personal data. Nothing beyond what RN 0.8.0 collects; no PII in logs; logs off by default in release.
 - **Resources:** solo maintainer (Julio). Behavior must stay in lockstep with the Kotlin implementation (`zeep-notti-react-native/android`, future `zeep-notti-android-sdk`).

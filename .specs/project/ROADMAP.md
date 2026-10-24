@@ -1,13 +1,13 @@
 # Roadmap
 
-**Current Milestone:** M1 - Native SDK with RN 0.6.0 parity
+**Current Milestone:** M1 - Native SDK with RN 0.8.0 parity (AD-017; was 0.6.0 until 2026-10-24)
 **Status:** In Progress
 
 ---
 
-## M1 - Native SDK with RN 0.6.0 parity (v0.1.0)
+## M1 - Native SDK with RN 0.8.0 parity (v0.1.0)
 
-**Goal:** A native iOS app can integrate Notti via SPM or CocoaPods and get the same behavior as `react-native-notti` 0.6.0 on iOS.
+**Goal:** A native iOS app can integrate Notti via SPM or CocoaPods and get the same behavior as `react-native-notti` 0.8.0 on iOS, In-App Messages included (AD-017).
 **Target:** Ported XCTest suite green in CI; example app passes the device checklist; tagged `0.1.0`.
 
 ### Features
@@ -51,6 +51,10 @@
 - README (setup via SPM/CocoaPods, capabilities, swizzling opt-out, data collection, storage keys, LGPD note, known limitations), CHANGELOG
 - Device validation checklist (carried over from RN 0.6.0 open items); tag `0.1.0`
 
+**core-rn-parity** - IN PROGRESS (2026-10-24, AD-018): port the RN 0.7.0/0.8.0 core fixes (profile re-send on a new device id, durable logout unlink, latest login/logout coalesced)
+
+**in-app-messages** - SPECIFIED, reconciling with RN 0.8.0 (2026-10-24, AD-013, AD-019; `.specs/features/in-app-messages/`): fetch once per session, four native layouts, `trackEvent`, click listener, `push_permission` button, own persistent event queue. Backend payload served since `zeep-notti` v0.23.0
+
 ---
 
 ## M2 - RN SDK on top of the native SDK
@@ -78,13 +82,12 @@
 **nse-shared-state** - PLANNED: App Group (configurable), `received` reported from the NSE, badge increment
 **notification-action-buttons** - PLANNED: parity with the RN `SDKACT-` spec, once that spec is done
 **queue-resilience** - PLANNED: per-event TTL, `Retry-After`, no head-of-line blocking
-**in-app-messages** - SPECIFIED (2026-10-18, waiting for approval; `.specs/features/in-app-messages/`, AD-013): fetch once per session, four native layouts, `trackEvent`, click listener for link actions, own persistent event queue. Needs M1 tagged and a `zeep-notti` release with the IARM payload
 
 ---
 
 ## Future Considerations
 
 - Binary xcframework distribution
-- Live Activities (In-App Messages moved to M3, see `in-app-messages`)
+- Live Activities
 - Mac Catalyst
 - Flutter wrapper consuming this SDK (`zeep-notti-flutter`)

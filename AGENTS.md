@@ -46,7 +46,7 @@ pod lib lint NottiSDK.podspec --platforms=ios && pod lib lint NottiSDKExtension.
 
 ### M1 is a port, not a rewrite (AD-002)
 
-Until M1 (v0.1.0) ships, code ported from `react-native-notti` 0.6.0 (`../zeep-notti-react-native/ios` at `52e4b55`) stays behavior-identical:
+Until M1 (v0.1.0) ships, code ported from `react-native-notti` 0.8.0 (`../zeep-notti-react-native/ios` at tag `v0.8.0`, `291d5a7`; the baseline was 0.6.0 at `52e4b55` until AD-017) stays behavior-identical:
 
 - Copy the RN file, then change only what the task lists. Keep the serial `workQueue`, the semaphore-based HTTP client, retry/backoff and every UserDefaults key (`notti_prefs` suite) exactly as in RN.
 - Port RN tests 1:1 with XCTest. Do not migrate them to Swift Testing in M1.
