@@ -375,7 +375,7 @@ No `[P]` task.
 
 ### T9: Engine, display state machine and timer
 
-**What**: Add to the engine: `NottiInAppDisplay` (states `preparing`, `visible`, `closed`), `displayAttached`, `becameVisible`, `userTapped(displayId:buttonId:action:)`, `userDismissed`, `displayFailed`, the clock by remaining wall-clock time (paused while detached or in background), `ensureImpression`, event recording plus a flush request, the click emission through the injected closure, the `push_permission` path (listener gets `action: nil`, no warning, close, then `pushPermissionPort` on main; nil port: report and close only) and `setPushPermissionPort`. `resetForNewConfig()` and `sessionEnded()` teardown of a display (visible kept at session end, preparing dropped). Invariants of the design.
+**What**: Add to the engine: `NottiInAppDisplay` (states `preparing`, `visible`, `closed`), `displayAttached`, `becameVisible`, `userTapped(displayId:buttonId:action:)`, `userDismissed`, `displayFailed`, the clock by remaining wall-clock time (paused while detached or in background), taps and dismisses ignored until `visible` (RN), event recording plus a flush request, the click emission through the injected closure, the `push_permission` path (listener gets `action: nil`, no warning, close, then `pushPermissionPort` on main; nil port: report and close only) and `setPushPermissionPort`. `resetForNewConfig()` and `sessionEnded()` teardown of a display (visible kept at session end, preparing dropped). Invariants of the design.
 **Where**: `Sources/NottiSDK/InApp/Engine/NottiInAppEngine.swift` (extension in `NottiInAppEngine+Display.swift`), `Tests/NottiSDKTests/NottiInAppEngineDisplayTests.swift`
 **Depends on**: T7, T8
 **Reuses**: everything above
@@ -383,7 +383,7 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] `becameVisible` three times records one `impression`; a tap or dismiss before `becameVisible` records the `impression` first (queue order asserted)
+- [ ] `becameVisible` three times records one `impression`; a tap or dismiss before `becameVisible` is ignored and queues nothing (RN `NottiInAppSession.swift:258-262`)
 - [ ] A button tap records `click` with that `button_id`, emits one click with the link action, asks the presenter to close, records no `dismiss`; an image tap records `click` with `image`; a second tap in the same turn is ignored; a tap with an unknown action emits `action: nil`
 - [ ] With no listener (`emitClick` returns false) a link tap logs exactly one fixed `.warn`; a `push_permission` tap logs nothing
 - [ ] A `push_permission` tap records `click` with the button id, emits `action: nil`, closes, then calls the port exactly once on the main dispatcher (call order recorded: enqueue, emit, close, port); with no port set it only records, emits and closes; a port set through `setPushPermissionPort` is read on the engine queue
@@ -595,7 +595,7 @@ No `[P]` task.
 
 ### T17: Presenter, window and scene handling
 
-**What**: `NottiInAppWindow` (level just under `.alert`, `canBecomeKey == false`, pass-through `hitTest`), `NottiInAppViewController` (clear container, follows the host key window's root view controller for orientations and status bar, animations, Reduce Motion, accessibility notifications), the overlay's `accessibilityPerformEscape()` override, `NottiInAppPresenter` implementing `NottiInAppPresenting` with an injected scene provider, image wait (3 s, `maxSidePx` = screen long side times scale), scene and app lifecycle observation (`didBecomeActive`, `UIScene.didActivateNotification`, `UIScene.didDisconnectNotification`), re-attach without a new impression, `becameVisible` after a layout pass while active, the legacy no-scene fallback, and production wiring in `NottiRuntime` replacing the T10 placeholder (RN `NottiInAppPresenter.swift`).
+**What**: `NottiInAppWindow` (level `.alert` like RN, `canBecomeKey == false`, pass-through `hitTest`), `NottiInAppViewController` (clear container, follows the host key window's root view controller for orientations and status bar, animations, Reduce Motion, accessibility notifications), the overlay's `accessibilityPerformEscape()` override, `NottiInAppPresenter` implementing `NottiInAppPresenting` with an injected scene provider, image wait (3 s, `maxSidePx` = screen long side times scale), scene and app lifecycle observation (`didBecomeActive`, `UIScene.didActivateNotification`, `UIScene.didDisconnectNotification`), re-attach without a new impression, `becameVisible` after a layout pass while active, the legacy no-scene fallback, and production wiring in `NottiRuntime` replacing the T10 placeholder (RN `NottiInAppPresenter.swift`).
 **Where**: `Sources/NottiSDK/InApp/UI/NottiInAppPresenter.swift` (with `NottiInAppWindow.swift`, `NottiInAppViewController.swift`), `Tests/NottiSDKTests/NottiInAppPresenterTests.swift`
 **Depends on**: T9, T10, T15, T16
 **Reuses**: the layouts, the engine's presenter protocol, the image loader
@@ -603,7 +603,7 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] The window is not the key window and cannot become key; `windowLevel` is below `.alert` and above `.normal`; for a bar the `hitTest` outside the bar returns nil and inside returns the bar; for `center` and `full` the backdrop returns a view
+- [ ] The window is not the key window and cannot become key; `windowLevel` is `.alert`; for a bar the `hitTest` outside the bar returns nil and inside returns the bar; for `center` and `full` the backdrop returns a view
 - [ ] The root view controller reports the host root view controller's `supportedInterfaceOrientations` and status bar values (a portrait-only host gives `.portrait`)
 - [ ] `accessibilityViewIsModal` is true for `center` and `full`, false for bars; `.screenChanged` with the title (the card when the title is hidden) or `.announcement` with "title. body" is posted once per display (injected poster)
 - [ ] `accessibilityPerformEscape()` on a `center` and on a `full` presentation returns true and reports one `dismiss` with `close_button` (none when already closing); on a `top` and on a `bottom` presentation it returns false and reports nothing
