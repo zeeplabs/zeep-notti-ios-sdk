@@ -111,6 +111,13 @@
 
 ---
 
+### AD-016: Swizzle the host delegate behind SwiftUI's `@UIApplicationDelegateAdaptor` (2026-10-24)
+
+**Decision:** When `UIApplication.shared.delegate` is SwiftUI's internal delegate, `NottiAppDelegateSwizzler.observe(delegate:)` asks it for `forwardingTarget(for:)` and swizzles the target's class (the host's adaptor delegate). SwiftUI's internal class is never modified. A `nil` target, the delegate itself or another SwiftUI-internal object means no adaptor: the existing `.warn` and the manual API still apply (DEL-19).
+**Reason:** Found by Julio on a real iPhone (SwiftUI + `@UIApplicationDelegateAdaptor`, CocoaPods static, Xcode 27.1): with swizzling on, the APNs token never reached the SDK and the device never registered; with `NottiDisableSwizzling` and manual forwarding it registered at once. Reproduced in the Example app on the Simulator: `UIApplication.shared.delegate` is `SwiftUI.AppDelegate` with the adaptor too, its `forwardingTarget` is `ExampleAppDelegate`, and `ExampleAppDelegate` was never swizzled. The delegate-integration design assumed the adaptor made the host class the app delegate. The launch hook did run (the swizzling state was active). Every SwiftUI app with the adaptor was affected, on SPM and CocoaPods alike.
+**Trade-off:** Relies on SwiftUI forwarding through `forwardingTarget(for:)`, an implementation detail of a private class [Provável stable; measured on Xcode 27.1 only]. If a future SwiftUI stops forwarding that way, the SDK falls back to the no-adaptor path (one `.warn`, manual API), never to a crash. Swizzling SwiftUI's own class instead was rejected: adding the token method there would shadow the host's forwarded implementation.
+**Impact:** `NottiAppDelegateSwizzler`, `NottiAppDelegateSwizzlerTests`, a hosted test in `Example/Tests`, delegate-integration `spec.md` and `design.md`, `DEVICE_CHECKLIST` D08.
+
 ### AD-015: logout unlinks the device on the backend (2026-10-21)
 
 **Decision:** `Notti.logout()` also sends `PATCH {external_user_id: null}` through the same path as `login` (queued until registration, not retried, dropped before `initialize`), before the email and phone clears. The backend side is `zeep-notti` AD-039 (branch `fix/device-upsert-keeps-identity`, not merged at the time of writing), which also makes a registration that omits `external_user_id` and `tags` keep them. Owner choice 2026-10-21: fix in the backend, not by re-sending the stored link from the SDK.
