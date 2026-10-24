@@ -119,7 +119,8 @@ Result:
 **Steps:**
 1. Run the app. **Setup** tab → **Initialize**. **Push** tab → **Add listeners** (both are needed on every launch: the example keeps no state).
 2. With the app in the foreground, send a push. Then background the app and tap a push.
-**Expected:** The Log shows `received` once per foreground push and `clicked` once per tap, with no duplicates. The Log lists key names only, never values.
+3. Delete the app and install the same build. **Setup** → **Initialize**. **Push** → **Request permission (async)** and allow. Wait about a minute, then tap **Refresh device id**.
+**Expected:** The Log shows `received` once per foreground push and `clicked` once per tap, with no duplicates. The Log lists key names only, never values. After step 3, "Device id" shows a value: the APNs token reached the SDK through the adaptor's delegate, which SwiftUI hides behind its own internal app delegate (AD-016). If it stays "none" while `initialize: ok` and `permission: granted` are logged, record a **Fail**.
 
 - [ ] Pass  - [ ] Fail
 Result:

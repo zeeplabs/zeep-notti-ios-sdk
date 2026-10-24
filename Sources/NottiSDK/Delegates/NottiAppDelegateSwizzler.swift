@@ -38,8 +38,8 @@ final class NottiAppDelegateSwizzler {
     private var warnedAboutSwiftUI = false
 
     /// - Parameters:
-    ///   - isSwiftUIInternalDelegate: true for SwiftUI's own app delegate class (an app without
-    ///     `@UIApplicationDelegateAdaptor`), which is not swizzled. Injected so tests need no SwiftUI.
+    ///   - isSwiftUIInternalDelegate: true for SwiftUI's own app delegate class, which is never swizzled
+    ///     (with an adaptor, its forwarding target is). Injected so tests need no SwiftUI.
     init(
         swizzler: NottiMethodSwizzler,
         adapter: NottiPushAdapter,
@@ -72,11 +72,31 @@ final class NottiAppDelegateSwizzler {
         return token && failure && fetch
     }
 
-    /// Late path: the delegate already exists when the SDK installs.
+    /// Swizzles the class of a delegate instance: from the `setDelegate:` hook and from the late path, when
+    /// the delegate already exists at install time.
+    ///
+    /// SwiftUI's internal delegate stays the app delegate even with `@UIApplicationDelegateAdaptor`, and
+    /// forwards each call to the host's adaptor object through `forwardingTarget(for:)` (DEL-19, AD-016).
+    /// That object's class is the one swizzled; SwiftUI's own class is never touched.
     @discardableResult
     func observe(delegate: AnyObject?) -> Bool {
         guard let delegate else { return true }
-        return swizzle(delegateClass: type(of: delegate))
+        let cls: AnyClass = type(of: delegate)
+        if isSwiftUIInternalDelegate(cls), let adaptor = adaptorDelegate(behind: delegate) {
+            return swizzle(delegateClass: type(of: adaptor))
+        }
+        return swizzle(delegateClass: cls)
+    }
+
+    /// The host's `@UIApplicationDelegateAdaptor` object behind SwiftUI's internal delegate, or nil when
+    /// there is none (no adaptor: the caller falls back to the SwiftUI warning).
+    private func adaptorDelegate(behind delegate: AnyObject) -> AnyObject? {
+        guard let object = delegate as? NSObject,
+              let target = object.forwardingTarget(for: Self.tokenSelector) as AnyObject?,
+              target !== delegate,
+              !isSwiftUIInternalDelegate(type(of: target))
+        else { return nil }
+        return target
     }
 
     // MARK: - UIApplication.setDelegate:

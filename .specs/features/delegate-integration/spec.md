@@ -197,6 +197,7 @@ Open questions: none. The `+load` / static-library behavior is a Design spike, a
 ## Edge Cases
 
 - WHEN `UIApplication.shared.delegate` is `nil` or SwiftUI's internal delegate (no `@UIApplicationDelegateAdaptor`) THEN the SDK SHALL NOT crash, SHALL log one `.warn`, and the token SHALL need the manual API. This limitation SHALL be in the README (example-and-release).
+- WHEN the app uses `@UIApplicationDelegateAdaptor` THEN `UIApplication.shared.delegate` is still SwiftUI's internal delegate, which forwards each call to the host's adaptor object through `forwardingTarget(for:)`. The SDK SHALL ask the internal delegate for that forwarding target, SHALL swizzle the target's class (the host delegate) exactly as for a UIKit delegate, SHALL NOT add or replace any method on SwiftUI's internal class and SHALL NOT log the SwiftUI `.warn`. A target that is `nil`, the internal delegate itself or another SwiftUI-internal object means no adaptor (previous edge case) (DEL-19, AD-016).
 - WHEN the host swaps `UNUserNotificationCenter.delegate` repeatedly THEN each assignment SHALL be observed without growing the swizzle chain.
 - WHEN a delegate class is a subclass of an already swizzled class THEN each callback SHALL still be observed once.
 - WHEN the host's `didReceive` never calls its completion THEN that is the host's bug and the SDK SHALL NOT call it a second time.
@@ -228,6 +229,7 @@ Open questions: none. The `+load` / static-library behavior is a Design spike, a
 | DEL-16 | P1: Silent push (legacy-only host not shadowed) | Specify | Verified (round 2 PASS) |
 | DEL-17 | P1: Silent push (no double `received` for visible push) | Specify | Verified (round 2 PASS) |
 | DEL-18 | P1: Deep link passthrough (data intact, no URL opening) | Specify | Verified (round 2 PASS) |
+| DEL-19 | Edge case: SwiftUI `@UIApplicationDelegateAdaptor` (swizzle the forwarding target, AD-016) | Specify | Implemented (unit + hosted Example test); device pending (D08) |
 
 Inherited behavior (adapter part only; reporting decisions verified in `core-port`):
 

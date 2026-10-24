@@ -358,6 +358,84 @@ final class NottiAppDelegateSwizzlerTests: XCTestCase {
         XCTAssertEqual(capturedLogs.filter { $0.0 == .warn }.count, 1)
     }
 
+    /// A fake SwiftUI-internal delegate: implements no callback and forwards every selector to `target`,
+    /// the way `SwiftUI.AppDelegate` forwards to the `@UIApplicationDelegateAdaptor` object.
+    private func makeForwardingDelegateClass(target: @escaping () -> AnyObject?) -> AnyClass {
+        let name = "NottiFixtureSwiftUIDelegate\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))"
+        guard let cls = objc_allocateClassPair(NSObject.self, name, 0) else {
+            XCTFail("could not allocate fixture class")
+            return NSObject.self
+        }
+        let block: @convention(block) (AnyObject, Selector) -> AnyObject? = { _, _ in target() }
+        class_addMethod(cls, NSSelectorFromString("forwardingTargetForSelector:"), imp_implementationWithBlock(block), "@@::")
+        let responds: @convention(block) (AnyObject, Selector) -> Bool = { _, selector in
+            class_respondsToSelector(cls, selector) || (target()?.responds(to: selector) ?? false)
+        }
+        class_addMethod(cls, NSSelectorFromString("respondsToSelector:"), imp_implementationWithBlock(responds), "B@::")
+        objc_registerClassPair(cls)
+        return cls
+    }
+
+    func test_theSwiftUIInternalDelegateWithAnAdaptorSwizzlesTheAdaptorClassAndLeavesSwiftUIsClassAlone() {
+        let hostClass = makeDelegateClass(.token)
+        let host = makeInstance(hostClass)
+        let internalClass = makeForwardingDelegateClass { host }
+        let swiftUIDelegate = makeInstance(internalClass)
+        let sdk = NottiAppDelegateSwizzler(
+            swizzler: swizzler,
+            adapter: adapterRecordingFirstUse(),
+            isSwiftUIInternalDelegate: { $0 == internalClass }
+        )
+
+        XCTAssertTrue(sdk.observe(delegate: swiftUIDelegate))
+        sendToken(swiftUIDelegate, Data([0x01]))
+
+        XCTAssertEqual(calls, ["adapter", "original:token"], "the token sent to SwiftUI's delegate reaches the SDK, then the host")
+        XCTAssertFalse(responds(internalClass, tokenSel), "SwiftUI's own class gets no method")
+        XCTAssertTrue(responds(hostClass, failureSel))
+        XCTAssertTrue(responds(hostClass, fetchSel))
+        XCTAssertTrue(capturedLogs.filter { $0.0 == .warn }.isEmpty, "no SwiftUI warning when an adaptor exists")
+    }
+
+    func test_setDelegateHookSwizzlesTheAdaptorClassBeforeTheOriginalSetterRuns() {
+        let hostClass = makeDelegateClass([])
+        let host = makeInstance(hostClass)
+        let internalClass = makeForwardingDelegateClass { host }
+        var respondedWhenSet: Bool?
+        let appClass = makeApplicationClass { delegate in respondedWhenSet = delegate?.responds(to: self.tokenSel) }
+        let sdk = makeSwizzler(isSwiftUI: { $0 == internalClass })
+        XCTAssertTrue(sdk.swizzleSetDelegate(on: appClass))
+
+        let application = makeInstance(appClass)
+        let setter = unsafeBitCast(application.method(for: setDelegateSel), to: SetDelegateCall.self)
+        setter(application, setDelegateSel, makeInstance(internalClass))
+
+        XCTAssertEqual(respondedWhenSet, true, "SwiftUI's delegate answers through the adaptor, already swizzled")
+        XCTAssertTrue(responds(hostClass, tokenSel))
+        XCTAssertFalse(responds(internalClass, tokenSel))
+    }
+
+    func test_theSwiftUIInternalDelegateWithNoUsableForwardingTargetWarnsOnceAndSwizzlesNothing() {
+        // Three ways to have no adaptor: no target, another SwiftUI object, and the delegate itself.
+        let otherInternal = makeInstance(makeDelegateClass([]))
+        let noTarget = makeForwardingDelegateClass { nil }
+        let swiftUITarget = makeForwardingDelegateClass { otherInternal }
+        var selfInstance: AnyObject?
+        let selfTarget = makeForwardingDelegateClass { selfInstance }
+        selfInstance = makeInstance(selfTarget)
+        let internalClasses: [AnyClass] = [noTarget, swiftUITarget, type(of: otherInternal), selfTarget]
+        let sdk = makeSwizzler(isSwiftUI: { cls in internalClasses.contains { $0 == cls } })
+
+        XCTAssertTrue(sdk.observe(delegate: makeInstance(noTarget)))
+        XCTAssertTrue(sdk.observe(delegate: makeInstance(swiftUITarget)))
+        XCTAssertTrue(sdk.observe(delegate: selfInstance))
+
+        for cls in internalClasses {
+            XCTAssertFalse(responds(cls, tokenSel), NSStringFromClass(cls))
+        }
+        XCTAssertEqual(capturedLogs.filter { $0.0 == .warn }.count, 1)
+    }
+
     func test_theDefaultSwiftUIPredicateMatchesOnlySwiftUINamedClasses() {
         XCTAssertFalse(NottiAppDelegateSwizzler.isSwiftUIInternal(NSObject.self))
         XCTAssertFalse(NottiAppDelegateSwizzler.isSwiftUIInternal(makeDelegateClass([])))
