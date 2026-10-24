@@ -166,8 +166,8 @@ stateDiagram-v2
 `NottiInAppDisplay`: `id` (display UUID, distinct from the message id), `message`, `state` (`preparing`, `visible`, `closed`), `impressed`, a clock (remaining time, started, attached, foreground). Transitions:
 
 - `becameVisible(id)`: ignored unless `id` matches, the state is `preparing` and no impression exists; then `visible`, record `impression` (D9), start the clock, request a flush.
-- `userTapped(id, buttonId, action)`: ignored if closing. `ensureImpression()` first (records `impression` if missing), then record `click` with `buttonId` (`image` for the image; the presenter resolves a bar body tap to the first button), set `closed`. If `action` is `push_permission`: emit the click with `action: nil` and no warning; else emit it with the link action (or nil) and, when `emitClick` returns false, log the fixed no-listener `.warn`. Then tell the presenter to `close`, then run `pushPermissionPort` on the main dispatcher for `push_permission` (nothing when the port is nil), then request a flush. No `dismiss` (RN `NottiInAppCoordinator.swift:274-288`).
-- `userDismissed(id, reason)`: ignored if closing; `ensureImpression()`, record `dismiss`, set `closed`, close, flush.
+- `userTapped(id, buttonId, action)`: ignored unless the display is `visible` (a tap before visible or while closing is ignored, like RN `NottiInAppSession.swift:258-262`); record `click` with `buttonId` (`image` for the image; the presenter resolves a bar body tap to the first button), set `closed`. If `action` is `push_permission`: emit the click with `action: nil` and no warning; else emit it with the link action (or nil) and, when `emitClick` returns false, log the fixed no-listener `.warn`. Then tell the presenter to `close`, then run `pushPermissionPort` on the main dispatcher for `push_permission` (nothing when the port is nil), then request a flush. No `dismiss` (RN `NottiInAppCoordinator.swift:274-288`).
+- `userDismissed(id, reason)`: ignored unless the display is `visible`; record `dismiss`, set `closed`, close, flush.
 - Timer fire: same as a dismiss with `auto`.
 - `displayAttached(id, attached)`: clock attached or paused (scene gone).
 - `displayFailed(id)`: drop a preparing display, no event.
@@ -199,7 +199,7 @@ Invariant checks (each has a test): at most one display; `impression` is always 
 | File | Role |
 | --- | --- |
 | `UI/NottiInAppPresenter.swift` | Implements `NottiInAppPresenting` (`present(display)`, `close(displayId)`, `teardown(display)`, idempotent). Waits for the image (3 s), chooses the scene through an injected scene provider, builds the window, observes `didBecomeActive`, `UIScene.didActivateNotification` and `UIScene.didDisconnectNotification`, re-attaches the same display to another active scene, reports `displayAttached`, `becameVisible` (once per display, after a layout pass while the app is active), taps and closes to the engine (RN `NottiInAppPresenter.swift:166-359`) |
-| `UI/NottiInAppWindow.swift` | `UIWindow` subclass; `canBecomeKey == false`; `windowLevel` just under `.alert` (see "Window, scene and level"); `hitTest` returns nil when the hit view is the window or the root view (pass-through for bars) |
+| `UI/NottiInAppWindow.swift` | `UIWindow` subclass; `canBecomeKey == false`; `windowLevel` `.alert`, like RN (see "Window, scene and level"); `hitTest` returns nil when the hit view is the window or the root view (pass-through for bars) |
 | `UI/NottiInAppViewController.swift` | Root view controller: a clear container hosting the overlay, laid out on every pass; follows the host key window's root view controller for `supportedInterfaceOrientations`, `preferredStatusBarStyle` and `prefersStatusBarHidden` (RN `:65-109`); hosts entrance and exit animation, Reduce Motion, accessibility notifications and the `accessibilityPerformEscape()` override |
 | `UI/NottiInAppMessageView.swift` | Builds the overlay, card and content for a `format` from the message, the resolved appearance and an optional image; every view has an `accessibilityIdentifier` (`notti.inapp.title`, `.body`, `.close`, `.image`, `.button.0`, `.button.1`, `.backdrop`, `.scroll`) for tests |
 | `UI/NottiInAppLayout.swift` | Pure functions of (container size, safe area, margin, format), port of RN `computeFrame` (`NottiInAppStyle.swift:126-182`): metrics `margin 16`, bar max height `min(0.4 * height, safeHeight - 2m)`, card width `min(0.9 * width, 560, safeWidth)`, card max height `0.9 * safeHeight`, close target `44`, thumbnail `56`; insets measured from the safe-area edge |
@@ -219,7 +219,7 @@ All of it is `@available(iOSApplicationExtension, unavailable)`.
 
 - The scene provider returns the first `UIWindowScene` with `activationState == .foregroundActive`; a scene-less app that is active gets `UIScreen.main.bounds`; with nothing active the display stays preparing until `didBecomeActive` or `didActivate` (RN `NottiInAppSceneProvider`). [Incerto] legacy no-scene apps on device (checklist).
 - The window is shown with `isHidden = false`, never `makeKey()` (`canBecomeKey` false): the host keeps the key window and its first responder.
-- `windowLevel = UIWindow.Level(rawValue: UIWindow.Level.alert.rawValue - 1)`: above the host's `.normal` windows (and a `UIAlertController`), below system alerts. RN uses `.alert` itself; the difference is recorded in the parity checklist (row 31) [Incerto] keyboard, Control Center and PiP interplay: device checklist.
+- `windowLevel = .alert`, like RN (owner rule "same as RN", 2026-10-24): above the host's `.normal` windows. System alerts belong to another process and are unaffected [Provável]. [Incerto] keyboard, Control Center and PiP interplay: device checklist.
 - Multi-scene and iPad: one display on one scene. When its scene disconnects, the presenter removes the window, reports `displayAttached(false)` (clock paused), and attaches the **same display id** to the next active scene (no impression, no dismiss).
 - Rotation: the overlay recomputes the frame on every layout pass from its own size and safe area; impression is an engine decision (D9).
 - Keyboard: no keyboard layout guide; bars anchor to the safe area. [Incerto] on device.
@@ -287,7 +287,7 @@ Objective-C mirror (`NottiObjC.swift` precedent): `+[Notti trackEvent:]` on `Not
 | Risk | Mitigation | Test |
 | --- | --- | --- |
 | Impression sent twice (rotation, re-layout, scene move, repeated layout) | `impressed` flag on the display, checked on the engine queue; views never write events (D9) | Call `becameVisible` 3 times, rotate in a hierarchy test, assert one record |
-| Click before impression | `ensureImpression()` in every tap and dismiss path | Fake presenter taps first; queue order asserted |
+| Click before impression | Taps and dismisses are ignored until the display is `visible` (RN) | Fake presenter taps before `becameVisible`: no event queued |
 | Same event sent twice after a timeout | `eventId` fixed at record time; the retry reuses it; the server answers `200 duplicate` (success) | A stub that times out once then `201`: one id across both bodies |
 | Event lost on kill | Write-ahead: persisted before the first send | New store over the same suite after "kill" has the record |
 | Event lost on an RN-to-native swap | Same key and Codable schema as RN (D2) | An RN-format JSON fixture decodes and is sent |
@@ -369,8 +369,8 @@ Status after Julio's decisions (2026-10-18, 2026-10-19) and the reconciliation w
 | 28 | Network regain | Resumes a transient give-up once per reconnect | Aligned (RN spec edge case, `tryStartFetch`) |
 | 29 | Layout refinements | Card width cap 560, height 90% of the safe height, close 8 pt inset and chip, image 180 pt cap and aspect modes, buttons into the scroll view, pan swipe threshold min(1/3, 44 pt), host orientation followed | Aligned (RN `ae47972`, `1265833`) |
 | 30 | Accessibility refinements | Title `.header` separate from the body; tappable image labeled with the title; no SDK image string | Aligned (RN `NottiInAppViews.swift:563-580`) |
-| 31 | Window level | iOS just under `.alert`; RN `.alert` | Differs on purpose (keeps system alerts above); confirm on device, checklist line 5 |
-| 32 | Display clock source | iOS wall clock (`Date`); RN `DispatchTime` uptime | Differs on purpose (privacy manifest, D8); same pause semantics |
+| 31 | Window level | Both `.alert` | Matches (aligned 2026-10-24); keyboard interplay on device, checklist line 5 |
+| 32 | Display clock source | iOS wall clock (`Date`); RN `DispatchTime` uptime | Differs on purpose (kept 2026-10-24): `DispatchTime` reads `mach_absolute_time`, a System Boot Time required-reason API that `NottiSDK` does not declare (D8); same pause semantics. RN declares no boot-time reason in its manifest: RN todo |
 
 ---
 
