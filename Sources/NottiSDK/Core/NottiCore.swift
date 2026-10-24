@@ -717,6 +717,10 @@ class NottiCore {
             let previousDeviceId = deviceStore.getDeviceId()
             deviceStore.setDeviceId(response.id)
             if response.id != previousDeviceId {
+                // A different id after a stored one means a new server row: acks from
+                // the old row are meaningless there. The first registration (no stored
+                // id) keeps whatever was recorded before it. (RN 9c5af1d, AD-018.)
+                if previousDeviceId != nil { deviceStore.clearProfileFieldAcks() }
                 onDeviceIdChanged(response.id)
             }
             deviceStore.setLastToken(token)
