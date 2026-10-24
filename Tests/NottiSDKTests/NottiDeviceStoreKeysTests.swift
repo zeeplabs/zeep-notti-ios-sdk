@@ -4,7 +4,8 @@ import XCTest
 /// Freezes the UserDefaults key names `NottiDeviceStore` writes (CORE-09).
 ///
 /// The list is copied verbatim from react-native-notti `52e4b55`
-/// (`ios/NottiDeviceStore.swift:88-117`). An app moving from RN 0.6.0 keeps its
+/// (`ios/NottiDeviceStore.swift:88-117`), plus `notti_pending_external_user_id_clear`
+/// added by RN 0.8.0 (`96f0500`, AD-018). An app moving from RN keeps its
 /// device id, session counters and acks only if every key stays byte-identical.
 /// The test writes through the store's public surface and reads the raw
 /// persistent domain, so it checks the strings that actually reach disk.
@@ -24,6 +25,7 @@ final class NottiDeviceStoreKeysTests: XCTestCase {
         "notti_location_sharing_enabled",
         "notti_session_last_seen_at_ms",
         "notti_pending_country_clear",
+        "notti_pending_external_user_id_clear",
         "notti_last_synced_country",
         "notti_last_synced_device_os",
         "notti_last_synced_device_model",
@@ -75,6 +77,7 @@ final class NottiDeviceStoreKeysTests: XCTestCase {
             ("notti_location_sharing_enabled", { store.setLocationSharingEnabled(true) }),
             ("notti_session_last_seen_at_ms", { store.setSessionLastSeenAtMs(6) }),
             ("notti_pending_country_clear", { store.setPendingCountryClear(true) }),
+            ("notti_pending_external_user_id_clear", { store.setPendingExternalUserIdClear(true) }),
             ("notti_last_synced_country", { store.setLastSyncedCountry("ZZ") }),
             ("notti_last_synced_device_os", { store.setLastSyncedDeviceOs("os-fixture") }),
             ("notti_last_synced_device_model", { store.setLastSyncedDeviceModel("model-fixture") }),

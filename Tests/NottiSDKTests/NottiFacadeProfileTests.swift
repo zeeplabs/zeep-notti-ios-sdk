@@ -268,6 +268,25 @@ final class NottiFacadeProfileTests: XCTestCase {
         XCTAssertTrue(bodies("PATCH").contains { $0["phone"] is NSNull })
     }
 
+    /// AD-018 (RN 96f0500): a logout before `initialize` keeps a durable clear
+    /// and unlinks the device on the backend once it registers.
+    func test_logoutAsTheFirstCallBeforeInitializeUnlinksTheDeviceAtRegistration() {
+        store.setExternalUserId("user-fixture")
+        XCTAssertNil(runtime.core, "precondition: no core before the first call")
+        facade.logout()
+        drain()
+        XCTAssertTrue(StubURLProtocol.recordedRequests().isEmpty)
+        XCTAssertNil(store.getExternalUserId())
+        XCTAssertTrue(store.getPendingExternalUserIdClear())
+        StubURLProtocol.enqueue(.echoDevice()) // registration
+        StubURLProtocol.enqueue(.echoDevice()) // external_user_id clear resync
+        facade.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        drain()
+
+        XCTAssertEqual(bodies("PATCH").filter { $0["external_user_id"] is NSNull }.count, 1)
+        XCTAssertFalse(store.getPendingExternalUserIdClear())
+    }
+
     func test_eachOtherPreInitializeCallAsTheFirstCallReachesEnsureCoreAndDoesNotCrash() {
         // One fresh runtime per method: the method under test is always the first call.
         let calls: [(NottiFacade) -> Void] = [
