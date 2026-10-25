@@ -47,6 +47,27 @@ enum IntegrationSnippets {
         clicked.remove()
         // README:end listeners
     }
+
+    static func inAppMessages() {
+        // README:begin in-app
+        // Add it before `Notti.initialize`, so a message shown right after launch already has a listener.
+        let inAppClicks = Notti.InAppMessages.addClickListener { click in
+            // nil for a `push_permission` button and for a button without a valid action.
+            guard let action = click.action else { return }
+            // `action.value` is the author's link, untouched. The SDK never opens it: you do.
+            if action.type == .deeplink {
+                print("route the deeplink inside the app")
+            } else {
+                print("open the url in Safari or an in-app browser")
+            }
+        }
+
+        // Shows the oldest waiting message whose trigger is this event name (exact, case-sensitive).
+        Notti.trackEvent("checkout_completed")
+
+        inAppClicks.remove()
+        // README:end in-app
+    }
 }
 
 // README:begin manual-forwarding

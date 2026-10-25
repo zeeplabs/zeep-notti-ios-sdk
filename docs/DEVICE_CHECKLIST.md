@@ -283,6 +283,12 @@ Result:
 
 ---
 
+## In-App Messages (separate checklist)
+
+In-App Messages have their own device checklist, items 1-27 of "Device validation checklist" in `.specs/features/in-app-messages/tasks.md` (in-app T21). It needs an iPhone **and** an iPad, a `zeep-notti` v0.23.0 or later (staging is fine) where you can author one message per layout, and the example app: tap **Initialize** (it adds the In-App click listener, which logs `in-app click: action url`, `deeplink` or `none` on the **Log** tab) and use **Track event** on the **Push** tab for event-triggered messages (event name `example_event`). Record the results in `.specs/features/in-app-messages/validation.md` (pass, fail or not run per item, with the device, iOS version and server release), under the same rule as here: no app id, client key, token, device id or message id in the file.
+
+---
+
 ## After the checklist
 
 1. Tick the STATE todos cited above (one edit, with the date and the Pass results).

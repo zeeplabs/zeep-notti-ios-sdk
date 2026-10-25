@@ -4,7 +4,7 @@
 **Spec**: `.specs/features/in-app-messages/spec.md`
 **Testing**: `.specs/codebase/TESTING.md`
 **Depends on feature**: none blocking. Part of M1 / `0.1.0` (AD-017): T19 edits the existing `Example/` app, T20 the `[0.1.0]` release notes. Server: `zeep-notti` v0.23.0 or later serves the payload (OQ-6 closed). Recorded dependency, not a task: the `zeep-notti` per-SDK minimum for `push_permission` (AD-019 decision 4). The AD-018 core fixes land first as separate commits
-**Status**: Approved by Julio 2026-10-24 (scope and the four AD-019 decisions), reconciled with `react-native-notti` 0.8.0. Not started
+**Status**: Approved by Julio 2026-10-24 (scope and the four AD-019 decisions), reconciled with `react-native-notti` 0.8.0. Execute done 2026-10-25 for T1-T20 and T22; T21 (device checklist and Verifier) not run
 
 ---
 
@@ -683,6 +683,7 @@ No `[P]` task.
 ### T20: Docs, release notes, traceability and status
 
 **What**: README section (what In-App does, minimum `zeep-notti` v0.23.0, `trackEvent`, the click listener with `action` nullable and the sentence that without it no link opens, the `push_permission` button and its settings jump, Dynamic Type and accessibility notes, a data collection line, `notti_pending_inapp_events` in the storage keys table); `CHANGELOG.md` `[0.1.0]`: first line becomes a native port of `react-native-notti` 0.8.0 with In-App Messages (was 0.6.0), the feature, the `403` divergence line, the `push_permission` settings exception, and the migration note's key list gains `notti_pending_inapp_events` (RN's key, so pending events carry over); `example-and-release/release-pr.md`: the In-App device checklist (this file, T21) as a pre-tag gate; `TESTING.md` (new layers and counts); `ROADMAP.md` status; `traceability.md` for IAM-01..52; spec statuses.
+**SPEC_DEVIATION**: (1) Files beyond **Where**: `AGENTS.md` (the layout line this task's Done-when asks for), `Example/App/IntegrationSnippets.swift` (the compiled-but-never-called region `in-app` behind the README snippet, so `check-readme-snippets.sh` guards it), `docs/DEVICE_CHECKLIST.md` (a pointer section to the In-App checklist and how to drive it from the Example), `.specs/project/STATE.md` (Current Work, a T21 todo and the `push_permission` per-SDK minimum todo) and this file's device checklist, prepared for T21 and not run: items 3, 15 and 16 extended (status bar of a portrait-only host, VoiceOver focus versus bar announcement, legacy fallback window, scene move without a `dismiss`) and items 24-27 added (animation feel and Reduce Motion, window level against Control Center, PiP, alerts and the keyboard with the window never key, late image after 3 s, touch pass-through around bars and during the fade-out). (2) README and CHANGELOG also correct the parity baseline from RN 0.6.0 to 0.8.0 (AD-017) outside the In-App text: the status banner, the backend requirements line (now listing v0.23.0 for In-App and v0.24.0 for the `logout` unlink), the storage-keys paragraph and the CHANGELOG migration heading ("0.6.0 to 0.8.0"; D20 still checks continuity from 0.6.0). (3) Claims that need a device or the backend are written as not yet proven (window level against system UI, legacy apps, launch ordering, RN-to-native queue carry-over) or as a backend dependency (`push_permission` per-SDK minimum), not asserted.
 **Where**: `.specs/features/in-app-messages/traceability.md`, `README.md`, `CHANGELOG.md`, `.specs/features/example-and-release/release-pr.md`, `.specs/codebase/TESTING.md`, `.specs/project/ROADMAP.md`, `.specs/features/in-app-messages/spec.md`
 **Depends on**: T18, T19
 **Reuses**: `nse-rich-media/traceability.md` as the template
@@ -690,11 +691,11 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] Every IAM-xx has at least one named test or check in `traceability.md`; the total matches the real count
-- [ ] `CHANGELOG.md` `[0.1.0]` names RN 0.8.0, contains the 403 divergence line, the `push_permission` exception and the new storage key; `scripts/check-version.sh` (CHANGELOG check) passes
-- [ ] `release-pr.md` lists the In-App device checklist gate
-- [ ] `check-readme-snippets.sh` passes with the new README snippets
-- [ ] `validate_spec.py` and `validate_tasks.py` pass; `AGENTS.md` layout line mentions `Sources/NottiSDK/InApp/`
+- [x] Every IAM-xx has at least one named test or check in `traceability.md`; the total matches the real count (52 rows: 51 covered, IAM-48 pending T21)
+- [x] `CHANGELOG.md` `[0.1.0]` names RN 0.8.0, contains the 403 divergence line, the `push_permission` exception and the new storage key; `scripts/check-version.sh` (CHANGELOG check) passes
+- [x] `release-pr.md` lists the In-App device checklist gate
+- [x] `check-readme-snippets.sh` passes with the new README snippets (new snippet `in-app`)
+- [x] `validate_spec.py` and `validate_tasks.py` pass; `AGENTS.md` layout line mentions `Sources/NottiSDK/InApp/`
 - [ ] Gate check passes: **full**
 - [ ] Test count at least the baseline plus the minimums above, none removed
 
@@ -731,7 +732,7 @@ Use synthetic content; one message per line where needed. Record device, iOS ver
 
 1. Cold start, registered device, one `session_start` message: shown once; `eligible` called once (server log or proxy); `impression` appears in the dashboard once.
 2. Background and foreground: new session, new `eligible`; a message the server returns again is shown again; the visible message at background stays and the countdown pauses.
-3. Rotation of an open message in each layout (portrait, landscape left and right): no second impression, bounds respected, close control reachable; a portrait-only host app keeps the message in portrait.
+3. Rotation of an open message in each layout (portrait, landscape left and right): no second impression, bounds respected, close control reachable; a portrait-only host app keeps the message in portrait and its status bar style and visibility do not change while a message is visible.
 4. `top`: swipe up reports `swipe` (a short drag snaps back); touch outside the bar reaches the app; a long body scrolls before a swipe starts; the status bar and the Dynamic Island are not covered; with `margin: true` the bar is 16 pt below the safe-area top and 16 pt from the sides, with `margin: false` it touches the safe-area top and sides.
 5. `bottom`: swipe down reports `swipe`; with the keyboard open in the host, record whether the bar is above or below it and whether it is tappable (window level, [Incerto]); note any difference from an RN 0.8.0 app (RN uses `.alert`).
 6. `center`: backdrop tap reports `outside_tap`; tap inside the card does nothing; VoiceOver focus moves to the title and cannot reach the app behind; on an iPad the card is at most 560 pt wide.
@@ -743,8 +744,8 @@ Use synthetic content; one message per line where needed. Record device, iOS ver
 12. `trackEvent`: with an event-triggered message, the exact name shows it; a different case does not; two calls show the second message only on the second call; an early call before the fetch completes shows the message on arrival; a call before `Notti.initialize`, a blank name, and a call while the app is in the background after a session ran show nothing and log nothing.
 13. Offline: put the device in airplane mode, tap and dismiss, restore: queued events arrive in order with the original `occurred_at`; no duplicates in the dashboard after a forced retry; a session started offline fetches once the network returns.
 14. `429` (staging with a lowered limit) and `5xx` (proxy): the SDK waits, the app stays responsive, login and tags are not delayed; `eligible` `429` with `Retry-After` over 60 s shows no message that session and sends no second request; a background and foreground inside a short pause does not fetch before it ends; `401` (a wrong client key) logs no registration text.
-15. VoiceOver reading order (title as a heading, then body, then buttons), close label in English and in Portuguese (`pt-BR` and `pt-PT`), the tappable image read with the message title, the escape gesture (two-finger Z) closing a `center` and a `full` message with `close_button` and doing nothing on `top` and `bottom`, Reduce Motion cross-fade, dark mode default colors, server colors unchanged in dark mode, `text_align: right` in an Arabic or Hebrew device language stays right.
-16. A non-scene (legacy) app and an iPad with two windows (Split View, Stage Manager): the message appears on one scene; moving the app between scenes does not duplicate impressions.
+15. VoiceOver reading order (title as a heading, then body, then buttons), `center` and `full` move the focus to the title (to the card when the title is blank) and the app behind is unreachable, a `top` or `bottom` bar is announced (title and body) without taking the focus, close label in English and in Portuguese (`pt-BR` and `pt-PT`), the tappable image read with the message title, the escape gesture (two-finger Z) closing a `center` and a `full` message with `close_button` and doing nothing on `top` and `bottom`, Reduce Motion cross-fade, dark mode default colors, server colors unchanged in dark mode, `text_align: right` in an Arabic or Hebrew device language stays right.
+16. A non-scene (legacy) app and an iPad with two windows (Split View, Stage Manager): the message appears on one scene; in the legacy app it fills the screen above the app's window; moving the app between scenes (or closing the scene that shows it) moves the message without a second impression and without a `dismiss` in the dashboard.
 17. Markdown and HTML in `title` and `body` of a test message are shown verbatim.
 18. CocoaPods consumers (static, static libraries, dynamic): the close control label resolves and the message shows.
 19. Launch ordering of the `trackEvent` cold-start window ([Provável]): call `Notti.initialize` and `Notti.trackEvent("fixture_event")` back to back (a) in `application(_:didFinishLaunchingWithOptions:)` and (b) in a SwiftUI `App` `init`, on a cold start with an event-triggered message for that name; record whether the message appears once the first session opens and `eligible` answers, whether `UIApplication.applicationState` was `.inactive` at the call, and the order of `trackEvent`, the `tryOpen()` edge and `didBecomeActive` (breakpoints or a temporary print in the host app, never a log line in the SDK). Also a launch in the background (silent push) followed by a foreground: the name is kept until the first foreground session.
@@ -752,6 +753,10 @@ Use synthetic content; one message per line where needed. Record device, iOS ver
 21. `push_permission` (needs a server that serves it: a staging build with `MinSDKVersionPushPermission` set, AD-019 decision 4): fresh install, tap → the system prompt appears and the subscribed state reaches the server after "Allow"; with permission denied, tap → the app's notification settings page opens (iOS 16+) or the app settings page (iOS 15); with permission granted, tap → nothing beyond the close; in every case `click` is in the dashboard and the Example listener logs `none`.
 22. Foreground session while the core is busy: block registration with a proxy that delays `PUT /devices` long enough for the core to retry, background and foreground the app: the In-App session opens and `eligible` is called at foreground, not after the core's retries end.
 23. RN-to-native continuity: an app on `react-native-notti` 0.8.0 with queued In-App events (airplane mode, tap a message), replaced by a build on this SDK with the same bundle id: the queued events are sent with their original `event_id` once online.
+24. Animation feel: a bar slides about 24 pt in from its edge while fading in (0.25 s), `center` and `full` fade in (0.25 s), every exit fades out (0.2 s); with Reduce Motion on, entrance and exit are a short cross-fade (0.15 s) with no movement and a released swipe snaps back without animation. Record whether it feels right and whether anything stutters on the oldest device available.
+25. Window level `.alert` against system UI ([Incerto]): with a bar visible, open Control Center and Notification Center, start Picture in Picture from a video (in a host that has one), show a host `UIAlertController` and the keyboard; record what covers what and whether the bar stays tappable. The message window never becomes key: a focused host text field keeps the keyboard and typing continues while a bar is visible.
+26. Late image: an image host delayed past 3 s (proxy): the message appears without the image at about 3 s and does not change when the image arrives later; one `impression` in the dashboard.
+27. Touch pass-through: with a `top` or `bottom` bar visible, taps and scrolls on the host around the bar work; during the exit fade-out of a bar and of a `center` message, a tap on the host reaches the host at once.
 
 ---
 
