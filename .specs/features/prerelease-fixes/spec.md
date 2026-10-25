@@ -157,7 +157,7 @@ See `tasks.md`.
 | PRF-07 | P2: Low defects | Tasks (T8) | Done |
 | PRF-08 | P2: Low defects | Tasks (T9) | Done |
 | PRF-09 | P2: Low defects | Tasks (T10) | Done |
-| PRF-10 | P3: Docs and log text | Tasks (T12) | Pending |
+| PRF-10 | P3: Docs and log text | Tasks (T12) | Done |
 | PRF-11 | P3: Docs and log text | Tasks (T11) | Done |
 | PRF-12 | P3: Docs and log text | Tasks (T1) | Done |
 

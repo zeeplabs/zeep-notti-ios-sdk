@@ -232,7 +232,8 @@ final class NottiFacade {
         receivedHub.add(handler)
     }
 
-    /// Live clicks only. A cold-start click is never replayed here: it waits for
+    /// Clicks that arrive while a listener is attached, the launch tap included when it arrives after the
+    /// listener was added. A click buffered with no listener is never replayed here: it waits for
     /// `takeInitialClick()`.
     func addClickedListener(_ handler: @escaping (NottiNotificationPayload) -> Void) -> NottiSubscription {
         clickedHub.add(handler)
@@ -243,7 +244,7 @@ final class NottiFacade {
         deviceIdHub.add(handler)
     }
 
-    /// The click that launched the app, once; nil afterwards.
+    /// The latest click buffered while no listener was attached (normally the launch tap), once; nil afterwards.
     func takeInitialClick() -> NottiNotificationPayload? {
         runtime.eventBuffer.takeInitialClick().map { NottiNotificationPayload(eventPayload: $0) }
     }
