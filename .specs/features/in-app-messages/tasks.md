@@ -435,6 +435,7 @@ No `[P]` task.
 ### T22: Push permission platform action and the URL-open allowlist
 
 **What**: `NottiPushPermissionAction` (design D15), a port of RN `NottiPushPermissionAction.swift`: `State` from `UNAuthorizationStatus`, `run()` with injected `readState`, `requestPermission`, `openNotificationSettings`, `logger`; production statics (`getNotificationSettings`; on main, `UIApplication.openNotificationSettingsURLString` on iOS 16+ else `openSettingsURLString`, then the open call). `NottiRuntime.start` builds it with `requestPermission` going to the runtime's current core (`NottiCore.requestPermission`, `NottiCore.swift:365`) and hands it to the engine through `setPushPermissionPort` (RN `396d320`). `scripts/check-no-url-open.sh` gains an exact-path allowlist of this one file; the AGENTS.md bullet "The SDK never opens a URL" (section "Delegate integration and the launch hook") states the exception (AD-019).
+**SPEC_DEVIATION**: (1) The OS side is a `NottiPushPermissionAction.Platform` value (`readState`, `openNotificationSettings`; `.system` in production) passed to `NottiRuntime.init(pushPermissionPlatform:)`; only `shared` passes `.system`, and a nil platform sets no port (tests), so the runtime never references the app-only statics directly. The class itself is not marked app-only: only `systemState`, `openSystemNotificationSettings` and `Platform.system` carry `@available(iOSApplicationExtension, unavailable)`. (2) `logger` defaults to `NottiLogger` `.warn`, category `inapp`, with RN's fixed text. (3) The allowlist exempts only `UIApplication.shared.open(` lines of that exact path; `openURL` or `.open(_:options` inside it still fail. The script had no fixture self-test, so the fixture trees were proved by hand (listed in the Done-when line), not added to the repo. (4) The runtime-level tests live in a second class, `NottiPushPermissionPortWiringTests`, in the same file. (5) README still says "The SDK never opens a URL"; its update is left to the docs task (T20).
 **Where**: `Sources/NottiSDK/InApp/Platform/NottiPushPermissionAction.swift`, `Sources/NottiSDK/Runtime/NottiRuntime.swift`, `scripts/check-no-url-open.sh`, `AGENTS.md`, `Tests/NottiSDKTests/NottiPushPermissionActionTests.swift`
 **Depends on**: T10
 **Reuses**: RN `NottiPushPermissionActionTests.swift` cases, `NottiCore.requestPermission`
@@ -442,13 +443,13 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] `notDetermined` calls `requestPermission` once and nothing else; `denied` calls `openNotificationSettings` once; `authorized`, `provisional` and `ephemeral` call nothing; `unknown` logs exactly one fixed line with no values; a state answered on a background thread still runs the row
-- [ ] A source test reads `NottiPushPermissionAction.swift` and asserts that the only URL sources are `openNotificationSettingsURLString` and `openSettingsURLString` (no `URL(string:` over anything else, no message or payload type referenced)
-- [ ] An isolated runtime after `start` gives the engine a port; a `push_permission` tap with a fake permission reader in state `notDetermined` reaches the fake core's `requestPermission`; after a core replacement the port reaches the new core
-- [ ] `scripts/check-no-url-open.sh` passes on the tree; a fixture tree with an open call in `Sources/NottiSDK/InApp/Engine/NottiInAppEngine.swift` fails; a fixture with the allowlisted file only passes; a fixture where the allowlisted path is moved fails
-- [ ] AGENTS.md names the exception and the allowlisted path
-- [ ] Gate check passes: **full**
-- [ ] Test count: at least 8 new, total at least B + 170
+- [x] `notDetermined` calls `requestPermission` once and nothing else; `denied` calls `openNotificationSettings` once; `authorized`, `provisional` and `ephemeral` call nothing; `unknown` logs exactly one fixed line with no values; a state answered on a background thread still runs the row
+- [x] A source test reads `NottiPushPermissionAction.swift` and asserts that the only URL sources are `openNotificationSettingsURLString` and `openSettingsURLString` (no `URL(string:` over anything else, no message or payload type referenced)
+- [x] An isolated runtime after `start` gives the engine a port; a `push_permission` tap with a fake permission reader in state `notDetermined` reaches the fake core's `requestPermission`; after a core replacement the port reaches the new core
+- [x] `scripts/check-no-url-open.sh` passes on the tree (fixture trees run by hand from a scratch copy of `Sources`: the open call in the engine, the allowlisted file moved, a copy of it under another name, `openURL` and `.open(_:options` added inside it all fail; the allowlisted file alone passes); a fixture tree with an open call in `Sources/NottiSDK/InApp/Engine/NottiInAppEngine.swift` fails; a fixture with the allowlisted file only passes; a fixture where the allowlisted path is moved fails
+- [x] AGENTS.md names the exception and the allowlisted path
+- [x] Gate check passes: **full** (local `ci.yml` equivalent on `2172f75`: DONE 0 failures)
+- [x] Test count: at least 8 new, total at least B + 170 (10 new: 7 in `NottiPushPermissionActionTests`, 3 in `NottiPushPermissionPortWiringTests`; `NottiSDKTests` 701 → 711)
 
 **Tests**: unit
 **Gate**: full
