@@ -27,7 +27,7 @@ final class NottiRuntime {
         return NottiRuntime(
             defaults: defaults,
             providers: .live(),
-            inAppEngine: .live(defaults: defaults, clicks: clicks),
+            inAppEngine: .live(defaults: defaults, clicks: clicks, presenter: NottiInAppPresenter()),
             inAppClicks: clicks,
             pushPermissionPlatform: .system
         )
