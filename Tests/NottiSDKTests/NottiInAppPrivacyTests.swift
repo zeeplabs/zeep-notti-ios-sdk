@@ -36,8 +36,8 @@ final class NottiInAppPrivacyTests: XCTestCase {
          permissionLabel, imageUrl, actionUrl, deeplink, eventName, "sentinel"]
     }
 
-    /// The registration text of the `403` warning (IAM-04).
-    private let registrationText = "until the next registration"
+    /// The text of the `403` warning (IAM-04, PRF-11).
+    private let forbiddenText = "refused for this session"
 
     // MARK: Fixture
 
@@ -184,15 +184,15 @@ final class NottiInAppPrivacyTests: XCTestCase {
         XCTAssertTrue(store.all().isEmpty, "the impression was sent")
     }
 
-    func test_eligible401LogsNoSentinelAndNoRegistrationText() {
+    func test_eligible401LogsNoSentinelAndNoForbiddenText() {
         fetch(.status(401))
-        XCTAssertFalse(lines.contains { $0.contains(registrationText) })
+        XCTAssertFalse(lines.contains { $0.contains(forbiddenText) })
         XCTAssertFalse(lines.isEmpty, "the generic 401 line is logged")
     }
 
     func test_eligible403LogsNoSentinel() {
         fetch(.status(403))
-        XCTAssertTrue(lines.contains { $0.contains(registrationText) })
+        XCTAssertTrue(lines.contains { $0.contains(forbiddenText) })
     }
 
     func test_eligible404LogsNoSentinel() {
@@ -219,15 +219,15 @@ final class NottiInAppPrivacyTests: XCTestCase {
 
     // MARK: Event queue paths
 
-    func test_events401LogsNoSentinelAndNoRegistrationText() {
+    func test_events401LogsNoSentinelAndNoForbiddenText() {
         showVisible(events: [.status(401)])
-        XCTAssertFalse(lines.contains { $0.contains(registrationText) })
+        XCTAssertFalse(lines.contains { $0.contains(forbiddenText) })
         XCTAssertTrue(lines.contains("Notti.inapp: events failed (HTTP 401)"))
     }
 
     func test_events403LogsNoSentinel() {
         showVisible(events: [.status(403)])
-        XCTAssertTrue(lines.contains { $0.contains(registrationText) })
+        XCTAssertTrue(lines.contains { $0.contains(forbiddenText) })
     }
 
     func test_eventsRejectedAndDroppedLogNoSentinel() {

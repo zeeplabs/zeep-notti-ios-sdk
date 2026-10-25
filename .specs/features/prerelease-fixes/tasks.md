@@ -266,9 +266,9 @@ Sequential order used in Execute: T1 → T2 → ... → T12.
 
 **Done when**:
 
-- [ ] Tests assert the new literal; no line says "until the next registration"
-- [ ] Test count: unchanged
-- [ ] Gate passes: quick
+- [x] Tests assert the new literal; no line says "until the next registration"
+- [x] Test count: unchanged
+- [x] Gate passes: quick
 
 **Tests**: unit
 **Gate**: quick
