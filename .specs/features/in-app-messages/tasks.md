@@ -178,13 +178,13 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] The example payload of `docs/en/sdks/in-app-messages.md` (ids replaced by `fixture` values, `example.invalid` URLs) maps field by field, including `trigger`, both buttons, `image_action`, `style`, `dismiss_after_seconds`
-- [ ] Unknown fields at every level are ignored; an unknown `format` becomes `center`; `style: null` and a missing `style` both give default style input
-- [ ] A message with an empty `id`, with blank title and body (empty or whitespace only), with an unknown trigger type, or with an `event` trigger without `name` is not renderable and the others survive; a non-object body or a non-array `messages` gives nil
-- [ ] A button without `id` or `label` is dropped and a third button is dropped; an action `url` or `deeplink` with an empty or missing `value` is nil while its button is kept; an unknown action type is nil; `push_permission` on a button gives `.pushPermission` (no value read); `push_permission` as `image_action` is dropped
-- [ ] `image_url` with `http`, `https://` alone or garbage is dropped; `image_action` without a valid image is dropped; `dismiss_after_seconds` 0, 301, 8.5, `true` and a string give nil, 1, 8.0 and 300 are kept; `margin: 1` is not read as a boolean (default `true`)
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 14 new, total at least B + 14
+- [x] The example payload of `docs/en/sdks/in-app-messages.md` (ids replaced by `fixture` values, `example.invalid` URLs) maps field by field, including `trigger`, both buttons, `image_action`, `style`, `dismiss_after_seconds`
+- [x] Unknown fields at every level are ignored; an unknown `format` becomes `center`; `style: null` and a missing `style` both give default style input
+- [x] A message with an empty `id`, with blank title and body (empty or whitespace only), with an unknown trigger type, or with an `event` trigger without `name` is not renderable and the others survive; a non-object body or a non-array `messages` gives nil
+- [x] A button without `id` or `label` is dropped and a third button is dropped; an action `url` or `deeplink` with an empty or missing `value` is nil while its button is kept; an unknown action type is nil; `push_permission` on a button gives `.pushPermission` (no value read); `push_permission` as `image_action` is dropped
+- [x] `image_url` with `http`, `https://` alone or garbage is dropped; `image_action` without a valid image is dropped; `dismiss_after_seconds` 0, 301, 8.5, `true` and a string give nil, 1, 8.0 and 300 are kept; `margin: 1` is not read as a boolean (default `true`)
+- [x] Gate check passes: quick
+- [x] Test count: at least 14 new, total at least B + 14
 
 **Tests**: unit
 **Gate**: quick
