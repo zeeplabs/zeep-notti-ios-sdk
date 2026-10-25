@@ -55,6 +55,9 @@ final class NottiDelegateInstaller: NSObject {
         var isLaunchFinished: () -> Bool
         var adapter: NottiPushAdapter
         var state: NottiSwizzlingState
+        /// Runs the late look at existing delegates on the main thread (PRF-05): now when already on main,
+        /// otherwise asynchronously, so `UIApplication.delegate` is never read on the caller's thread.
+        var runOnMain: (@escaping () -> Void) -> Void = NottiDelegateInstaller.runOnMainThread
 
         /// The real classes and the process-wide runtime and state. Nothing here creates an object that
         /// touches I/O: the adapter resolves `NottiRuntime.shared` on first use.
@@ -124,8 +127,13 @@ final class NottiDelegateInstaller: NSObject {
         guard enabled else { return }
 
         if !fromLaunchHook {
-            appDelegateSwizzler?.observe(delegate: environment.existingApplicationDelegate())
-            centerSwizzler?.observe(delegate: environment.center.delegate)
+            let appSwizzler = appDelegateSwizzler
+            let center = centerSwizzler
+            let environment = self.environment
+            environment.runOnMain {
+                appSwizzler?.observe(delegate: environment.existingApplicationDelegate())
+                center?.observe(delegate: environment.center.delegate)
+            }
             if !launchFinished, environment.isLaunchFinished() {
                 launchFinished = true
             }
@@ -199,8 +207,17 @@ final class NottiDelegateInstaller: NSObject {
 
     // MARK: - Production probes
 
+    /// `Environment.runOnMain` in production.
+    static func runOnMainThread(_ task: @escaping () -> Void) {
+        if Thread.isMainThread {
+            task()
+        } else {
+            DispatchQueue.main.async(execute: task)
+        }
+    }
+
     /// `UIApplication.shared.delegate`, read through the ObjC runtime: `UIApplication.shared` is not optional
-    /// and the property is main-actor isolated, while this runs on whatever thread called `initialize`.
+    /// and the property is main-actor isolated. Called through `runOnMain`, so on the main thread.
     private static func currentApplicationDelegate() -> AnyObject? {
         guard let application = sharedApplication() else { return nil }
         return application.perform(NSSelectorFromString("delegate"))?.takeUnretainedValue()

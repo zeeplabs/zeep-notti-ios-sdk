@@ -331,6 +331,52 @@ final class NottiDelegateInstallerTests: XCTestCase {
         XCTAssertEqual(storedTypes, ["received"], "observed once after two ensure calls")
     }
 
+    // MARK: - Main thread (PRF-05)
+
+    func test_theLateLookReadsTheAppDelegateOnlyInsideTheMainHop() {
+        let existingClass: AnyClass = makeUNDelegateClass()
+        var reads = 0
+        var hops: [() -> Void] = []
+        let runtime = self.runtime!
+        var environment = NottiDelegateInstaller.Environment(
+            configuration: { NottiSwizzlingConfiguration(infoDictionary: [:]) },
+            applicationClass: makeSetterClass("NottiFixtureApplication") {},
+            centerClass: makeSetterClass("NottiFixtureCenter") {},
+            existingApplicationDelegate: { reads += 1; return self.makeInstance(existingClass) },
+            center: center,
+            notificationCenter: notifications,
+            isLaunchFinished: { false },
+            adapter: NottiPushAdapter(runtime: runtime),
+            state: state
+        )
+        environment.runOnMain = { hops.append($0) }
+        let installer = NottiDelegateInstaller(environment: environment)
+
+        installer.performInstall(fromLaunchHook: false)
+        XCTAssertEqual(reads, 0, "not read on the calling thread")
+        XCTAssertFalse(existingClass.instancesRespond(to: fetchSel))
+        XCTAssertEqual(hops.count, 1)
+
+        hops.forEach { $0() }
+        XCTAssertEqual(reads, 1)
+        XCTAssertTrue(existingClass.instancesRespond(to: fetchSel), "observed inside the hop")
+    }
+
+    func test_theProductionMainHopRunsOnMainNowOrLater() {
+        var ranInline = false
+        NottiDelegateInstaller.runOnMainThread { ranInline = true }
+        XCTAssertTrue(ranInline, "on main it runs synchronously")
+
+        let ranOnMain = expectation(description: "task ran on main")
+        DispatchQueue.global(qos: .utility).async {
+            NottiDelegateInstaller.runOnMainThread {
+                XCTAssertTrue(Thread.isMainThread)
+                ranOnMain.fulfill()
+            }
+        }
+        wait(for: [ranOnMain], timeout: 10)
+    }
+
     // MARK: - Fallback delegate (D1) and the late install
 
     func test_theFallbackIsAssignedAtTheEndOfLaunchWhenTheHostLeftTheDelegateNil() {
