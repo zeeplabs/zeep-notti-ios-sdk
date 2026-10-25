@@ -299,15 +299,15 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] 201, 200 and 204 remove the record and continue; 404, 422 and 400 remove it, log one fixed code and continue; each is a separate test with the exact status
-- [ ] 401 returns `unauthorized` and 403 returns `forbidden` with the queue intact; no line contains a token, id, URL or body (sentinels in the stub response)
-- [ ] 408 on the head behaves exactly like 503: full mode returns `backoff(1)`..`backoff(4)` across calls with the **same `eventId` in all five bodies**, then `failed` with the queue intact; single-attempt mode returns `failed` after one request
-- [ ] 429 returns `paused` with the unclamped seconds (nil when absent) and sends nothing more in that pass
-- [ ] A record of another app is purged before sending and never sent; with only other-app records no request is made
-- [ ] A failing head is never skipped: with impression then click queued and the impression failing, the click is never sent
-- [ ] Records older than 7 days are removed without a request
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 19 new, total at least B + 84
+- [x] 201, 200 and 204 remove the record and continue; 404, 422 and 400 remove it, log one fixed code and continue; each is a separate test with the exact status
+- [x] 401 returns `unauthorized` and 403 returns `forbidden` with the queue intact; no line contains a token, id, URL or body (sentinels in the stub response)
+- [x] 408 on the head behaves exactly like 503: full mode returns `backoff(1)`..`backoff(4)` across calls with the **same `eventId` in all five bodies**, then `failed` with the queue intact; single-attempt mode returns `failed` after one request
+- [x] 429 returns `paused` with the unclamped seconds (nil when absent) and sends nothing more in that pass
+- [x] A record of another app is purged before sending and never sent; with only other-app records no request is made
+- [x] A failing head is never skipped: with impression then click queued and the impression failing, the click is never sent
+- [x] Records older than 7 days are removed without a request
+- [x] Gate check passes: quick
+- [x] Test count: at least 19 new, total at least B + 84
 
 **Tests**: unit
 **Gate**: quick
