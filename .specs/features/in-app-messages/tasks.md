@@ -607,6 +607,7 @@ No `[P]` task.
 ### T17: Presenter, window and scene handling
 
 **What**: `NottiInAppWindow` (level `.alert` like RN, `canBecomeKey == false`, pass-through `hitTest`), `NottiInAppViewController` (clear container, follows the host key window's root view controller for orientations and status bar, animations, Reduce Motion, accessibility notifications), the overlay's `accessibilityPerformEscape()` override, `NottiInAppPresenter` implementing `NottiInAppPresenting` with an injected scene provider, image wait (3 s, `maxSidePx` = screen long side times scale), scene and app lifecycle observation (`didBecomeActive`, `UIScene.didActivateNotification`, `UIScene.didDisconnectNotification`), re-attach without a new impression, `becameVisible` after a layout pass while active, the legacy no-scene fallback, and production wiring in `NottiRuntime` replacing the T10 placeholder (RN `NottiInAppPresenter.swift`).
+**SPEC_DEVIATION**: (1) The `accessibilityPerformEscape()` override is in `NottiInAppViewController` (the overlay's responder chain) and calls the presenter through `NottiInAppWindowContent.onEscape`, so the T15/T16 overlay files are unchanged; on `center`/`full` it returns true also while the display is closing, and then reports nothing. (2) RN's seams are kept: `NottiInAppSceneProviding` (the decision itself is the pure `NottiInAppSceneProvider.target(activeScene:sceneCount:appActive:screenBounds:)`, tested without `UIApplication`), `NottiInAppWindowHosting` and `NottiInAppWindowContent`, all in `NottiInAppWindow.swift`; the engine-facing callbacks are the `NottiInAppDisplayEvents` protocol, which the engine adopts with no code change. The scene-less fallback follows the app delegate's window (`UIApplication.windows` is deprecated, a strict-build warning). (3) RN 0.8.0 has no entrance or exit animation; this SDK adds the design's: a bar slides 24 pt from its edge while fading in (0.25 s), `center`/`full` fade in (0.25 s), exit 0.2 s, and under Reduce Motion a 0.15 s cross-fade with no movement. `center`/`full` do not scale or move the card because `NottiInAppCardLayout` places it with `frame`. Touches pass through while the window fades out. (4) The accessibility notification is posted once per display (RN posts it per attachment, so again after a scene move). (5) `NottiInAppEngine.live(defaults:clicks:presenter:)` takes the concrete `NottiInAppPresenter` and sets its weak `events` to the new engine; `NottiRuntime.shared` passes `NottiInAppPresenter()` (one line). `NottiInAppPlaceholderPresenter` stays for runtimes built without an engine (tests). Files beyond **Where**: `NottiInAppHooks.swift`, `Tests/NottiSDKTests/Support/InAppPresenterFakes.swift`. (6) The presenter never calls `displayFailed` (RN neither): with no active scene the display waits. Its observers run on the posting thread (UIKit posts them on main).
 **Where**: `Sources/NottiSDK/InApp/UI/NottiInAppPresenter.swift` (with `NottiInAppWindow.swift`, `NottiInAppViewController.swift`), `Tests/NottiSDKTests/NottiInAppPresenterTests.swift`
 **Depends on**: T9, T10, T15, T16
 **Reuses**: the layouts, the engine's presenter protocol, the image loader
@@ -614,17 +615,17 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] The window is not the key window and cannot become key; `windowLevel` is `.alert`; for a bar the `hitTest` outside the bar returns nil and inside returns the bar; for `center` and `full` the backdrop returns a view
-- [ ] The root view controller reports the host root view controller's `supportedInterfaceOrientations` and status bar values (a portrait-only host gives `.portrait`)
-- [ ] `accessibilityViewIsModal` is true for `center` and `full`, false for bars; `.screenChanged` with the title (the card when the title is hidden) or `.announcement` with "title. body" is posted once per display (injected poster)
-- [ ] `accessibilityPerformEscape()` on a `center` and on a `full` presentation returns true and reports one `dismiss` with `close_button` (none when already closing); on a `top` and on a `bottom` presentation it returns false and reports nothing
-- [ ] With Reduce Motion on, entrance and exit use the cross-fade path and the swipe snap-back is not animated; the dismissal still completes
-- [ ] The image is requested with `maxSidePx` equal to the screen's long side times its scale (injected screen); with no image in 3 s the message presents without it and a late image is ignored
-- [ ] A fake scene provider that loses and regains a scene keeps the same display id, creates no `impression` and no `dismiss`, and reports `displayAttached` both ways; a provider with no scenes in an active app uses the screen-sized fallback window; with nothing active the display waits for `didBecomeActive`
-- [ ] The presenter reports `becameVisible` exactly once per display, only after a layout pass while the app is active
-- [ ] The production `NottiRuntime` uses the real presenter; no other test touches `UIApplication.shared`
-- [ ] Gate check passes: **full**
-- [ ] Test count: at least 15 new, total at least B + 244
+- [x] The window is not the key window and cannot become key; `windowLevel` is `.alert`; for a bar the `hitTest` outside the bar returns nil and inside returns the bar; for `center` and `full` the backdrop returns a view
+- [x] The root view controller reports the host root view controller's `supportedInterfaceOrientations` and status bar values (a portrait-only host gives `.portrait`)
+- [x] `accessibilityViewIsModal` is true for `center` and `full`, false for bars; `.screenChanged` with the title (the card when the title is hidden) or `.announcement` with "title. body" is posted once per display (injected poster)
+- [x] `accessibilityPerformEscape()` on a `center` and on a `full` presentation returns true and reports one `dismiss` with `close_button` (none when already closing); on a `top` and on a `bottom` presentation it returns false and reports nothing
+- [x] With Reduce Motion on, entrance and exit use the cross-fade path and the swipe snap-back is not animated; the dismissal still completes
+- [x] The image is requested with `maxSidePx` equal to the screen's long side times its scale (injected screen); with no image in 3 s the message presents without it and a late image is ignored
+- [x] A fake scene provider that loses and regains a scene keeps the same display id, creates no `impression` and no `dismiss`, and reports `displayAttached` both ways; a provider with no scenes in an active app uses the screen-sized fallback window; with nothing active the display waits for `didBecomeActive`
+- [x] The presenter reports `becameVisible` exactly once per display, only after a layout pass while the app is active
+- [x] The production `NottiRuntime` uses the real presenter; no other test touches `UIApplication.shared`
+- [x] Gate check passes: **full** (local `ci.yml` equivalent on `a63e376`: DONE 0 failures; Shared 14, SDK 820, ObjC 7, Extension 110, ExtensionObjC 3)
+- [x] Test count: at least 15 new, total at least B + 244 (30 new in `NottiInAppPresenterTests`; `NottiSDKTests` 790 → 820)
 
 **Tests**: unit
 **Gate**: full

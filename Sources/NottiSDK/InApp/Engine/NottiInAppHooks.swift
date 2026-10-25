@@ -47,8 +47,8 @@ final class NottiInAppClickRelay {
     }
 }
 
-/// Stands in for the UIKit presenter until it exists (T17): shows nothing, so no display ever becomes
-/// visible and no impression is recorded; a pending display is dropped at session end.
+/// Shows nothing, so no display ever becomes visible and no impression is recorded; a pending display is
+/// dropped at session end. Used by runtimes built without an engine (tests); production uses `NottiInAppPresenter`.
 final class NottiInAppPlaceholderPresenter: NottiInAppPresenting {
     func present(_ display: NottiInAppDisplay) {}
     func close(displayId: String) {}
@@ -59,18 +59,22 @@ extension NottiInAppEngine {
 
     /// The production engine over the `notti_prefs` suite (`defaults`): the RN-compatible event queue, the
     /// identity read from `NottiDeviceStore` at send time, the queue scheduler and the `URLSession.shared`
-    /// client factory. Clicks go to `clicks` (the facade's listener hub attaches there).
+    /// client factory. Clicks go to `clicks` (the facade's listener hub attaches there). `presenter` shows the
+    /// displays and reports back to the returned engine, which it holds weakly (the engine owns it).
+    @available(iOSApplicationExtension, unavailable)
     static func live(
         defaults: UserDefaults,
         clicks: NottiInAppClickRelay,
-        presenter: NottiInAppPresenting = NottiInAppPlaceholderPresenter()
+        presenter: NottiInAppPresenter
     ) -> NottiInAppEngine {
-        NottiInAppEngine(
+        let engine = NottiInAppEngine(
             store: NottiInAppEventStore(defaults: defaults),
             identity: deviceIdentity(defaults: defaults),
             presenter: presenter,
             emitClick: { clicks.emit($0) }
         )
+        presenter.events = engine
+        return engine
     }
 
     /// The persisted device id and last token, both written by a registration `.success`; nil while either is
