@@ -35,11 +35,12 @@ shared_dir="Sources/NottiShared"
 ext_attr="@available(iOSApplicationExtension, unavailable)"
 # Top-level public types that are extension-safe on purpose, so they carry no
 # attribute: NottiSubscription (listener token, no runtime access),
-# NottiNotificationPayload (plain value type) and NottiLogLevelObjC (plain enum).
+# NottiNotificationPayload, NottiInAppClick and NottiInAppAction (plain value
+# types) and NottiLogLevelObjC (plain enum).
 # Everything else, including the public `Notti` enum and the ObjC classes, reaches
 # `NottiFacade.shared` / `NottiRuntime.shared`, which are unavailable in
 # extensions, so it must be marked. A new type needs the attribute or an entry here.
-ext_safe_types=" NottiSubscription NottiNotificationPayload NottiLogLevelObjC "
+ext_safe_types=" NottiSubscription NottiNotificationPayload NottiLogLevelObjC NottiInAppClick NottiInAppAction "
 
 cd "$root"
 

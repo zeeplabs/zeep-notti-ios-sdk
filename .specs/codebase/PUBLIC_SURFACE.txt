@@ -33,6 +33,17 @@ Sources/NottiSDK/Public/Notti.swift: public static var logLevel: LogLevel {
 Sources/NottiSDK/Public/Notti.swift: public struct Options {
 Sources/NottiSDK/Public/Notti.swift: public typealias LogLevel = NottiLogLevelObjC
 Sources/NottiSDK/Public/Notti.swift: public var baseUrl: String?
+Sources/NottiSDK/Public/NottiInAppMessages.swift: public enum ActionType: String, Sendable {
+Sources/NottiSDK/Public/NottiInAppMessages.swift: public enum InAppMessages {
+Sources/NottiSDK/Public/NottiInAppMessages.swift: public let action: NottiInAppAction?
+Sources/NottiSDK/Public/NottiInAppMessages.swift: public let buttonId: String
+Sources/NottiSDK/Public/NottiInAppMessages.swift: public let messageId: String
+Sources/NottiSDK/Public/NottiInAppMessages.swift: public let type: ActionType
+Sources/NottiSDK/Public/NottiInAppMessages.swift: public let value: String
+Sources/NottiSDK/Public/NottiInAppMessages.swift: public static func addClickListener(_ handler: @escaping (NottiInAppClick) -> Void) -> NottiSubscription {
+Sources/NottiSDK/Public/NottiInAppMessages.swift: public static func trackEvent(_ name: String) {
+Sources/NottiSDK/Public/NottiInAppMessages.swift: public struct NottiInAppAction: Equatable, Sendable {
+Sources/NottiSDK/Public/NottiInAppMessages.swift: public struct NottiInAppClick: Equatable, Sendable {
 Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func didFailToRegisterForRemoteNotifications(error: Error) {
 Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func didReceive(_ response: UNNotificationResponse) {
 Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
