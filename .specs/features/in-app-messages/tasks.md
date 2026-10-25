@@ -514,11 +514,11 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] `en` gives `Close`; `pt-BR`, `pt-PT`, `pt_BR` and `pt` give `Fechar`; `fr`, `es` and an empty list give `Close`
-- [ ] The labels are asserted as literals; the file has no `NSLocalizedString`, `Bundle`, `LocalizedStringKey` (grep test)
-- [ ] `Package.swift` and both podspecs are unchanged by this task
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 4 new, total at least B + 187
+- [x] `en` gives `Close`; `pt-BR`, `pt-PT`, `pt_BR` and `pt` give `Fechar`; `fr`, `es` and an empty list give `Close`
+- [x] The labels are asserted as literals; the file has no `NSLocalizedString`, `Bundle`, `LocalizedStringKey` (grep test)
+- [x] `Package.swift` and both podspecs are unchanged by this task
+- [x] Gate check passes: quick
+- [x] Test count: at least 4 new, total at least B + 187 (5 new in `NottiInAppStringsTests`; `NottiSDKTests` 726 → 731)
 
 **Tests**: unit
 **Gate**: quick
