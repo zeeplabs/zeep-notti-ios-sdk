@@ -636,6 +636,7 @@ No `[P]` task.
 ### T18: Privacy sweep and guards
 
 **What**: One test class with sentinels in token, device id, message id, title, body, button labels, image and action URLs and event name run through every path (fetch ok, each error status including 401 and 408, queue flush, tap, dismiss, `push_permission` tap in every state, image failure, no listener, `trackEvent` before `initialize` and blank) asserting no captured `NottiLogger` line contains any of them; source greps for the banned strings (rule 3) outside the allowlisted file; `PrivacyInfo.xcprivacy` comment extended for In-App events (keys unchanged); re-check of required-reason APIs in the new code.
+**SPEC_DEVIATION**: (1) Every path runs through the real engine (fake scheduler, network and clock), the real `NottiInAppPresenter` (fake scenes and window hosts from the T17 harness) and, for image failures, the real `NottiInAppImageLoader` over `RoutedStubURLProtocol`; `eligible` and events replies go through the fake network, which applies the real `NottiInAppApiClient` status tables (the HTTP client itself has no log call). (2) The sentinel set also covers the app id, the client key, both button ids and the bare word `sentinel`; the capture runs at `.verbose`. (3) The source guards are one scanner (`NottiInAppSourceGuard`) with an in-memory mutant self-test per banned string (non-allowlisted file, allowlisted file with `openURL` or `.open(_:options`, the allowlisted file moved); the required-reason grep covers all four source targets, not only `InApp`. The scripts cannot run inside the simulator test (no `Process` on iOS), so their fixture trees were run by hand (see the commit body). (4) The manifest comment also records that the device id and token travel on the In-App `eligible` and event requests (keys unchanged; no new required-reason API or collected data type).
 **Where**: `Tests/NottiSDKTests/NottiInAppPrivacyTests.swift`, `Sources/NottiSDK/Resources/PrivacyInfo.xcprivacy` (comment only)
 **Depends on**: T11, T17, T22
 **Reuses**: `LogSink`, `NottiLoggingPrivacyTests` patterns
@@ -643,13 +644,13 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] Every sentinel is absent from every captured line on every listed path (each path is its own test method)
-- [ ] On the `401` path (eligible and events) no captured line contains the registration text of the `403` warning, and the `trackEvent` name never appears in a line when it is ignored
-- [ ] The source grep tests fail on a temporary mutant containing each banned string in a non-allowlisted file (noted in the commit body)
-- [ ] `PrivacyManifestTests` pass unchanged; the manifest diff is the comment only
-- [ ] `scripts/check-no-url-open.sh`, `check-extension-safety.sh`, `check-package-graph.sh`, `check-public-surface.sh` pass
+- [x] Every sentinel is absent from every captured line on every listed path (each path is its own test method)
+- [x] On the `401` path (eligible and events) no captured line contains the registration text of the `403` warning, and the `trackEvent` name never appears in a line when it is ignored
+- [x] The source grep tests fail on a temporary mutant containing each banned string in a non-allowlisted file (noted in the commit body)
+- [x] `PrivacyManifestTests` pass unchanged; the manifest diff is the comment only
+- [x] `scripts/check-no-url-open.sh`, `check-extension-safety.sh`, `check-package-graph.sh`, `check-public-surface.sh` pass
 - [ ] Gate check passes: **full**
-- [ ] Test count: at least 10 new, total at least B + 254
+- [x] Test count: at least 10 new, total at least B + 254 (36 new in `NottiInAppPrivacyTests`; `NottiSDKTests` 820 → 856)
 
 **Tests**: unit
 **Gate**: full
