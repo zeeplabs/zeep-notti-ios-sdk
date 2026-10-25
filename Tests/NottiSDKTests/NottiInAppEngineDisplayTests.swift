@@ -327,6 +327,214 @@ final class NottiInAppEngineDisplayTests: XCTestCase {
         XCTAssertEqual(portCalls, 0)
     }
 
+    // MARK: - url actions opened by the SDK (AD-020, IOU-01..07)
+
+    private var opened: [URL] = []
+    private var openedOnMain: [Bool] = []
+    private let noListenerWarning = "Notti.inapp: click reported but no click listener is registered"
+    private let refusedLog = "Notti.inapp: url action not opened: only http and https links with a host are opened"
+
+    private func wireOpener() {
+        opened = []
+        openedOnMain = []
+        run {
+            engine.setURLOpenPort { [unowned self] url in
+                self.opened.append(url)
+                self.openedOnMain.append(self.insideMain)
+                self.order.append("open")
+            }
+        }
+    }
+
+    private static func urlButton(_ value: String) -> String {
+        #"{"id":"fixture-btn","label":"fixture","action":{"type":"url","value":"\#(value)"}}"#
+    }
+
+    private static func link(_ type: NottiInAppLinkType, _ value: String) -> NottiInAppButtonAction {
+        .link(NottiInAppLinkAction(type: type, value: value))
+    }
+
+    /// Shows a one-button message, makes it visible and taps the button with `action`.
+    private func tapLink(_ action: NottiInAppButtonAction?, buttonId: String = "fixture-btn") {
+        let display = show(InAppFixtureJSON.sessionStart(messageId, extra: extra(buttons: [Self.linkButton])))
+        makeVisible(display)
+        tap(display, buttonId, action)
+    }
+
+    func test_anHttpsUrlTapEmitsClosesThenOpensTheValidatedUrlOnMain() {
+        wireOpener()
+        tapLink(Self.linkAction)
+
+        XCTAssertEqual(order, ["emit(clickQueued: true)", "close", "open"], "listeners first, then close, then open")
+        XCTAssertEqual(opened, [URL(string: "https://example.invalid/sentinel")])
+        XCTAssertEqual(openedOnMain, [true], "the open runs through the main dispatcher")
+        XCTAssertEqual(clicks.first?.action, NottiInAppAction(type: .url, value: "https://example.invalid/sentinel"))
+        XCTAssertEqual(types, ["impression", "click"])
+        XCTAssertTrue(logs.warnings.isEmpty)
+        XCTAssertTrue(logs.debugs.isEmpty)
+        assertNoSentinelInLogs()
+    }
+
+    func test_anOpenedUrlWithNoListenerLogsNoWarning() {
+        listenerRegistered = false
+        wireOpener()
+        tapLink(Self.linkAction)
+
+        XCTAssertEqual(opened.count, 1)
+        XCTAssertTrue(logs.messages.isEmpty, "the SDK handled the tap itself")
+        XCTAssertEqual(types, ["impression", "click"])
+    }
+
+    func test_httpAndAnyLetterCaseOfTheSchemeAreOpened() {
+        for value in ["http://example.invalid/a", "HTTPS://EXAMPLE.INVALID/b", "hTtP://example.invalid"] {
+            makeFixture()
+            wireOpener()
+            tapLink(Self.link(.url, value))
+            XCTAssertEqual(opened.map(\.absoluteString), [value], value)
+        }
+    }
+
+    func test_theOptionOffOpensNothingLogsNoRefusalAndWarnsWithoutAListener() {
+        listenerRegistered = false
+        wireOpener()
+        run { engine.setOpensURLs(false) }
+        tapLink(Self.linkAction)
+
+        XCTAssertTrue(opened.isEmpty)
+        XCTAssertEqual(order, ["emit(clickQueued: true)", "close"])
+        XCTAssertEqual(logs.messages, [noListenerWarning])
+        XCTAssertEqual(clicks.first?.action?.value, "https://example.invalid/sentinel", "the listener path is unchanged")
+    }
+
+    func test_aRefusedSchemeIsNotOpenedLogsOneFixedDebugLineAndReachesTheListenerUntouched() {
+        let refused = ["tel:+000fixture", "sms:fixture", "mailto:fixture@example.invalid", "fixture-app://sentinel",
+                       "javascript:alert(1)", "https:///sentinel", "/sentinel/path", "https://example.invalid/a b"]
+        for value in refused {
+            makeFixture()
+            wireOpener()
+            tapLink(Self.link(.url, value))
+
+            XCTAssertTrue(opened.isEmpty, value)
+            XCTAssertEqual(logs.debugs, [refusedLog], value)
+            XCTAssertTrue(logs.warnings.isEmpty, "\(value): a listener is registered")
+            XCTAssertEqual(clicks.first?.action, NottiInAppAction(type: .url, value: value), value)
+            XCTAssertEqual(order, ["emit(clickQueued: true)", "close"], value)
+            assertNoSentinelInLogs()
+        }
+    }
+
+    func test_aRefusedSchemeWithNoListenerAlsoWarns() {
+        listenerRegistered = false
+        wireOpener()
+        tapLink(Self.link(.url, "tel:+000fixture"))
+
+        XCTAssertTrue(opened.isEmpty)
+        XCTAssertEqual(logs.messages, [refusedLog, noListenerWarning])
+        assertNoSentinelInLogs()
+    }
+
+    func test_aDeeplinkIsNeverOpenedAndLogsNoRefusal() {
+        for value in ["fixture://sentinel", "https://example.invalid/sentinel"] {
+            makeFixture()
+            wireOpener()
+            tapLink(Self.link(.deeplink, value))
+
+            XCTAssertTrue(opened.isEmpty, value)
+            XCTAssertTrue(logs.messages.isEmpty, value)
+            XCTAssertEqual(clicks.first?.action, NottiInAppAction(type: .deeplink, value: value))
+        }
+    }
+
+    func test_aDeeplinkWithNoListenerStillWarns() {
+        listenerRegistered = false
+        wireOpener()
+        tapLink(Self.link(.deeplink, "fixture://sentinel"))
+
+        XCTAssertTrue(opened.isEmpty)
+        XCTAssertEqual(logs.warnings, [noListenerWarning])
+    }
+
+    func test_anImageUrlActionIsOpenedToo() {
+        wireOpener()
+        let display = show(InAppFixtureJSON.sessionStart(messageId, extra: extra(image: true)))
+        makeVisible(display)
+        tap(display, "image", Self.link(.url, "https://example.invalid/image-target"))
+
+        XCTAssertEqual(opened.map(\.absoluteString), ["https://example.invalid/image-target"])
+        XCTAssertEqual(records.last?.buttonId, "image")
+    }
+
+    func test_withNoPortAUrlTapBehavesAsBeforeAndWarnsWithoutAListener() {
+        listenerRegistered = false
+        tapLink(Self.linkAction)
+
+        XCTAssertEqual(order, ["emit(clickQueued: true)", "close"])
+        XCTAssertEqual(logs.messages, [noListenerWarning], "no refusal line without a port")
+    }
+
+    func test_aPushPermissionTapNeverOpensAUrl() {
+        wireOpener()
+        let display = show(InAppFixtureJSON.sessionStart(messageId, extra: extra(buttons: [Self.permissionButton])))
+        makeVisible(display)
+        tap(display, "fixture-perm", .pushPermission)
+
+        XCTAssertTrue(opened.isEmpty)
+        XCTAssertTrue(logs.messages.isEmpty)
+    }
+
+    func test_aButtonWithNoActionOpensNothingAndStillWarnsWithoutAListener() {
+        listenerRegistered = false
+        wireOpener()
+        tapLink(nil)
+
+        XCTAssertTrue(opened.isEmpty)
+        XCTAssertEqual(logs.messages, [noListenerWarning])
+    }
+
+    func test_aSecondTapInTheSameTurnOpensOnce() {
+        wireOpener()
+        let display = show(InAppFixtureJSON.sessionStart(messageId, extra: extra(buttons: [Self.linkButton])))
+        makeVisible(display)
+        engine.userTapped(displayId: display.id, buttonId: "fixture-btn", action: Self.linkAction)
+        engine.userTapped(displayId: display.id, buttonId: "fixture-btn", action: Self.linkAction)
+        scheduler.drain()
+
+        XCTAssertEqual(opened.count, 1)
+    }
+
+    func test_theOptionDefaultsToTrueAndBothInputsAreSetOnTheEngineQueue() {
+        XCTAssertTrue(engine.opensURLs, "on by default")
+        XCTAssertNil(engine.urlOpenPort)
+
+        engine.setOpensURLs(false)
+        engine.setURLOpenPort { _ in }
+        XCTAssertTrue(engine.opensURLs, "not set before the engine queue runs")
+        XCTAssertNil(engine.urlOpenPort)
+
+        scheduler.drain()
+        XCTAssertFalse(engine.opensURLs)
+        XCTAssertNotNil(engine.urlOpenPort)
+
+        run {
+            engine.setOpensURLs(true)
+            engine.setURLOpenPort(nil)
+        }
+        XCTAssertTrue(engine.opensURLs)
+        XCTAssertNil(engine.urlOpenPort)
+    }
+
+    func test_anUrlButtonParsedFromTheServerOpensItsValue() {
+        wireOpener()
+        let display = show(InAppFixtureJSON.sessionStart(
+            messageId, extra: extra(buttons: [Self.urlButton("https://example.invalid/parsed")])
+        ))
+        makeVisible(display)
+        let action = display.message.buttons.first?.action
+        tap(display, "fixture-btn", action)
+
+        XCTAssertEqual(opened.map(\.absoluteString), ["https://example.invalid/parsed"])
+    }
+
     // MARK: - Dismiss (IAM-28)
 
     func test_dismissReasonsAreRecordedAsGiven() {

@@ -17,9 +17,11 @@ extension Notti {
     public enum InAppMessages {
         /// Called on the main thread when the user taps a button, the image or the body of a message.
         ///
-        /// The SDK never opens a `url` or `deeplink`: the host decides what the link means. A
-        /// `push_permission` button arrives with `action == nil`. Keep the subscription and call
-        /// `remove()` to stop; it is not removed on `deinit`.
+        /// The listener receives every link untouched. After it ran, the SDK opens an `http`/`https` `url`
+        /// action in the browser while `Notti.Options.opensInAppURLs` is true (the default): do not open it
+        /// again here. A `deeplink`, or a `url` with another scheme, is never opened by the SDK: the host
+        /// decides what it means. A `push_permission` button arrives with `action == nil`. Keep the
+        /// subscription and call `remove()` to stop; it is not removed on `deinit`.
         @discardableResult
         public static func addClickListener(_ handler: @escaping (NottiInAppClick) -> Void) -> NottiSubscription {
             NottiFacade.shared.addInAppClickListener(handler)
@@ -38,7 +40,8 @@ public struct NottiInAppClick: Equatable, Sendable {
     public let action: NottiInAppAction?
 }
 
-/// A link of an In-App message. The SDK never opens, validates or rewrites it.
+/// A link of an In-App message, as the server sent it. The SDK never rewrites it; it opens only an `http`/`https`
+/// `url` while `Notti.Options.opensInAppURLs` is true, and never a `deeplink`.
 public struct NottiInAppAction: Equatable, Sendable {
     /// `url` or `deeplink`, as the server sent it.
     public enum ActionType: String, Sendable {

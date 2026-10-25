@@ -107,6 +107,16 @@ extension NottiInAppEngine {
         scheduler.execute { self.pushPermissionPort = port }
     }
 
+    /// Engine input: whether the SDK opens `url` actions itself (AD-020, `Notti.Options.opensInAppURLs`).
+    func setOpensURLs(_ enabled: Bool) {
+        scheduler.execute { self.opensURLs = enabled }
+    }
+
+    /// Engine input: the platform action that opens a validated URL in the browser (AD-020).
+    func setURLOpenPort(_ port: ((URL) -> Void)?) {
+        scheduler.execute { self.urlOpenPort = port }
+    }
+
     /// The display's window joined (true) or left (false) a scene: the clock runs only while attached.
     func displayAttached(displayId: String, attached: Bool) {
         scheduler.execute {
@@ -131,7 +141,8 @@ extension NottiInAppEngine {
     }
 
     /// A button, the image or a bar body was tapped (IAM-25, IAM-26, IAM-49): `click` queued, listeners
-    /// called, display closed, then the `push_permission` port. Ignored unless the display is visible.
+    /// called, display closed, then the `push_permission` port or the URL opener (AD-020). Ignored unless the
+    /// display is visible.
     func userTapped(displayId: String, buttonId: String, action: NottiInAppButtonAction?) {
         scheduler.execute { self.handleTap(displayId: displayId, buttonId: buttonId, action: action) }
     }
@@ -174,15 +185,31 @@ extension NottiInAppEngine {
             buttonId: buttonId,
             action: link.map(NottiInAppAction.init(link:))
         )
+        let opening = link.flatMap(urlToOpen)
+        // The listeners first: the hub queues them on the main thread before the close and the open below.
         let delivered = emitClick(click)
-        if !delivered && !runsPushPermission {
+        if !delivered && !runsPushPermission && opening == nil {
             NottiLogger.log(.warn, Self.noListenerWarning, category: "inapp")
         }
         mainDispatcher { self.presenter.close(displayId: displayId) }
         if runsPushPermission, let port = pushPermissionPort {
             mainDispatcher(port)
         }
+        if let opening = opening {
+            mainDispatcher { opening.port(opening.url) }
+        }
         requestFlush()
+    }
+
+    /// The port and the URL when the SDK opens this link itself (AD-020): a `url` action, the option on, a port
+    /// set and a value `NottiInAppURLOpener.openableURL(from:)` accepts. A refused value logs one fixed line.
+    private func urlToOpen(_ link: NottiInAppLinkAction) -> (port: (URL) -> Void, url: URL)? {
+        guard link.type == .url, opensURLs, let port = urlOpenPort else { return nil }
+        guard let url = NottiInAppURLOpener.openableURL(from: link.value) else {
+            NottiLogger.log(.debug, NottiInAppURLOpener.refusedLog, category: "inapp")
+            return nil
+        }
+        return (port: port, url: url)
     }
 
     func dismiss(displayId: String, reason: String) {

@@ -5,7 +5,12 @@ import NottiSDK
 /// `Notti.Notifications` is called from here or from `ManualForwarding` (EXR-02, drift guard T5).
 struct LiveSDKClient: ExampleSDKClient {
     func initialize(appId: String, clientKey: String, baseUrl: String?) {
-        Notti.initialize(appId: appId, clientKey: clientKey, options: Notti.Options(baseUrl: baseUrl))
+        // `opensInAppURLs: true` is the default, spelled out: the SDK opens In-App http(s) url actions (AD-020).
+        Notti.initialize(
+            appId: appId,
+            clientKey: clientKey,
+            options: Notti.Options(baseUrl: baseUrl, opensInAppURLs: true)
+        )
     }
 
     func requestPermission() async -> Bool {
@@ -91,7 +96,8 @@ struct LiveSDKClient: ExampleSDKClient {
         return { subscription.remove() }
     }
 
-    /// The action type only. The SDK never opens the link; a real app would route `click.action?.value` here.
+    /// The action type only, logged and nothing else: the SDK opens an http(s) `url` itself after this listener
+    /// (AD-020), so opening it here would open it twice. A real app would route a `deeplink` value here.
     private static func actionKind(of click: NottiInAppClick) -> InAppActionKind {
         guard let action = click.action else { return .noAction }
         return InAppActionKind(rawValue: action.type.rawValue) ?? .noAction

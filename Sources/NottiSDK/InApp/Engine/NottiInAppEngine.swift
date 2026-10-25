@@ -139,6 +139,10 @@ final class NottiInAppEngine {
     var display: NottiInAppDisplay?
     /// The `push_permission` platform action (D15); set through `setPushPermissionPort`, read here only.
     var pushPermissionPort: (() -> Void)?
+    /// `Notti.Options.opensInAppURLs` (AD-020); set through `setOpensURLs`, true until told otherwise.
+    var opensURLs = true
+    /// Opens a validated `url` action in the browser (AD-020); set through `setURLOpenPort`, read here only.
+    var urlOpenPort: ((URL) -> Void)?
 
     init(
         store: NottiInAppEventStore,

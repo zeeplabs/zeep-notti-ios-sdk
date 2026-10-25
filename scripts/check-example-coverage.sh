@@ -4,7 +4,7 @@
 # Members come from .specs/codebase/PUBLIC_SURFACE.txt, so a new public member fails this check until the
 # example calls it. Scope: `Notti`, `Notti.User`, `Notti.Notifications` (including the delegate forwarding
 # methods), `Notti.trackEvent` and `Notti.InAppMessages.addClickListener` (the click's fields are read, not
-# called, and the example logs only the action type), `Notti.Options`, the payload fields, `NottiSubscription.remove` and the two
+# called, and the example logs only the action type), `Notti.Options` (both initializer labels), the payload fields, `NottiSubscription.remove` and the two
 # `NottiNotificationServiceExtension` methods. The Objective-C mirror (Public/ObjC) is out of scope:
 # `NottiSDKObjCTests` and `NottiSDKExtensionObjCTests` already compile it.
 #
@@ -123,8 +123,9 @@ while read -r kind name; do
 
   case "$kind" in
     sdk)
-      # `Notti.Options(baseUrl:` is an initializer argument, not a dotted call.
+      # `Notti.Options(baseUrl:opensInAppURLs:)` arguments are initializer labels, not dotted calls.
       if [[ "$name" == "baseUrl" ]]; then pattern='Notti\.Options\(baseUrl:'
+      elif [[ "$name" == "opensInAppURLs" ]]; then pattern='Notti\.Options\([^)]*opensInAppURLs:'
       else pattern="Notti(\\.[A-Za-z]+)*\\.${name}([^A-Za-z0-9_]|\$)"; fi ;;
     payload) pattern="payload\\.${name}([^A-Za-z0-9_]|\$)" ;;
     subscription) pattern="subscription\\.${name}\\(" ;;

@@ -106,7 +106,13 @@ final class NottiInAppPrivacyTests: XCTestCase {
         }
     }
 
-    private func message(format: String = "center", dismissAfter: Int? = nil, trigger: String? = nil) -> String {
+    private func message(
+        format: String = "center",
+        dismissAfter: Int? = nil,
+        trigger: String? = nil,
+        actionValue: String? = nil
+    ) -> String {
+        let actionUrl = actionValue ?? self.actionUrl
         let dismiss = dismissAfter.map { #","dismiss_after_seconds":\#($0)"# } ?? ""
         let triggerJSON = trigger.map { #"{"type":"event","name":"\#($0)"}"# } ?? #"{"type":"session_start"}"#
         return #"""
@@ -139,9 +145,10 @@ final class NottiInAppPrivacyTests: XCTestCase {
     private func showVisible(
         format: String = "center",
         dismissAfter: Int? = nil,
+        actionValue: String? = nil,
         events: [InAppFakeNetwork.Reply] = [.status(202)]
     ) -> InAppFakeHost? {
-        fetch(.messages(message(format: format, dismissAfter: dismissAfter)))
+        fetch(.messages(message(format: format, dismissAfter: dismissAfter, actionValue: actionValue)))
         events.forEach { network.enqueue($0) }
         harness.host?.layout()
         scheduler.drain()
@@ -266,6 +273,59 @@ final class NottiInAppPrivacyTests: XCTestCase {
         host.messageView?.buttons.first?.sendActions(for: .touchUpInside)
         scheduler.drain()
         XCTAssertTrue(lines.contains("Notti.inapp: click reported but no click listener is registered"))
+    }
+
+    // MARK: url actions opened by the SDK (AD-020, IOU-08)
+
+    private func wireOpener(answer: Bool) -> () -> [URL] {
+        let lock = NSLock()
+        var opened: [URL] = []
+        let opener = NottiInAppURLOpener(platform: NottiInAppURLOpener.Platform(open: { url, completion in
+            lock.withLock { opened.append(url) }
+            completion(answer)
+        }))
+        engine.setURLOpenPort { opener.open($0) }
+        return { lock.withLock { opened } }
+    }
+
+    func test_anOpenedUrlActionLogsNoSentinel() throws {
+        let opened = wireOpener(answer: true)
+        listenerRegistered = false
+        let host = try XCTUnwrap(showVisible())
+        host.messageView?.buttons.first?.sendActions(for: .touchUpInside)
+        scheduler.drain()
+        XCTAssertEqual(opened().map(\.absoluteString), [actionUrl])
+        XCTAssertFalse(lines.contains { $0.contains("no click listener") }, "the SDK handled the tap")
+    }
+
+    func test_aFailedOpenLogsOnlyTheFixedLine() throws {
+        let opened = wireOpener(answer: false)
+        let host = try XCTUnwrap(showVisible())
+        host.messageView?.buttons.first?.sendActions(for: .touchUpInside)
+        scheduler.drain()
+        XCTAssertEqual(opened().count, 1)
+        XCTAssertTrue(lines.contains(NottiInAppURLOpener.failedLog))
+    }
+
+    func test_aRefusedUrlActionLogsOnlyTheFixedLines() throws {
+        let opened = wireOpener(answer: true)
+        listenerRegistered = false
+        let host = try XCTUnwrap(showVisible(actionValue: "sentinel-scheme://sentinel-host/x"))
+        host.messageView?.buttons.first?.sendActions(for: .touchUpInside)
+        scheduler.drain()
+        XCTAssertTrue(opened().isEmpty)
+        XCTAssertTrue(lines.contains(NottiInAppURLOpener.refusedLog))
+        XCTAssertTrue(lines.contains("Notti.inapp: click reported but no click listener is registered"))
+    }
+
+    func test_aDeeplinkImageTapWithAnOpenerOpensNothingAndLogsNoSentinel() throws {
+        let opened = wireOpener(answer: true)
+        harness.imageAnswer = .some(InAppViewFixtures.picture())
+        let host = try XCTUnwrap(showVisible())
+        try XCTUnwrap(host.messageView).handleImageTap()
+        scheduler.drain()
+        XCTAssertTrue(opened().isEmpty)
+        XCTAssertEqual(host.hideCount, 1)
     }
 
     func test_anImageTapLogsNoSentinel() throws {
@@ -430,11 +490,15 @@ final class NottiInAppPrivacyTests: XCTestCase {
 
     // MARK: Source guards (rule 3)
 
-    func test_noSourceOpensAURLOutsideTheAllowlistedFile() throws {
+    func test_noSourceOpensAURLOutsideTheAllowlistedFiles() throws {
         var files = try sources(under: "Sources/NottiSDK")
         files += try sources(under: "Sources/NottiSDKBootstrap")
         XCTAssertEqual(NottiInAppSourceGuard.urlOpenHits(files), [])
-        XCTAssertTrue(files.contains { $0.path == NottiInAppSourceGuard.allowlistedFile })
+        for allowed in NottiInAppSourceGuard.allowlistedFiles {
+            XCTAssertTrue(files.contains { $0.path == allowed }, allowed)
+        }
+        let opening = files.filter { $0.text.contains("UIApplication.shared.open(") }.map(\.path).sorted()
+        XCTAssertEqual(opening, NottiInAppSourceGuard.allowlistedFiles.sorted(), "exactly the two files open a URL")
     }
 
     func test_theInAppUIHasNoRichTextOrWebView() throws {
@@ -456,12 +520,15 @@ final class NottiInAppPrivacyTests: XCTestCase {
         for token in ["UIApplication.shared.open(url)", "app.open(_:options: [:])", "openURL(url)"] {
             XCTAssertEqual(NottiInAppSourceGuard.urlOpenHits([(engineFile, "// \(token)")]).count, 1, token)
         }
-        let allowlisted = NottiInAppSourceGuard.allowlistedFile
-        XCTAssertEqual(NottiInAppSourceGuard.urlOpenHits([(allowlisted, "UIApplication.shared.open(url)")]), [])
-        XCTAssertEqual(NottiInAppSourceGuard.urlOpenHits([(allowlisted, "openURL(url)")]).count, 1)
-        XCTAssertEqual(NottiInAppSourceGuard.urlOpenHits([(allowlisted, "x.open(_:options: [:])")]).count, 1)
-        let moved = "Sources/NottiSDK/InApp/Platform/NottiPushPermissionAction2.swift"
-        XCTAssertEqual(NottiInAppSourceGuard.urlOpenHits([(moved, "UIApplication.shared.open(url)")]).count, 1)
+        for allowlisted in NottiInAppSourceGuard.allowlistedFiles {
+            XCTAssertEqual(NottiInAppSourceGuard.urlOpenHits([(allowlisted, "UIApplication.shared.open(url)")]), [])
+            XCTAssertEqual(NottiInAppSourceGuard.urlOpenHits([(allowlisted, "openURL(url)")]).count, 1)
+            XCTAssertEqual(NottiInAppSourceGuard.urlOpenHits([(allowlisted, "x.open(_:options: [:])")]).count, 1)
+        }
+        for moved in ["Sources/NottiSDK/InApp/Platform/NottiPushPermissionAction2.swift",
+                      "Sources/NottiSDK/InApp/Platform/NottiInAppURLOpener2.swift"] {
+            XCTAssertEqual(NottiInAppSourceGuard.urlOpenHits([(moved, "UIApplication.shared.open(url)")]).count, 1)
+        }
         let uiFile = "Sources/NottiSDK/InApp/UI/NottiInAppMessageView.swift"
         for token in ["label.attributedText = x", "AttributedString(x)", "WKWebView()", "LocalizedStringKey(x)"] {
             XCTAssertEqual(NottiInAppSourceGuard.richTextHits([(uiFile, token)]).count, 1, token)
@@ -475,15 +542,19 @@ final class NottiInAppPrivacyTests: XCTestCase {
 
 /// The textual guards of tasks rule 3 (the same tokens as `scripts/check-no-url-open.sh`, comments included).
 enum NottiInAppSourceGuard {
-    static let allowlistedFile = "Sources/NottiSDK/InApp/Platform/NottiPushPermissionAction.swift"
+    /// AD-019 (push_permission settings) and AD-020 (In-App `url` actions), the same list as the script.
+    static let allowlistedFiles = [
+        "Sources/NottiSDK/InApp/Platform/NottiPushPermissionAction.swift",
+        "Sources/NottiSDK/InApp/Platform/NottiInAppURLOpener.swift"
+    ]
     static let urlOpenTokens = ["UIApplication.shared.open", ".open(_:options", "openURL"]
     static let richTextTokens = ["attributedText", "AttributedString", "WKWebView", "LocalizedStringKey"]
     static let requiredReasonTokens = ["systemUptime", "mach_absolute_time", "contentModificationDate", "fileModificationDate"]
 
-    /// `path:line: token` for every hit; the allowlisted file may contain only `UIApplication.shared.open(` lines.
+    /// `path:line: token` for every hit; the allowlisted files may contain only `UIApplication.shared.open(` lines.
     static func urlOpenHits(_ files: [(path: String, text: String)]) -> [String] {
         hits(files, urlOpenTokens) { path, line in
-            path == allowlistedFile && line.contains("UIApplication.shared.open(")
+            allowlistedFiles.contains(path) && line.contains("UIApplication.shared.open(")
                 && !line.contains("openURL") && !line.contains(".open(_:options")
         }
     }
