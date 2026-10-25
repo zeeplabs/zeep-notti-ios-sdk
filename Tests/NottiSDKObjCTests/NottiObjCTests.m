@@ -15,22 +15,22 @@
 @implementation NottiObjCTests
 
 - (void)tearDown {
-    Notti.logLevel = NottiLogLevelError;
+    NottiSDK.logLevel = NottiLogLevelError;
     [super tearDown];
 }
 
 - (void)testNottiEntryPointsAreCallable {
     // Invalid on purpose: empty appId is ignored by the facade (no network).
-    [Notti initializeWithAppId:@"" clientKey:@"" baseUrl:nil];
-    [Notti initializeWithAppId:@"" clientKey:@"" baseUrl:@"https://notti.example.invalid"];
-    [Notti initializeWithAppId:@"" clientKey:@"" baseUrl:nil opensInAppURLs:NO]; // AD-020 selector, ignored
-    [Notti login:@"user-fixture"];   // dropped before initialize
-    [Notti logout];
-    (void)Notti.deviceId;            // nil or a persisted id
-    [Notti setLocationSharingEnabled:NO];
+    [NottiSDK initializeWithAppId:@"" clientKey:@"" baseUrl:nil];
+    [NottiSDK initializeWithAppId:@"" clientKey:@"" baseUrl:@"https://notti.example.invalid"];
+    [NottiSDK initializeWithAppId:@"" clientKey:@"" baseUrl:nil opensInAppURLs:NO]; // AD-020 selector, ignored
+    [NottiSDK login:@"user-fixture"];   // dropped before initialize
+    [NottiSDK logout];
+    (void)NottiSDK.deviceId;         // nil or a persisted id
+    [NottiSDK setLocationSharingEnabled:NO];
 
     __block NSInteger deviceIdCalls = 0;
-    NottiSubscription *subscription = [Notti addDeviceIdChangedListener:^(NSString *deviceId) {
+    NottiSubscription *subscription = [NottiSDK addDeviceIdChangedListener:^(NSString *deviceId) {
         (void)deviceId;
         deviceIdCalls += 1;
     }];
@@ -43,8 +43,8 @@
 // IAM-24, IAM-44: the In-App entry points compile only with these selector names. Before initialize
 // `trackEvent:` is a no-op, so nothing reaches the network.
 - (void)testInAppEntryPointsAreCallable {
-    [Notti trackEvent:@"fixture_event"];
-    [Notti trackEvent:@""];
+    [NottiSDK trackEvent:@"fixture_event"];
+    [NottiSDK trackEvent:@""];
 
     __block NSInteger clicks = 0;
     NottiSubscription *subscription = [NottiInAppMessages addClickListener:^(NSDictionary *click) {
@@ -57,14 +57,14 @@
 }
 
 - (void)testLogLevelRoundTripsThroughTheObjCEnum {
-    XCTAssertEqual(Notti.logLevel, NottiLogLevelError, @"default level");
+    XCTAssertEqual(NottiSDK.logLevel, NottiLogLevelError, @"default level");
     NSArray<NSNumber *> *levels = @[
         @(NottiLogLevelNone), @(NottiLogLevelError), @(NottiLogLevelWarn),
         @(NottiLogLevelInfo), @(NottiLogLevelDebug), @(NottiLogLevelVerbose)
     ];
     for (NSNumber *level in levels) {
-        Notti.logLevel = (NottiLogLevel)level.integerValue;
-        XCTAssertEqual(Notti.logLevel, (NottiLogLevel)level.integerValue);
+        NottiSDK.logLevel = (NottiLogLevel)level.integerValue;
+        XCTAssertEqual(NottiSDK.logLevel, (NottiLogLevel)level.integerValue);
     }
 }
 

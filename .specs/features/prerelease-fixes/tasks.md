@@ -93,10 +93,10 @@ Sequential order used in Execute: T1 → T2 → ... → T12.
 
 **Done when**:
 
-- [ ] `NSClassFromString("NottiSDK") === NottiObjC.self` and no `Notti`, `NottiImpl`, `NottiBridge`, `NottiPushDelegate` class is registered
-- [ ] `NottiObjCTests.m` calls `[NottiSDK ...]` and passes
-- [ ] Test count: SDK +1
-- [ ] Gate passes: quick
+- [x] `NSClassFromString("NottiSDK") === NottiObjC.self` and no `Notti`, `NottiImpl`, `NottiBridge`, `NottiPushDelegate` class is registered
+- [x] `NottiObjCTests.m` calls `[NottiSDK ...]` and passes
+- [x] Test count: SDK +1
+- [x] Gate passes: quick
 
 **Tests**: unit
 **Gate**: quick

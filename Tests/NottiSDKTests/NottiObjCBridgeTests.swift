@@ -140,6 +140,20 @@ final class NottiObjCBridgeTests: XCTestCase {
         XCTAssertTrue(patchBodies().contains { $0["external_user_id"] as? String == "user-fixture" })
     }
 
+    /// PRF-01, AD-021: the facade's ObjC runtime name is `NottiSDK`, and no SDK class takes a runtime name that
+    /// react-native-notti 0.8.0 declares in Objective-C (`ios/Notti.h`, `NottiImpl`, `NottiBridge`, `NottiPushDelegate`).
+    func test_objcRuntimeNamesDoNotCollideWithReactNativeNottiClasses() {
+        XCTAssertEqual(NSStringFromClass(NottiObjC.self), "NottiSDK")
+        XCTAssertTrue(NSClassFromString("NottiSDK") === NottiObjC.self)
+        for reactNativeName in ["Notti", "NottiImpl", "NottiBridge", "NottiPushDelegate"] {
+            XCTAssertNil(NSClassFromString(reactNativeName), reactNativeName)
+        }
+        let sdkNames = [
+            NottiObjC.self, NottiUserObjC.self, NottiNotificationsObjC.self, NottiInAppMessagesObjC.self, NottiSubscription.self
+        ].map { NSStringFromClass($0) }
+        XCTAssertEqual(sdkNames, ["NottiSDK", "NottiUser", "NottiNotifications", "NottiInAppMessages", "NottiSubscription"])
+    }
+
     func test_listenersReceiveTheNSDictionaryShapeAndTakeInitialClickReturnsIt() {
         let received = Log()
         let subscription = NottiNotificationsObjC.addReceivedListener { received.append($0) }
