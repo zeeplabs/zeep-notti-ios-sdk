@@ -23,10 +23,12 @@ final class NottiRuntime {
     @available(iOSApplicationExtension, unavailable)
     static let shared: NottiRuntime = {
         let defaults = UserDefaults(suiteName: defaultsSuiteName) ?? .standard
+        let clicks = NottiInAppClickRelay()
         return NottiRuntime(
             defaults: defaults,
             providers: .live(),
-            inAppEngine: .live(defaults: defaults),
+            inAppEngine: .live(defaults: defaults, clicks: clicks),
+            inAppClicks: clicks,
             pushPermissionPlatform: .system
         )
     }()
@@ -37,6 +39,8 @@ final class NottiRuntime {
     /// Process-wide In-App engine: survives core replacement, hears the two core hooks and the process
     /// observers (design D4, D14).
     let inAppEngine: NottiInAppEngine
+    /// Where `inAppEngine` hands its clicks; the facade's click hub attaches here.
+    let inAppClicks: NottiInAppClickRelay
 
     private let defaults: UserDefaults
     private let providers: NottiPlatformProviders
@@ -64,6 +68,8 @@ final class NottiRuntime {
     ///     reconnect). Tests that don't need them pass `false`.
     ///   - inAppEngine: `shared` passes the production engine; when nil the
     ///     runtime gets one with no client, which sends nothing (tests).
+    ///   - inAppClicks: the relay `inAppEngine` emits clicks to; pass the same
+    ///     relay the engine was built with.
     ///   - notificationCenter: where the process observers listen.
     ///   - pushPermissionPlatform: the OS side of the In-App `push_permission`
     ///     button (`shared` passes `.system`); nil sets no port (tests).
@@ -77,15 +83,18 @@ final class NottiRuntime {
         sdkVersion: String = NottiSDKVersion.current,
         startObservers: Bool = true,
         inAppEngine: NottiInAppEngine? = nil,
+        inAppClicks: NottiInAppClickRelay = NottiInAppClickRelay(),
         notificationCenter: NotificationCenter = .default,
         pushPermissionPlatform: NottiPushPermissionAction.Platform? = nil
     ) {
         self.defaults = defaults
+        self.inAppClicks = inAppClicks
         self.inAppEngine = inAppEngine ?? NottiInAppEngine(
             store: NottiInAppEventStore(defaults: defaults),
             identity: NottiInAppEngine.deviceIdentity(defaults: defaults),
             presenter: NottiInAppPlaceholderPresenter(),
-            clientFactory: { _ in nil }
+            clientFactory: { _ in nil },
+            emitClick: { inAppClicks.emit($0) }
         )
         self.notificationCenter = notificationCenter
         self.pushPermissionPlatform = pushPermissionPlatform

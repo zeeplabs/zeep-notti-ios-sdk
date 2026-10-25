@@ -460,6 +460,7 @@ No `[P]` task.
 ### T11: Public API (Swift)
 
 **What**: `Notti.trackEvent(_:)`, `Notti.InAppMessages.addClickListener`, `NottiInAppClick` (`messageId`, `buttonId`, `action: NottiInAppAction?`) and `NottiInAppAction` (`type: ActionType` `url`/`deeplink`, `value`), the `NottiFacade` methods, a `NottiListenerHub<NottiInAppClick>` attached to the engine's click handler (returning whether a listener exists), the allowlist entry for the two value types in `scripts/check-public-surface.sh`, and the regenerated `PUBLIC_SURFACE.txt`.
+**SPEC_DEVIATION**: (1) The engine is built before the facade, so `NottiRuntime` owns a `NottiInAppClickRelay` (`inAppClicks`, new init parameter defaulting to a fresh relay; lock-guarded optional handler, `emit` returns false with no handler) defined in `NottiInAppHooks.swift`; `NottiInAppEngine.live(defaults:clicks:)` and the runtime's default engine pass `emitClick: { relay.emit($0) }`, and the facade's `NottiListenerHub<NottiInAppClick>` attaches to and detaches from the relay (the device-id hub pattern). Files touched beyond **Where**: `NottiInAppHooks.swift`, `NottiRuntime.swift` (the relay property, init parameter and `shared` wiring only), `NottiInAppEngine+Display.swift` (the internal click type removed; the click carries `NottiInAppAction(link:)`), `NottiInAppEngineDisplayTests.swift` (two assertions compare `NottiInAppAction` instead of `NottiInAppLinkAction`, same values). (2) `NottiFacade.runtime` goes from `private` to internal and the hub is an internal stored property, so the `NottiFacade+InApp.swift` extension can reach them. (3) The public `NottiInAppClick` drops the redacted `description` of the T9 internal type (the design declares only `Equatable, Sendable`, RN has none; the SDK never logs a click). (4) Neither value type has a public initializer (internal ones, as `NottiNotificationPayload`); `NottiInAppAction` has an internal `init(link:)`.
 **Where**: `Sources/NottiSDK/Public/NottiInAppMessages.swift`, `Sources/NottiSDK/Facade/NottiFacade.swift` (extension in `NottiFacade+InApp.swift`), `scripts/check-public-surface.sh`, `.specs/codebase/PUBLIC_SURFACE.txt`, `Tests/NottiSDKTests/NottiInAppPublicApiTests.swift`
 **Depends on**: T10
 **Reuses**: `NottiListenerHub`, `NottiFacade.setSharedForTesting`, `check-public-surface.sh --update`
@@ -467,12 +468,12 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] `Notti.trackEvent("fixture_event")` reaches the engine through an isolated facade; an empty or whitespace-only string is a silent no-op (no log line at any level); before `Notti.initialize` the call is a no-op and no log line contains the name
-- [ ] A listener receives `NottiInAppClick` on the main thread with `messageId`, `buttonId`, `action.type` and the untouched `value`; a `push_permission` click arrives with `action == nil`; two listeners both receive it in order; `remove()` stops delivery; with no listener nothing crashes and the engine is told no listener received it
-- [ ] The public declarations are in `PUBLIC_SURFACE.txt`; `scripts/check-public-surface.sh` passes; `NottiInAppClick` and `NottiInAppAction` need no availability attribute (allowlisted), every other new public type has it
-- [ ] `scripts/check-no-url-open.sh` passes
-- [ ] Gate check passes: quick plus `scripts/check-public-surface.sh` and `scripts/check-no-url-open.sh`
-- [ ] Test count: at least 9 new, total at least B + 179
+- [x] `Notti.trackEvent("fixture_event")` reaches the engine through an isolated facade; an empty or whitespace-only string is a silent no-op (no log line at any level); before `Notti.initialize` the call is a no-op and no log line contains the name
+- [x] A listener receives `NottiInAppClick` on the main thread with `messageId`, `buttonId`, `action.type` and the untouched `value`; a `push_permission` click arrives with `action == nil`; two listeners both receive it in order; `remove()` stops delivery; with no listener nothing crashes and the engine is told no listener received it
+- [x] The public declarations are in `PUBLIC_SURFACE.txt`; `scripts/check-public-surface.sh` passes; `NottiInAppClick` and `NottiInAppAction` need no availability attribute (allowlisted), every other new public type has it
+- [x] `scripts/check-no-url-open.sh` passes
+- [x] Gate check passes: quick plus `scripts/check-public-surface.sh` and `scripts/check-no-url-open.sh`
+- [x] Test count: at least 9 new, total at least B + 179 (11 new in `NottiInAppPublicApiTests`; `NottiSDKTests` 711 → 722)
 
 **Tests**: unit
 **Gate**: quick
