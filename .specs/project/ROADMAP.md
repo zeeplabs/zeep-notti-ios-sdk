@@ -53,7 +53,7 @@
 
 **core-rn-parity** - IN PROGRESS (2026-10-24, AD-018): port the RN 0.7.0/0.8.0 core fixes (profile re-send on a new device id, durable logout unlink, latest login/logout coalesced)
 
-**in-app-messages** - SPECIFIED, reconciling with RN 0.8.0 (2026-10-24, AD-013, AD-019; `.specs/features/in-app-messages/`): fetch once per session, four native layouts, `trackEvent`, click listener, `push_permission` button, own persistent event queue. Backend payload served since `zeep-notti` v0.23.0
+**in-app-messages** - Execute done except device validation (2026-10-25; T1-T20 and T22 on branch `feat/in-app-messages`; AD-013, AD-019; `.specs/features/in-app-messages/`, `traceability.md`; local `ci.yml` equivalent green, CI blocked by billing): fetch once per session, four native layouts, `trackEvent`, click listener, `push_permission` button, own persistent event queue. Backend payload served since `zeep-notti` v0.23.0. Open: the In-App device checklist (T21) and the Verifier; not verified until both pass
 
 ---
 

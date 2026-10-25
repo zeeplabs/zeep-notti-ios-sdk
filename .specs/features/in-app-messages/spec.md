@@ -1,6 +1,6 @@
 # In-App Messages Specification
 
-**Status**: Approved by Julio 2026-10-24 (scope and the four AD-019 decisions), reconciled with `react-native-notti` 0.8.0 (tag `v0.8.0`, `291d5a7`).
+**Status**: Approved by Julio 2026-10-24 (scope and the four AD-019 decisions), reconciled with `react-native-notti` 0.8.0 (tag `v0.8.0`, `291d5a7`). Execute done 2026-10-25 (T1-T20, T22); not verified until the device checklist (T21) and the Verifier pass.
 
 ## Problem Statement
 
@@ -330,60 +330,60 @@ Legend: `y` confirmed. Evidence tags: [Certo] verified in code or contract, [Pro
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| IAM-01 | P1: Fetch once per session (trigger, once, registered in this process) | Specify | Pending |
-| IAM-02 | P1: Fetch once per session (request shape) | Specify | Pending |
-| IAM-03 | P1: Fetch once per session (flush before fetch, events pause skip) | Specify | Pending |
-| IAM-04 | P1: Fetch once per session (error and retry policy, `eligible` 429 cap and cross-session pause, 408, 401 vs 403 text) | Specify | Pending |
-| IAM-05 | P1: Fetch once per session (lenient parsing) | Specify | Pending |
-| IAM-06 | P1: Fetch once per session (session end, late response, re-initialize reset, threading) | Specify | Pending |
-| IAM-07 | P1: Choose what to show (session start) | Specify | Pending |
-| IAM-08 | P1: Choose what to show (event trigger, local match) | Specify | Pending |
-| IAM-09 | P1: Choose what to show (one visible, once per session) | Specify | Pending |
-| IAM-10 | P1: Choose what to show (no persisted shown state) | Specify | Pending |
-| IAM-11 | P1: Choose what to show (early events, first 32, blank no-op, cold-start window) | Specify | Pending |
-| IAM-12 | P1: Choose what to show (visible across sessions, OQ-9) | Specify | Pending |
-| IAM-13 | P1: Render the four layouts (placement, RN metrics, pan swipe) | Specify | Pending |
-| IAM-14 | P1: Render the four layouts (close control, 8 pt inset, scrim chip) | Specify | Pending |
-| IAM-15 | P1: Render the four layouts (image sizing, buttons) | Specify | Pending |
-| IAM-16 | P1: Render the four layouts (renderable rules, action parsing, unknown format) | Specify | Pending |
-| IAM-17 | P1: Render the four layouts (overflow, buttons into the scroll view) | Specify | Pending |
-| IAM-18 | P1: Render the four layouts (rotation, host orientation, no duplicate impression) | Specify | Pending |
-| IAM-19 | P1: Render the four layouts (body tap on bars) | Specify | Pending |
-| IAM-20 | P1: Style and plain text (colors) | Specify | Pending |
-| IAM-21 | P1: Style and plain text (absolute alignment, margin from the safe-area edge) | Specify | Pending |
-| IAM-22 | P1: Style and plain text (button token, defaults) | Specify | Pending |
-| IAM-23 | P1: Style and plain text (plain text only) | Specify | Pending |
-| IAM-24 | P1: Link actions and clicks (listener, nullable `{type, value}`, no URL open) | Specify | Pending |
-| IAM-25 | P1: Link actions and clicks (click reporting) | Specify | Pending |
-| IAM-26 | P1: Link actions and clicks (ordering, double tap) | Specify | Pending |
-| IAM-27 | P1: Impressions, dismissals and the queue (impression once, first) | Specify | Pending |
-| IAM-28 | P1: Impressions, dismissals and the queue (dismiss reasons) | Specify | Pending |
-| IAM-29 | P1: Impressions, dismissals and the queue (event_id, body) | Specify | Pending |
-| IAM-30 | P1: Impressions, dismissals and the queue (RN key and schema, `appId` per record) | Specify | Pending |
-| IAM-31 | P1: Impressions, dismissals and the queue (server responses, 408, 401 vs 403 warning) | Specify | Pending |
-| IAM-32 | P1: Impressions, dismissals and the queue (FIFO, independence) | Specify | Pending |
-| IAM-33 | P1: Impressions, dismissals and the queue (flush triggers) | Specify | Pending |
-| IAM-34 | P1: Auto dismiss (timer, reason auto) | Specify | Pending |
-| IAM-35 | P1: Auto dismiss (pause, close available) | Specify | Pending |
-| IAM-36 | P1: Presentation (window, pass-through, key window) | Specify | Pending |
-| IAM-37 | P1: Presentation (scene lifecycle) | Specify | Pending |
-| IAM-38 | P1: Presentation (accessibility, header title, image label, escape gesture, close label table, reduce motion) | Specify | Pending |
-| IAM-39 | P1: Presentation (dark mode, Dynamic Type) | Specify | Pending |
-| IAM-40 | P1: Images (download and decode rules) | Specify | Pending |
-| IAM-41 | P1: Images (failure never blocks) | Specify | Pending |
-| IAM-42 | P1: Images (no credentials to the image host) | Specify | Pending |
-| IAM-43 | P1: Privacy and surface (logging, sentinels) | Specify | Pending |
-| IAM-44 | P1: Privacy and surface (PUBLIC_SURFACE, ObjC mirror) | Specify | Pending |
-| IAM-45 | P1: Privacy and surface (extension safety, scripts with the one allowlisted file, packaging) | Specify | Pending |
-| IAM-46 | P1: Privacy and surface (privacy manifest) | Specify | Pending |
-| IAM-47 | P2: Documentation and example | Specify | Pending |
-| IAM-48 | P2: Documentation and example (device checklist) | Specify | Pending |
-| IAM-49 | P1: Push permission button (click, null action, close, then the platform action) | Specify | Pending |
-| IAM-50 | P1: Push permission button (state table, the only URL opened, allowlisted file) | Specify | Pending |
-| IAM-51 | P1: Sessions and network regain (foreground session open, idempotent core report, process-observer end) | Specify | Pending |
-| IAM-52 | P1: Sessions and network regain (resume a transient give-up once per reconnect) | Specify | Pending |
+| IAM-01 | P1: Fetch once per session (trigger, once, registered in this process) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-02 | P1: Fetch once per session (request shape) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-03 | P1: Fetch once per session (flush before fetch, events pause skip) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-04 | P1: Fetch once per session (error and retry policy, `eligible` 429 cap and cross-session pause, 408, 401 vs 403 text) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-05 | P1: Fetch once per session (lenient parsing) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-06 | P1: Fetch once per session (session end, late response, re-initialize reset, threading) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-07 | P1: Choose what to show (session start) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-08 | P1: Choose what to show (event trigger, local match) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-09 | P1: Choose what to show (one visible, once per session) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-10 | P1: Choose what to show (no persisted shown state) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-11 | P1: Choose what to show (early events, first 32, blank no-op, cold-start window) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-12 | P1: Choose what to show (visible across sessions, OQ-9) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-13 | P1: Render the four layouts (placement, RN metrics, pan swipe) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-14 | P1: Render the four layouts (close control, 8 pt inset, scrim chip) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-15 | P1: Render the four layouts (image sizing, buttons) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-16 | P1: Render the four layouts (renderable rules, action parsing, unknown format) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-17 | P1: Render the four layouts (overflow, buttons into the scroll view) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-18 | P1: Render the four layouts (rotation, host orientation, no duplicate impression) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-19 | P1: Render the four layouts (body tap on bars) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-20 | P1: Style and plain text (colors) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-21 | P1: Style and plain text (absolute alignment, margin from the safe-area edge) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-22 | P1: Style and plain text (button token, defaults) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-23 | P1: Style and plain text (plain text only) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-24 | P1: Link actions and clicks (listener, nullable `{type, value}`, no URL open) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-25 | P1: Link actions and clicks (click reporting) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-26 | P1: Link actions and clicks (ordering, double tap) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-27 | P1: Impressions, dismissals and the queue (impression once, first) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-28 | P1: Impressions, dismissals and the queue (dismiss reasons) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-29 | P1: Impressions, dismissals and the queue (event_id, body) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-30 | P1: Impressions, dismissals and the queue (RN key and schema, `appId` per record) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-31 | P1: Impressions, dismissals and the queue (server responses, 408, 401 vs 403 warning) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-32 | P1: Impressions, dismissals and the queue (FIFO, independence) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-33 | P1: Impressions, dismissals and the queue (flush triggers) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-34 | P1: Auto dismiss (timer, reason auto) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-35 | P1: Auto dismiss (pause, close available) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-36 | P1: Presentation (window, pass-through, key window) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-37 | P1: Presentation (scene lifecycle) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-38 | P1: Presentation (accessibility, header title, image label, escape gesture, close label table, reduce motion) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-39 | P1: Presentation (dark mode, Dynamic Type) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-40 | P1: Images (download and decode rules) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-41 | P1: Images (failure never blocks) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-42 | P1: Images (no credentials to the image host) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-43 | P1: Privacy and surface (logging, sentinels) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-44 | P1: Privacy and surface (PUBLIC_SURFACE, ObjC mirror) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-45 | P1: Privacy and surface (extension safety, scripts with the one allowlisted file, packaging) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-46 | P1: Privacy and surface (privacy manifest) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-47 | P2: Documentation and example | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-48 | P2: Documentation and example (device checklist) | Validate | Pending (T21 device checklist) |
+| IAM-49 | P1: Push permission button (click, null action, close, then the platform action) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-50 | P1: Push permission button (state table, the only URL opened, allowlisted file) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-51 | P1: Sessions and network regain (foreground session open, idempotent core report, process-observer end) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
+| IAM-52 | P1: Sessions and network regain (resume a transient give-up once per reconnect) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
 
-**Coverage:** 52 total, mapped to stories; task mapping in `tasks.md`.
+**Coverage:** 52 total, mapped to stories; task mapping in `tasks.md`; tests per requirement in `traceability.md` (51 covered, IAM-48 pending T21).
 
 ---
 
