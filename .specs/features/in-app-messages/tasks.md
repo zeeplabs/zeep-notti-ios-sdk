@@ -649,7 +649,7 @@ No `[P]` task.
 - [x] The source grep tests fail on a temporary mutant containing each banned string in a non-allowlisted file (noted in the commit body)
 - [x] `PrivacyManifestTests` pass unchanged; the manifest diff is the comment only
 - [x] `scripts/check-no-url-open.sh`, `check-extension-safety.sh`, `check-package-graph.sh`, `check-public-surface.sh` pass
-- [ ] Gate check passes: **full**
+- [x] Gate check passes: **full** (local `ci.yml` equivalent on `84c3e73`: DONE 0 failures; Shared 14, SDK 856, ObjC 7, Extension 110, ExtensionObjC 3. The first run on `208a47e` failed one test: the source scan compared `/tmp` and `/private/tmp` paths in the CI worktree, fixed in `84c3e73`)
 - [x] Test count: at least 10 new, total at least B + 254 (36 new in `NottiInAppPrivacyTests`; `NottiSDKTests` 820 → 856)
 
 **Tests**: unit
