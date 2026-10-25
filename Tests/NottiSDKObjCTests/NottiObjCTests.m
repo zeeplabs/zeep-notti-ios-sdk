@@ -82,6 +82,14 @@
     [NottiUser clearPhone];
 }
 
+// PRF-06: an array that mixes strings and other objects (an ObjC caller, a JS array through a bridge) is
+// accepted like addTags:, the non-strings dropped, instead of trapping in Swift's NSArray-to-[String] bridging.
+- (void)testRemoveTagsAcceptsAMixedArray {
+    NSArray *mixed = @[@"plan", @1, [NSNull null], @"lang"];
+    [NottiUser removeTags:mixed];
+    [NottiUser removeTags:@[@2]];
+}
+
 - (void)testNotificationsEntryPointsAreCallable {
     XCTestExpectation *permission = [self expectationWithDescription:@"permission completion"];
     [NottiNotifications requestPermission:^(BOOL granted) {

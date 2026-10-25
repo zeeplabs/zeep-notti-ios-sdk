@@ -107,6 +107,21 @@ final class NottiObjCBridgeTests: XCTestCase {
         XCTAssertEqual(sent, [["plan": "vip"]])
     }
 
+    /// PRF-06: `removeTags:` keeps only the string keys of a mixed array, like `addTags:`.
+    func test_nonStringKeysAreDroppedByObjCRemoveTags() {
+        initializeThroughObjC()
+        for _ in 0..<2 { StubURLProtocol.enqueue(.echoDevice()) }
+        NottiUserObjC.addTags(["plan": "vip", "lang": "pt", "keep": "yes"])
+        drain()
+
+        let mixed: [Any] = ["plan", NSNumber(value: 1), NSNull(), "lang"]
+        NottiUserObjC.removeTags(mixed)
+        drain()
+
+        let sent = patchBodies().compactMap { $0["tags"] as? [String: String] }
+        XCTAssertEqual(sent.last, ["keep": "yes"], "only the string keys were removed")
+    }
+
     func test_userMethodsReachTheFacade() {
         initializeThroughObjC()
         for _ in 0..<4 { StubURLProtocol.enqueue(.echoDevice()) }

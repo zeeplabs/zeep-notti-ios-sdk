@@ -190,9 +190,9 @@ Sequential order used in Execute: T1 → T2 → ... → T12.
 
 **Done when**:
 
-- [ ] A mixed `NSArray` from ObjC does not crash; the PATCH removes only the string keys
-- [ ] Test count: SDK +1, ObjC +1
-- [ ] Gate passes: quick
+- [x] A mixed `NSArray` from ObjC does not crash; the PATCH removes only the string keys
+- [x] Test count: SDK +1, ObjC +1
+- [x] Gate passes: quick
 
 **Tests**: unit
 **Gate**: quick
