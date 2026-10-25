@@ -669,9 +669,9 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] The example builds for the simulator and device with the strict flags and the hosted test passes; `check-example-coverage.sh` and `check-example-config.sh` pass
+- [x] The example builds for the simulator and device with the strict flags and the hosted test passes; `check-example-coverage.sh` and `check-example-config.sh` pass (local `ci.yml` equivalent on `51862d3`: DONE 0 failures; Example hosted 41 per leg on SPM, pods static, pods libs, pods dynamic; strict device builds and the Manual and NoAdaptor configurations)
 - [x] The sample config in `Example/Config/Example.xcconfig.sample` is unchanged (no real keys)
-- [ ] Gate check passes: Example build and hosted tests plus quick
+- [x] Gate check passes: Example build and hosted tests plus quick (full local run on `51862d3`, SDK 856 unchanged)
 - [x] Test count: at least 2 new hosted tests (not counted in the SDK total) (5 new in `InAppExampleTests`; Example hosted 36 → 41 on the SPM leg, local run before the commit)
 
 **Tests**: unit (hosted)
