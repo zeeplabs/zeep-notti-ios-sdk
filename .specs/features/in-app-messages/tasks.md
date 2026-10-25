@@ -583,6 +583,7 @@ No `[P]` task.
 ### T16: `center` and `full` layouts
 
 **What**: `center`: backdrop at 50% black, card centered in the safe area with width min(90% of the container, 560 pt, safe width) and height capped at 90% of the safe height, outside-tap recognizer that ignores taps inside the card, `margin` ignored, image filling the width above the text (aspect fill, 180 pt cap). `full`: inside the safe areas with the `margin` inset, image aspect-fit taking the free height the text leaves, buttons pinned to the bottom, no dismiss gesture, corner radius 0 with `margin: false`.
+**SPEC_DEVIATION**: (1) `NottiInAppCardLayout` is the overlay view for both formats (placement, backdrop color and identifier `notti.inapp.backdrop`, the `center` outside-tap recognizer with `handleBackdropTap` and `backdropAccepts`, corner radius 0 for `full` with `margin: false`); the image sizing, aspect modes, free-room growth and pinned buttons are computed in the T14 card layout pass (as in RN) and asserted here. (2) The overlay's `accessibilityViewIsModal` and `accessibilityPerformEscape()` are left to T17, as its task lists.
 **Where**: `Sources/NottiSDK/InApp/UI/NottiInAppCardLayout.swift`, `Tests/NottiSDKTests/NottiInAppCardLayoutTests.swift`
 **Depends on**: T14
 **Reuses**: `NottiInAppLayout`
@@ -590,12 +591,12 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] `center`: the card width is 351 pt at 390 pt wide (90%), 560 pt on a 1024 x 1366 iPad, and never wider than the safe width in landscape; it is centered in the safe area with asymmetric insets; its height never exceeds 90% of the safe height with a 500-character body; the backdrop is 0.5 black; `margin: false` changes nothing; the outside-tap handler yields `outside_tap` and a tap inside the card yields nothing
-- [ ] `center` image: a 2:1 image is `inner width` wide and `inner / 2` tall with `.scaleAspectFill`; a 1:2 image is capped at 180 pt
-- [ ] `full`: the frame equals the safe area inset by 16 (`margin: true` or absent) or 0 (`margin: false`), also in landscape; with a short text the image is `.scaleAspectFit` and taller than its natural height (it takes the free room); buttons are at the bottom of the card while a long body scrolls; no swipe and no backdrop recognizer exists
-- [ ] The close control is present and 44 pt in both, also with a 500-character body at the largest Dynamic Type
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 14 new, total at least B + 229
+- [x] `center`: the card width is 351 pt at 390 pt wide (90%), 560 pt on a 1024 x 1366 iPad, and never wider than the safe width in landscape; it is centered in the safe area with asymmetric insets; its height never exceeds 90% of the safe height with a 500-character body; the backdrop is 0.5 black; `margin: false` changes nothing; the outside-tap handler yields `outside_tap` and a tap inside the card yields nothing
+- [x] `center` image: a 2:1 image is `inner width` wide and `inner / 2` tall with `.scaleAspectFill`; a 1:2 image is capped at 180 pt
+- [x] `full`: the frame equals the safe area inset by 16 (`margin: true` or absent) or 0 (`margin: false`), also in landscape; with a short text the image is `.scaleAspectFit` and taller than its natural height (it takes the free room); buttons are at the bottom of the card while a long body scrolls; no swipe and no backdrop recognizer exists
+- [x] The close control is present and 44 pt in both, also with a 500-character body at the largest Dynamic Type
+- [x] Gate check passes: quick
+- [x] Test count: at least 14 new, total at least B + 229 (17 new in `NottiInAppCardLayoutTests`; `NottiSDKTests` 773 → 790, full `NottiSDKTests` run 790 / 0 failures)
 
 **Tests**: unit
 **Gate**: quick
