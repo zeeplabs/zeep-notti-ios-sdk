@@ -125,9 +125,11 @@ public final class NottiUserObjC: NSObject {
         NottiFacade.shared.removeTags([key])
     }
 
+    /// Elements that are not strings are dropped, as in `addTags:`. Typed `NSArray` on purpose: bridging an
+    /// array with a non-string element to `[String]` traps at the call (PRF-06).
     @objc(removeTags:)
-    public static func removeTags(_ keys: [String]) {
-        NottiFacade.shared.removeTags(keys)
+    public static func removeTags(_ keys: [Any]) {
+        NottiFacade.shared.removeTags(keys.compactMap { $0 as? String })
     }
 
     @objc(setEmail:)

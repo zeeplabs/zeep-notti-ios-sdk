@@ -71,7 +71,7 @@ Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func initialize(appI
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func login(_ externalUserId: String) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func logout() {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func removeTag(_ key: String) {
-Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func removeTags(_ keys: [String]) {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func removeTags(_ keys: [Any]) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func requestPermission(_ completion: @escaping (Bool) -> Void) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func setEmail(_ email: String) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func setLocationSharingEnabled(_ enabled: Bool) {
