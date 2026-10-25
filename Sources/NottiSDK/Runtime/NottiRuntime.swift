@@ -23,7 +23,12 @@ final class NottiRuntime {
     @available(iOSApplicationExtension, unavailable)
     static let shared: NottiRuntime = {
         let defaults = UserDefaults(suiteName: defaultsSuiteName) ?? .standard
-        return NottiRuntime(defaults: defaults, providers: .live(), inAppEngine: .live(defaults: defaults))
+        return NottiRuntime(
+            defaults: defaults,
+            providers: .live(),
+            inAppEngine: .live(defaults: defaults),
+            pushPermissionPlatform: .system
+        )
     }()
 
     let eventStore: NottiEventStore
@@ -49,6 +54,7 @@ final class NottiRuntime {
     private var backgroundObserver: NSObjectProtocol?
     private var foregroundObserver: NSObjectProtocol?
     private let notificationCenter: NotificationCenter
+    private let pushPermissionPlatform: NottiPushPermissionAction.Platform?
 
     /// - Parameters:
     ///   - sdkVersion: value sent as `sdk_version`. Production passes the native
@@ -59,6 +65,8 @@ final class NottiRuntime {
     ///   - inAppEngine: `shared` passes the production engine; when nil the
     ///     runtime gets one with no client, which sends nothing (tests).
     ///   - notificationCenter: where the process observers listen.
+    ///   - pushPermissionPlatform: the OS side of the In-App `push_permission`
+    ///     button (`shared` passes `.system`); nil sets no port (tests).
     init(
         defaults: UserDefaults,
         providers: NottiPlatformProviders,
@@ -69,7 +77,8 @@ final class NottiRuntime {
         sdkVersion: String = NottiSDKVersion.current,
         startObservers: Bool = true,
         inAppEngine: NottiInAppEngine? = nil,
-        notificationCenter: NotificationCenter = .default
+        notificationCenter: NotificationCenter = .default,
+        pushPermissionPlatform: NottiPushPermissionAction.Platform? = nil
     ) {
         self.defaults = defaults
         self.inAppEngine = inAppEngine ?? NottiInAppEngine(
@@ -79,6 +88,7 @@ final class NottiRuntime {
             clientFactory: { _ in nil }
         )
         self.notificationCenter = notificationCenter
+        self.pushPermissionPlatform = pushPermissionPlatform
         self.providers = providers
         self.apiClientFactory = apiClientFactory
         self.sdkVersion = sdkVersion
@@ -151,6 +161,7 @@ final class NottiRuntime {
         if !appId.isEmpty, !clientKey.isEmpty, let normalized = NottiApiClient.validatedBaseUrl(baseUrl) {
             inAppEngine.configure(appId: appId, clientKey: clientKey, baseUrl: normalized)
         }
+        wirePushPermissionPort()
         let core = makeCore()
         lock.withLock { _core = core }
         core.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkVersion: sdkVersion)
@@ -211,6 +222,18 @@ final class NottiRuntime {
             }
         }
         return add
+    }
+
+    /// Hands the engine the `push_permission` action (D15, RN `wirePushPermissionPort`). The prompt goes
+    /// through whichever core is current when the button is tapped, so a replaced core is never used.
+    private func wirePushPermissionPort() {
+        guard let platform = pushPermissionPlatform else { return }
+        let action = NottiPushPermissionAction(
+            readState: platform.readState,
+            requestPermission: { [weak self] in self?.core?.requestPermission { _ in } },
+            openNotificationSettings: platform.openNotificationSettings
+        )
+        inAppEngine.setPushPermissionPort { action.run() }
     }
 
     /// Caller holds `lifecycleLock`.
