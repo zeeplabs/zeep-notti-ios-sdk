@@ -495,7 +495,7 @@ No `[P]` task.
 - [x] The Objective-C test calls `[Notti trackEvent:]` and `[NottiInAppMessages addClickListener:]` and compiles only with these selector names
 - [x] The bridge test checks that the dictionary has exactly three keys, that `action` is `@{type, value}` for a link and `NSNull` for a nil action
 - [x] `scripts/check-public-surface.sh` passes
-- [ ] Gate check passes: **full** (local `ci.yml` equivalent on `de5a981`: DONE 0 failures, but SwiftLint and the Linux mawk guards were SKIPPED because the local Docker daemon (OrbStack) stopped answering; open until SwiftLint runs)
+- [x] Gate check passes: **full** (local `ci.yml` equivalent on `de5a981`: DONE 0 failures; SwiftLint and Linux guards verified on 7c193bf)
 - [x] Test count: at least 4 new, total at least B + 183 (4 new in `NottiObjCBridgeTests`; `NottiSDKTests` 722 → 726; `NottiSDKObjCTests` 6 → 7)
 
 **Tests**: unit (Swift bridge) + ObjC compile check
@@ -529,6 +529,7 @@ No `[P]` task.
 ### T14: Message view base, appearance and layout metrics
 
 **What**: `NottiInAppLayout` (pure bounds, port of RN `computeFrame` and `InAppMetrics`), `NottiInAppAppearance` (RN `resolveStyle`; fonts `headline`, `subheadline`, bold `subheadline`), and the part of `NottiInAppMessageView` shared by all layouts: title and body labels (plain text, absolute alignment, hidden when blank), the scrolling content region, the button row (side by side or stacked, measured), the move of the buttons into the scroll view when they exceed the card's room, the 44 pt close control at the 8 pt inset with its scrim chip over an image, the optional image, accessibility identifiers, traits and labels, Dynamic Type.
+**SPEC_DEVIATION**: (1) `NottiInAppMessageView` is the card (RN `InAppCardView` plus the factory), not the full-screen overlay: the overlays are `NottiInAppBarLayout` (T15) and `NottiInAppCardLayout` (T16). As in RN, one card layout pass computes the content of every kind (`bar` thumbnail, `card` image above the text, `fill` image growth and pinned buttons); T15 and T16 assert those per-format metrics. (2) `NottiInAppLayout` also ports the placement of RN `InAppOverlayView.layoutSubviews` as the pure `cardRect(_:height:container:)`, and uses `UIEdgeInsets` instead of RN `InAppInsets`. (3) Taps and closes leave the view as `NottiInAppViewOutcome` through `onOutcome`, first outcome only (RN `InAppInteraction.close/act`); close, buttons and the tappable image are wired here. (4) A label with `adjustsFontForContentSizeCategory` re-resolves its font against its own traits, and outside a window those ignore `traitOverrides`: the injected `traits` (nil in production) set `traitOverrides.preferredContentSizeCategory` on iOS 17+ and the tests host the view in a plain offscreen `UIWindow(frame:)` (never shown, never key, not from `UIApplication.shared`; `Tests/NottiSDKTests/Support/InAppViewFixtures.swift`), as RN's Dynamic Type test does.
 **Where**: `Sources/NottiSDK/InApp/UI/NottiInAppMessageView.swift` (with `NottiInAppLayout.swift`, `NottiInAppAppearance.swift`), `Tests/NottiSDKTests/NottiInAppMessageViewTests.swift`
 **Depends on**: T2, T13
 **Reuses**: `NottiInAppStyle`, the label table
@@ -536,16 +537,16 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] Title `**bold** <b>x</b> [l](https://example.invalid)` and a body with newlines are displayed verbatim: the labels' `text` equals the input and `attributedText` carries no link, bold or paragraph attribute from markup; a blank title label is hidden
-- [ ] Valid tokens color the background, text, close tint, button background and label; an invalid token falls back to its default; with `button_color` set both buttons are filled with it; without tokens the first button is filled and the second tinted; fonts are `headline` (title), `subheadline` (body) and bold `subheadline` (buttons)
-- [ ] `text_align: right` gives `.right` and `left` gives `.left` with `semanticContentAttribute = .forceRightToLeft` (absolute, never `.natural`)
-- [ ] The close control is 44 x 44, its frame is 8 pt from the card's top and trailing edges (top-leading under right-to-left), it is not inside the scroll view, and with an image on `center` its glyph is white on a black 40% capsule
-- [ ] Two short labels sit side by side; a label longer than half the width stacks both; each button is at least 44 pt tall
-- [ ] A 500-character body at the largest accessibility content size gives a scroll content size larger than its viewport and the close control and buttons remain visible; two buttons taller than the card's room move into the scroll view after the text (`buttonsScroll`), and back out when the room grows
-- [ ] The title has the `.header` trait and is a separate element from the body; buttons have the `.button` trait and their label; the image is not an element unless tappable, then it is `[.button, .image]` labeled with the title (nil for a blank title)
-- [ ] A grep test over `Sources/NottiSDK/InApp/UI` finds none of `attributedText`, `AttributedString`, `WKWebView`, `LocalizedStringKey`, `openURL`
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 15 new, total at least B + 202
+- [x] Title `**bold** <b>x</b> [l](https://example.invalid)` and a body with newlines are displayed verbatim: the labels' `text` equals the input and `attributedText` carries no link, bold or paragraph attribute from markup; a blank title label is hidden
+- [x] Valid tokens color the background, text, close tint, button background and label; an invalid token falls back to its default; with `button_color` set both buttons are filled with it; without tokens the first button is filled and the second tinted; fonts are `headline` (title), `subheadline` (body) and bold `subheadline` (buttons)
+- [x] `text_align: right` gives `.right` and `left` gives `.left` with `semanticContentAttribute = .forceRightToLeft` (absolute, never `.natural`)
+- [x] The close control is 44 x 44, its frame is 8 pt from the card's top and trailing edges (top-leading under right-to-left), it is not inside the scroll view, and with an image on `center` its glyph is white on a black 40% capsule
+- [x] Two short labels sit side by side; a label longer than half the width stacks both; each button is at least 44 pt tall
+- [x] A 500-character body at the largest accessibility content size gives a scroll content size larger than its viewport and the close control and buttons remain visible; two buttons taller than the card's room move into the scroll view after the text (`buttonsScroll`), and back out when the room grows
+- [x] The title has the `.header` trait and is a separate element from the body; buttons have the `.button` trait and their label; the image is not an element unless tappable, then it is `[.button, .image]` labeled with the title (nil for a blank title)
+- [x] A grep test over `Sources/NottiSDK/InApp/UI` finds none of `attributedText`, `AttributedString`, `WKWebView`, `LocalizedStringKey`, `openURL`
+- [x] Gate check passes: quick
+- [x] Test count: at least 15 new, total at least B + 202 (24 new in `NottiInAppMessageViewTests`; `NottiSDKTests` 731 → 755)
 
 **Tests**: unit
 **Gate**: quick
