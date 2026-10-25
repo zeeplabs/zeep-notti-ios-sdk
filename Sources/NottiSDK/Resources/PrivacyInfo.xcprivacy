@@ -24,9 +24,14 @@
 	  Coarse Location: opt-in country, reverse-geocoded from the host's own
 	  CoreLocation fix (SEGTEL-10..15). Off by default. AD-005.
 	  Product Interaction: session telemetry (first/last session, count,
-	  time) and received/opened/clicked events. AD-005.
+	  time) and received/opened/clicked events. AD-005. In-App messages
+	  (AD-019) add impression, click (with the author's button id) and
+	  dismiss (with a fixed reason) events per message, kept on the device
+	  for at most 7 days until sent. trackEvent names are matched on the
+	  device and never sent, stored or logged.
 	  Device ID: the APNs push token and the backend device id, sent on
-	  registration and on every device PATCH. App Functionality only.
+	  registration and on every device PATCH, and on the In-App eligible
+	  and event requests. App Functionality only.
 	  Other Diagnostic Data: app_version, sdk_version, device_os, device_model,
 	  timezone_id, language and the OS push-permission status (DPF-01..13).
 	  Other Data Types: tags set by the host app (free-form key/values).
