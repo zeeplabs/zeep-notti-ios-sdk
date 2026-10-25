@@ -186,6 +186,34 @@ final class NottiInAppWiringTests: XCTestCase {
         return records.map(\.appId)
     }
 
+    // MARK: - Replaced core (PRF-07)
+
+    func test_aReplacedCoresLateRegistrationDoesNotMarkTheNewConfig() {
+        let blocker = QueueBlocker()
+        let runtime = makeRuntime(active: { true }, blocker: blocker)
+        // App 1's registration fails once and its core sleeps in the retry.
+        StubURLProtocol.enqueue(.status(500))
+        blocker.arm()
+        start(runtime)
+        XCTAssertEqual(blocker.entered.wait(wallTimeout: .now() + 20), .success, "the first core never blocked")
+        let retired = runtime.core
+
+        // App 2's registration fails for good: nothing registered app 2 in this process.
+        StubURLProtocol.enqueue(.status(400))
+        start(runtime, app: "fixture-app-2")
+        drain(runtime.core)
+
+        // The retired core's retry succeeds now, for app 1.
+        StubURLProtocol.enqueue(.status(200, body: Self.registered))
+        blocker.released.signal()
+        drain(retired)
+        scheduler.drain()
+
+        XCTAssertEqual(engine.config?.appId, "fixture-app-2")
+        XCTAssertFalse(engine.registeredInProcess, "app 1's late registration does not count for app 2")
+        XCTAssertEqual(eligibleCount, 0)
+    }
+
     // MARK: - Core hooks (D4)
 
     func test_theCoreCallsOnSessionStartedOncePerRealSession() {

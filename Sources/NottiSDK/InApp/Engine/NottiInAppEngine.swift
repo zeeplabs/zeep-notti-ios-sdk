@@ -188,11 +188,22 @@ final class NottiInAppEngine {
 
     /// Core hook: the device registration succeeded.
     func deviceRegistered() {
+        scheduler.execute { self.markRegistered() }
+    }
+
+    /// Core hook of the core built for `config`: ignored once the engine moved to another config, so a replaced
+    /// core finishing its registration never marks the new app as registered in this process (PRF-07, D13).
+    func deviceRegistered(for config: NottiInAppConfig) {
         scheduler.execute {
-            self.registeredInProcess = true
-            self.requestFlush()
-            self.maybeFetch(allowTransientRetry: false)
+            guard self.config == config else { return }
+            self.markRegistered()
         }
+    }
+
+    private func markRegistered() {
+        registeredInProcess = true
+        requestFlush()
+        maybeFetch(allowTransientRetry: false)
     }
 
     /// Runtime observer (`willEnterForeground`): opens every session after the first one without waiting

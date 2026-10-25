@@ -177,11 +177,13 @@ final class NottiRuntime {
         invalidateCurrentCore()
         // In-App first, from this thread, so a `trackEvent` right after `start`
         // finds the config (D12). Invalid input is left to the core, which logs it.
+        var inAppConfig: NottiInAppConfig?
         if !appId.isEmpty, !clientKey.isEmpty, let normalized = NottiApiClient.validatedBaseUrl(baseUrl) {
             inAppEngine.configure(appId: appId, clientKey: clientKey, baseUrl: normalized)
+            inAppConfig = NottiInAppConfig(appId: appId, clientKey: clientKey, baseUrl: normalized)
         }
         wirePushPermissionPort()
-        let core = makeCore()
+        let core = makeCore(inAppConfig: inAppConfig)
         lock.withLock { _core = core }
         core.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkVersion: sdkVersion)
     }
@@ -196,7 +198,7 @@ final class NottiRuntime {
         defer { lifecycleLock.unlock() }
         return lock.withLock {
             if let existing = _core { return existing }
-            let created = makeCore()
+            let created = makeCore(inAppConfig: nil)
             _core = created
             return created
         }
@@ -282,7 +284,8 @@ final class NottiRuntime {
     /// How long a replaced core is kept alive to finish the work already queued on it.
     private static let retireTimeout: TimeInterval = 60
 
-    private func makeCore() -> NottiCore {
+    /// - Parameter inAppConfig: the config `start` gave the In-App engine; nil for the pre-`initialize` core.
+    private func makeCore(inAppConfig: NottiInAppConfig?) -> NottiCore {
         NottiCore(
             deviceStore: NottiDeviceStore(defaults: defaults),
             eventStore: eventStore,
@@ -301,7 +304,7 @@ final class NottiRuntime {
             beginBackgroundTask: providers.beginBackgroundTask,
             logger: { level, message in NottiLogger.log(level, message) },
             onDeviceIdChanged: { [weak self] deviceId in self?.onDeviceIdChanged?(deviceId) },
-            inAppHooks: .forwarding(to: inAppEngine),
+            inAppHooks: .forwarding(to: inAppEngine, config: inAppConfig),
             sessionGate: sessionGate
         )
     }

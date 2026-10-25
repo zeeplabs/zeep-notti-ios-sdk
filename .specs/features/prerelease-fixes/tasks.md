@@ -209,9 +209,9 @@ Sequential order used in Execute: T1 → T2 → ... → T12.
 
 **Done when**:
 
-- [ ] Retired core's late success: `registeredInProcess` false, no `eligible`; current core's success marks it
-- [ ] Test count: SDK +2
-- [ ] Gate passes: quick
+- [x] Retired core's late success: `registeredInProcess` false, no `eligible`; current core's success marks it
+- [x] Test count: SDK +2
+- [x] Gate passes: quick
 
 **Tests**: unit
 **Gate**: quick
