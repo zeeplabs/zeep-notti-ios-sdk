@@ -25,6 +25,28 @@ struct NottiInAppHooks {
     }
 }
 
+/// Carries the engine's clicks to whoever listens (IAM-24, IAM-25). The engine is built before the facade,
+/// so the runtime owns this relay and the facade's `NottiListenerHub` attaches to it, as the device-id hub
+/// attaches to `NottiRuntime.onDeviceIdChanged`. `emit` runs on the engine queue and only hands off: the hub
+/// hops to the main thread.
+final class NottiInAppClickRelay {
+    private let lock = NSLock()
+    private var _handler: ((NottiInAppClick) -> Void)?
+
+    /// Set by the hub while at least one listener is registered, nil otherwise.
+    var handler: ((NottiInAppClick) -> Void)? {
+        get { lock.withLock { _handler } }
+        set { lock.withLock { _handler = newValue } }
+    }
+
+    /// False when no listener is registered (the engine then logs its one warning).
+    func emit(_ click: NottiInAppClick) -> Bool {
+        guard let handler = handler else { return false }
+        handler(click)
+        return true
+    }
+}
+
 /// Stands in for the UIKit presenter until it exists (T17): shows nothing, so no display ever becomes
 /// visible and no impression is recorded; a pending display is dropped at session end.
 final class NottiInAppPlaceholderPresenter: NottiInAppPresenting {
@@ -37,12 +59,17 @@ extension NottiInAppEngine {
 
     /// The production engine over the `notti_prefs` suite (`defaults`): the RN-compatible event queue, the
     /// identity read from `NottiDeviceStore` at send time, the queue scheduler and the `URLSession.shared`
-    /// client factory.
-    static func live(defaults: UserDefaults, presenter: NottiInAppPresenting = NottiInAppPlaceholderPresenter()) -> NottiInAppEngine {
+    /// client factory. Clicks go to `clicks` (the facade's listener hub attaches there).
+    static func live(
+        defaults: UserDefaults,
+        clicks: NottiInAppClickRelay,
+        presenter: NottiInAppPresenting = NottiInAppPlaceholderPresenter()
+    ) -> NottiInAppEngine {
         NottiInAppEngine(
             store: NottiInAppEventStore(defaults: defaults),
             identity: deviceIdentity(defaults: defaults),
-            presenter: presenter
+            presenter: presenter,
+            emitClick: { clicks.emit($0) }
         )
     }
 

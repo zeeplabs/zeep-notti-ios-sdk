@@ -17,17 +17,6 @@ enum NottiInAppDismissReason {
     static let auto = "auto"
 }
 
-/// A click handed to the host listeners, the link action untouched (IAM-24, IAM-25). `action` is nil for an
-/// unknown action and always nil for `push_permission` (IAM-49). Its descriptions print no value.
-struct NottiInAppClick: Equatable, CustomStringConvertible, CustomDebugStringConvertible {
-    let messageId: String
-    let buttonId: String
-    let action: NottiInAppLinkAction?
-
-    var description: String { "NottiInAppClick(<redacted>)" }
-    var debugDescription: String { description }
-}
-
 /// The one message that is pending or visible. `id` is local (a UUID, not the message id) and names the
 /// presenter's callbacks for this display. `state`, `impressed` and `clock` belong to the engine queue.
 final class NottiInAppDisplay {
@@ -180,7 +169,12 @@ extension NottiInAppEngine {
             runsPushPermission = false
         }
         // The listener never sees a push_permission action: it is not a link to handle.
-        let delivered = emitClick(NottiInAppClick(messageId: current.message.id, buttonId: buttonId, action: link))
+        let click = NottiInAppClick(
+            messageId: current.message.id,
+            buttonId: buttonId,
+            action: link.map(NottiInAppAction.init(link:))
+        )
+        let delivered = emitClick(click)
         if !delivered && !runsPushPermission {
             NottiLogger.log(.warn, Self.noListenerWarning, category: "inapp")
         }
