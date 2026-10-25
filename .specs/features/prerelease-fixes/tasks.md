@@ -228,9 +228,9 @@ Sequential order used in Execute: T1 → T2 → ... → T12.
 
 **Done when**:
 
-- [ ] `Notti.initialize(appId:clientKey:)` after `opensInAppURLs: false` gives `true`
-- [ ] Test count: SDK +1
-- [ ] Gate passes: quick
+- [x] `Notti.initialize(appId:clientKey:)` after `opensInAppURLs: false` gives `true`
+- [x] Test count: SDK +1
+- [x] Gate passes: quick
 
 **Tests**: unit
 **Gate**: quick

@@ -414,6 +414,18 @@ final class NottiInAppOpenURLPublicApiTests: XCTestCase {
         XCTAssertTrue(engine.opensURLs)
     }
 
+    /// PRF-08: every valid `initialize` sets the option to the value it carries; one without options means `true`.
+    func test_aLaterInitializeWithoutOptionsTurnsTheOptionBackOn() {
+        initialize(Notti.Options(baseUrl: baseUrl, opensInAppURLs: false))
+        XCTAssertFalse(engine.opensURLs)
+
+        Notti.initialize(appId: appId, clientKey: clientKey)
+        if let core = runtime.core { XCTAssertTrue(core.waitForPendingWork(timeout: 25)) }
+        scheduler.drain()
+
+        XCTAssertTrue(engine.opensURLs, "no options: the default, true")
+    }
+
     func test_anInvalidInitializeIgnoresTheOptionToo() {
         Notti.initialize(appId: "", clientKey: clientKey, options: Notti.Options(opensInAppURLs: false))
         scheduler.drain()

@@ -30,6 +30,9 @@ public enum Notti {
         /// ran. Default `true`. Only `http` and `https` links with a host are opened; a `deeplink` or any
         /// other scheme is never opened by the SDK and reaches the listener only. With `false` the SDK opens
         /// no In-App link: handle `url` actions in `Notti.InAppMessages.addClickListener`.
+        ///
+        /// Every valid `initialize` sets the option to the value it carries, like `baseUrl` (PRF-08): a later
+        /// `initialize` without options turns it back on. Pass the same `Options` on every call.
         public var opensInAppURLs: Bool
 
         public init(baseUrl: String? = nil, opensInAppURLs: Bool = true) {
@@ -42,8 +45,10 @@ public enum Notti {
 
     /// Starts the SDK. Calling it again with the same values does nothing; with
     /// a different app id, client key or base URL it restarts the SDK, and a
-    /// different `opensInAppURLs` alone is applied without a restart. Invalid
-    /// values are logged (without the values) and ignored.
+    /// different `opensInAppURLs` alone is applied without a restart. Each valid
+    /// call applies all of `options`: omitted values fall back to their defaults
+    /// (default host, `opensInAppURLs` true). Invalid values are logged (without
+    /// the values) and ignored.
     public static func initialize(appId: String, clientKey: String, options: Options = Options()) {
         NottiFacade.shared.initialize(
             appId: appId,
