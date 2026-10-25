@@ -696,8 +696,8 @@ No `[P]` task.
 - [x] `release-pr.md` lists the In-App device checklist gate
 - [x] `check-readme-snippets.sh` passes with the new README snippets (new snippet `in-app`)
 - [x] `validate_spec.py` and `validate_tasks.py` pass; `AGENTS.md` layout line mentions `Sources/NottiSDK/InApp/`
-- [ ] Gate check passes: **full**
-- [ ] Test count at least the baseline plus the minimums above, none removed
+- [x] Gate check passes: **full** (local `ci.yml` equivalent on `60a4f4f`: DONE 0 failures)
+- [x] Test count at least the baseline plus the minimums above, none removed (Shared 14, SDK 856, ObjC 7, Extension 110, ExtensionObjC 3; Example hosted 41 per leg on all four legs)
 
 **Tests**: none
 **Gate**: full
