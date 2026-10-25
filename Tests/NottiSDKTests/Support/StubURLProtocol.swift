@@ -1,5 +1,5 @@
 // Ported from react-native-notti 52e4b55 ios/Tests/StubURLProtocol.swift (AD-002).
-// Changes: none (test support).
+// Changes: none (test support). The `headers` field is ported from react-native-notti 0.8.0 (291d5a7), same file.
 // Lint rules the RN code breaks are disabled for this file only (AD-007).
 // swiftlint:disable static_over_final_class force_try
 
@@ -19,9 +19,16 @@ final class StubURLProtocol: URLProtocol {
         /// Answer like the real backend's PATCH: a device whose fields echo the
         /// request body (`token` excluded). Overrides `body`.
         var echoDevice: Bool = false
+        /// Response header fields (e.g. `Retry-After`); none when empty.
+        var headers: [String: String] = [:]
 
-        static func status(_ code: Int, body: String = "", delayMs: Int = 0) -> StubResponse {
-            StubResponse(statusCode: code, body: body.data(using: .utf8), error: nil, delayMs: delayMs)
+        static func status(
+            _ code: Int,
+            body: String = "",
+            delayMs: Int = 0,
+            headers: [String: String] = [:]
+        ) -> StubResponse {
+            StubResponse(statusCode: code, body: body.data(using: .utf8), error: nil, delayMs: delayMs, headers: headers)
         }
 
         static func echoDevice() -> StubResponse {
@@ -90,7 +97,7 @@ final class StubURLProtocol: URLProtocol {
             url: request.url!,
             statusCode: stub.statusCode ?? 200,
             httpVersion: "HTTP/1.1",
-            headerFields: nil
+            headerFields: stub.headers.isEmpty ? nil : stub.headers
         )!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         if stub.echoDevice {

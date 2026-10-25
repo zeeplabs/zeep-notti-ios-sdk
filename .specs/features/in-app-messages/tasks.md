@@ -275,13 +275,13 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] `eligible` sends `POST`, the exact path `/v1/apps/<appId>/in-app-messages/eligible`, `Authorization: Bearer <key>`, `Content-Type: application/json; charset=utf-8`, and a body whose keys are exactly `device_id` and `token`
-- [ ] `report` sends the path `/v1/apps/<appId>/in-app-messages/<messageId>/events` with a body of exactly `device_id`, `token`, `event_id`, `type`, `occurred_at` (`yyyy-MM-dd'T'HH:mm:ss.SSS'Z'` UTC) and, only when set, `button_id` (click only) or `reason` (dismiss only); a path component with a space or `/` is percent-encoded as one segment
-- [ ] Eligible: a 2xx with a valid body gives `messages`, a 2xx with an unparseable body gives `transient`; 401 `unauthorized`, 403 `forbidden`, 404, 422 and 400 `terminal(status)`, 408, 500, 503 and a transport error `transient`. Events: 200, 201 and 204 `recorded`, 400, 404, 409, 422 `drop`, 401, 403, 408 as above
-- [ ] 429 with `Retry-After: 7` gives 7, `0` gives 0, ` 120 ` gives 120 (unclamped), `99999999999` gives `Int32.max`; missing, `soon`, `-5`, `1.5` and an HTTP-date give nil
-- [ ] The existing `NottiApiClientTests` still pass unchanged
-- [ ] Gate check passes: quick (`NottiInAppApiClientTests` and `NottiApiClientTests`)
-- [ ] Test count: at least 13 new, total at least B + 65
+- [x] `eligible` sends `POST`, the exact path `/v1/apps/<appId>/in-app-messages/eligible`, `Authorization: Bearer <key>`, `Content-Type: application/json; charset=utf-8`, and a body whose keys are exactly `device_id` and `token`
+- [x] `report` sends the path `/v1/apps/<appId>/in-app-messages/<messageId>/events` with a body of exactly `device_id`, `token`, `event_id`, `type`, `occurred_at` (`yyyy-MM-dd'T'HH:mm:ss.SSS'Z'` UTC) and, only when set, `button_id` (click only) or `reason` (dismiss only); a path component with a space or `/` is percent-encoded as one segment
+- [x] Eligible: a 2xx with a valid body gives `messages`, a 2xx with an unparseable body gives `transient`; 401 `unauthorized`, 403 `forbidden`, 404, 422 and 400 `terminal(status)`, 408, 500, 503 and a transport error `transient`. Events: 200, 201 and 204 `recorded`, 400, 404, 409, 422 `drop`, 401, 403, 408 as above
+- [x] 429 with `Retry-After: 7` gives 7, `0` gives 0, ` 120 ` gives 120 (unclamped), `99999999999` gives `Int32.max`; missing, `soon`, `-5`, `1.5` and an HTTP-date give nil
+- [x] The existing `NottiApiClientTests` still pass unchanged
+- [x] Gate check passes: quick (`NottiInAppApiClientTests` and `NottiApiClientTests`)
+- [x] Test count: at least 13 new, total at least B + 65
 
 **Tests**: unit
 **Gate**: quick
