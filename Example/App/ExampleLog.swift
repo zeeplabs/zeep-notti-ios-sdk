@@ -20,6 +20,7 @@ enum ExampleCall: String, CaseIterable {
     case addListeners
     case removeListeners
     case takeInitialClick
+    case trackEvent
 }
 
 enum CallOutcome: String {
@@ -33,6 +34,14 @@ enum PayloadKind: String {
     case clicked
 }
 
+/// The type of an In-App click's action, the only part of a click the log shows. `noAction` covers a
+/// button without a valid action and a `push_permission` button.
+enum InAppActionKind: String, CaseIterable {
+    case url
+    case deeplink
+    case noAction = "none"
+}
+
 /// Everything the log can say. There is no case that carries a free string to print:
 /// SDK data (token, email, phone, client key, payload values) cannot reach a row
 /// (EXR-03, LGPD). Payload keys are the one string input, and only keys from
@@ -42,6 +51,7 @@ enum LogEvent {
     case call(ExampleCall, CallOutcome)
     case permission(granted: Bool)
     case payload(PayloadKind, keys: [String])
+    case inAppClick(action: InAppActionKind)
 
     var text: String {
         switch self {
@@ -57,6 +67,8 @@ enum LogEvent {
             var parts = known
             if otherCount > 0 { parts.append("+\(otherCount) other") }
             return "\(kind.rawValue): keys [\(parts.joined(separator: ", "))]"
+        case let .inAppClick(action):
+            return "in-app click: action \(action.rawValue)"
         }
     }
 }

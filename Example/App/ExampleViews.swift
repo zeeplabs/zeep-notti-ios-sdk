@@ -135,6 +135,11 @@ struct NotificationsView: View {
                     .disabled(!model.isListening)
                 Button("Take initial click") { model.takeInitialClick() }
             }
+            Section("In-App messages") {
+                Button("Track event") { model.trackEvent() }
+                Text("The click listener is added at Initialize and logs the action type only.")
+                    .foregroundColor(.secondary)
+            }
             if model.manualForwardingEnabled {
                 Section("Manual forwarding") {
                     Text("NottiDisableSwizzling is on: the app delegate forwards the five delegate calls to the SDK.")

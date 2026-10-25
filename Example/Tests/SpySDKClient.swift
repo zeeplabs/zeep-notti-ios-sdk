@@ -11,6 +11,10 @@ final class SpySDKClient: ExampleSDKClient {
     var receivedHandler: PayloadHandler?
     var clickedHandler: PayloadHandler?
     var deviceIdHandler: (@MainActor @Sendable (String) -> Void)?
+    var inAppClickHandler: InAppClickHandler?
+    /// Counted apart from `calls`: `initialize` adds the In-App listener first, and the older tests assert `calls`
+    /// for `initialize` alone.
+    private(set) var inAppListenerAdds = 0
     private(set) var removedListeners = 0
     private var level = ExampleLogLevel.error
 
@@ -55,4 +59,9 @@ final class SpySDKClient: ExampleSDKClient {
         return { [weak self] in self?.removedListeners += 1 }
     }
     func takeInitialClick() -> [String]? { note("takeInitialClick"); return initialClickKeys }
+    func trackEvent(_ name: String) { note("trackEvent", ["event": name]) }
+    func addInAppClickListener(_ handler: @escaping InAppClickHandler) -> () -> Void {
+        inAppListenerAdds += 1; inAppClickHandler = handler
+        return { [weak self] in self?.removedListeners += 1 }
+    }
 }

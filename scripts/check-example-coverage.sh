@@ -3,7 +3,8 @@
 #
 # Members come from .specs/codebase/PUBLIC_SURFACE.txt, so a new public member fails this check until the
 # example calls it. Scope: `Notti`, `Notti.User`, `Notti.Notifications` (including the delegate forwarding
-# methods), `Notti.Options`, the payload fields, `NottiSubscription.remove` and the two
+# methods), `Notti.trackEvent` and `Notti.InAppMessages.addClickListener` (the click's fields are read, not
+# called, and the example logs only the action type), `Notti.Options`, the payload fields, `NottiSubscription.remove` and the two
 # `NottiNotificationServiceExtension` methods. The Objective-C mirror (Public/ObjC) is out of scope:
 # `NottiSDKObjCTests` and `NottiSDKExtensionObjCTests` already compile it.
 #
@@ -98,6 +99,7 @@ members="$(awk -F': ' '
     if (n == "") next
     if (file ~ /\/Public\/ObjC\//) next
     if (file ~ /Public\/Notti\.swift$/ || file ~ /Public\/NottiNotifications\+Delegate\.swift$/) print "sdk " n
+    else if (file ~ /Public\/NottiInAppMessages\.swift$/ && line ~ /func[[:space:]]/) print "sdk " n
     else if (file ~ /Facade\/NottiNotificationPayload\.swift$/) print "payload " n
     else if (file ~ /Facade\/NottiListenerHub\.swift$/) print "subscription " n
     else if (file ~ /NottiSDKExtension\/NottiNotificationServiceExtension\.swift$/) print "nse " n
