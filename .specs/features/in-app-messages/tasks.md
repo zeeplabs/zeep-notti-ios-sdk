@@ -249,15 +249,15 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] Records survive a new store over the same suite, in insertion order, with the same `id`, `eventId`, `appId`, `occurredAtMs`, `buttonId`, `reason`; `id` and `eventId` are distinct lowercase UUID strings
-- [ ] A JSON fixture written byte for byte in RN 0.8.0's format (literal keys `id`, `eventId`, `appId`, `messageId`, `type`, `buttonId`, `reason`, `occurredAtMs`) under the literal key `notti_pending_inapp_events` decodes into the same records; the data the store writes has exactly those keys
-- [ ] The 101st record drops the oldest; `expire` with an injected `now` drops a record 7 days plus 1 ms old and keeps one exactly 7 days old; `enqueue` drops expired records first
-- [ ] The stored JSON contains no `token` and no `device_id`
-- [ ] `purgeOtherApps` removes the records of other apps, keeps the current app's in order, and is a no-op when all match
-- [ ] A value that does not decode (corrupt bytes, a record without `appId`) is removed, the queue reads empty, and one `.warn` without content is logged
-- [ ] The CTR key `notti_pending_events` is untouched by every operation
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 13 new, total at least B + 52
+- [x] Records survive a new store over the same suite, in insertion order, with the same `id`, `eventId`, `appId`, `occurredAtMs`, `buttonId`, `reason`; `id` and `eventId` are distinct lowercase UUID strings
+- [x] A JSON fixture written byte for byte in RN 0.8.0's format (literal keys `id`, `eventId`, `appId`, `messageId`, `type`, `buttonId`, `reason`, `occurredAtMs`) under the literal key `notti_pending_inapp_events` decodes into the same records; the data the store writes has exactly those keys
+- [x] The 101st record drops the oldest; `expire` with an injected `now` drops a record 7 days plus 1 ms old and keeps one exactly 7 days old; `enqueue` drops expired records first
+- [x] The stored JSON contains no `token` and no `device_id`
+- [x] `purgeOtherApps` removes the records of other apps, keeps the current app's in order, and is a no-op when all match
+- [x] A value that does not decode (corrupt bytes, a record without `appId`) is removed, the queue reads empty, and one `.warn` without content is logged
+- [x] The CTR key `notti_pending_events` is untouched by every operation
+- [x] Gate check passes: quick
+- [x] Test count: at least 13 new, total at least B + 52
 
 **Tests**: unit
 **Gate**: quick
