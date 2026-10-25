@@ -199,8 +199,11 @@ final class InAppFakePresenter: NottiInAppPresenting {
         onPresent?(display)
     }
 
+    var onClose: ((String) -> Void)?
+
     func close(displayId: String) {
         lock.withLock { closedIds.append(displayId) }
+        onClose?(displayId)
     }
 
     func teardown(_ display: NottiInAppDisplay) {

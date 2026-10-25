@@ -34,25 +34,6 @@ enum NottiInAppFetchState: Equatable {
     case gaveUp(transient: Bool)
 }
 
-enum NottiInAppDisplayState: Equatable {
-    case preparing
-    case visible
-    case closed
-}
-
-/// The one message that is pending or visible. `id` is local (a UUID, not the message id) and names the
-/// presenter's callbacks for this display. `state` is read and written on the engine queue only.
-final class NottiInAppDisplay {
-    let id: String
-    let message: NottiInAppMessage
-    var state: NottiInAppDisplayState = .preparing
-
-    init(id: String, message: NottiInAppMessage) {
-        self.id = id
-        self.message = message
-    }
-}
-
 /// Shows and removes the overlay; every call comes from the main thread. `close` removes a display after
 /// its terminal event; `teardown` removes one silently (session ended before it was visible, config
 /// change). Both must be idempotent.
@@ -113,14 +94,16 @@ final class NottiInAppEngine {
         }
     }
 
-    private let store: NottiInAppEventStore
+    let store: NottiInAppEventStore
     private let identity: () -> NottiInAppIdentity?
-    private let presenter: NottiInAppPresenting
-    private let scheduler: NottiInAppScheduling
-    private let now: () -> Date
-    private let uuid: () -> String
-    private let mainDispatcher: NottiMainDispatcher
+    let presenter: NottiInAppPresenting
+    let scheduler: NottiInAppScheduling
+    let now: () -> Date
+    let uuid: () -> String
+    let mainDispatcher: NottiMainDispatcher
     private let clientFactory: (NottiInAppConfig) -> NottiInAppTransport?
+    /// Hands a click to the host listeners; false when none is registered (IAM-25).
+    let emitClick: (NottiInAppClick) -> Bool
 
     // MARK: State (engine queue only)
 
@@ -152,7 +135,10 @@ final class NottiInAppEngine {
     private var passRunning = false
     private var passQueue: [(@escaping () -> Void) -> Void] = []
     private(set) var selector = NottiInAppSelector()
-    private(set) var display: NottiInAppDisplay?
+    /// The one pending or visible display (IAM-09); written by the display extension too.
+    var display: NottiInAppDisplay?
+    /// The `push_permission` platform action (D15); set through `setPushPermissionPort`, read here only.
+    var pushPermissionPort: (() -> Void)?
 
     init(
         store: NottiInAppEventStore,
@@ -162,7 +148,8 @@ final class NottiInAppEngine {
         now: @escaping () -> Date = Date.init,
         uuid: @escaping () -> String = { UUID().uuidString.lowercased() },
         mainDispatcher: @escaping NottiMainDispatcher = { DispatchQueue.main.async(execute: $0) },
-        clientFactory: @escaping (NottiInAppConfig) -> NottiInAppTransport? = NottiInAppEngine.clientFactory()
+        clientFactory: @escaping (NottiInAppConfig) -> NottiInAppTransport? = NottiInAppEngine.clientFactory(),
+        emitClick: @escaping (NottiInAppClick) -> Bool = { _ in false }
     ) {
         self.store = store
         self.identity = identity
@@ -172,6 +159,7 @@ final class NottiInAppEngine {
         self.uuid = uuid
         self.mainDispatcher = mainDispatcher
         self.clientFactory = clientFactory
+        self.emitClick = emitClick
     }
 
     // MARK: - Inputs (any thread)
@@ -212,6 +200,8 @@ final class NottiInAppEngine {
             if reported, self.config != nil, !self.sessionOpen {
                 self.openSession()
             }
+            self.display?.clock?.setForeground(true)
+            self.scheduleClockCheck()
             self.requestFlush()
         }
     }
@@ -222,7 +212,10 @@ final class NottiInAppEngine {
     }
 
     func appBackgrounded() {
-        scheduler.execute { self.appForeground = false }
+        scheduler.execute {
+            self.appForeground = false
+            self.display?.clock?.setForeground(false)
+        }
     }
 
     /// Network regained: flush, and resume a fetch that gave up on a transient failure (IAM-52).
@@ -308,7 +301,10 @@ final class NottiInAppEngine {
 
     private func present(_ message: NottiInAppMessage?) {
         guard let message = message else { return }
-        let created = NottiInAppDisplay(id: uuid(), message: message)
+        let now = self.now
+        let clock = NottiInAppDisplayClock.make(seconds: message.dismissAfterSeconds) { NottiInAppEngine.milliseconds(now()) }
+        clock?.setForeground(appForeground)
+        let created = NottiInAppDisplay(id: uuid(), message: message, clock: clock)
         display = created
         mainDispatcher { self.presenter.present(created) }
     }
@@ -459,7 +455,7 @@ final class NottiInAppEngine {
     // MARK: - Event flush (IAM-31, IAM-33)
 
     /// Single-flight and coalesced: a request during a run asks for one more pass.
-    private func requestFlush() {
+    func requestFlush() {
         guard config != nil, client != nil, !keyRejected else { return }
         if let pausedUntil = eventsPauseUntil, now() < pausedUntil { return }
         if flushRunning {
