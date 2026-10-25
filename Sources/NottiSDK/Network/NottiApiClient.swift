@@ -139,7 +139,7 @@ class NottiApiClient {
     /// `deviceId` containing a space or `/` (a misbehaving/compromised
     /// backend) made `URL(string:)` return nil forever after, permanently
     /// bricking every later PATCH for that device with no recovery path.
-    private static func percentEncodedPathComponent(_ raw: String) -> String? {
+    static func percentEncodedPathComponent(_ raw: String) -> String? {
         raw.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed.subtracting(CharacterSet(charactersIn: "/")))
     }
 
