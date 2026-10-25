@@ -152,7 +152,8 @@ final class NottiInAppPrivacyTests: XCTestCase {
     private var lines: [String] { logs.messages }
 
     private func sources(under relative: String) throws -> [(path: String, text: String)] {
-        let root = InAppViewFixtures.repoRoot
+        // Both sides resolved: the enumerator reports `/private/tmp/...` for a checkout under `/tmp`.
+        let root = InAppViewFixtures.repoRoot.resolvingSymlinksInPath()
         let base = root.appendingPathComponent(relative)
         guard let walker = FileManager.default.enumerator(at: base, includingPropertiesForKeys: nil) else {
             XCTFail("missing \(relative)")
@@ -160,7 +161,7 @@ final class NottiInAppPrivacyTests: XCTestCase {
         }
         var found: [(String, String)] = []
         for case let url as URL in walker where ["swift", "m", "h"].contains(url.pathExtension) {
-            let path = String(url.path.dropFirst(root.path.count + 1))
+            let path = String(url.resolvingSymlinksInPath().path.dropFirst(root.path.count + 1))
             found.append((path, try String(contentsOf: url, encoding: .utf8)))
         }
         XCTAssertFalse(found.isEmpty, relative)
