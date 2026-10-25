@@ -102,6 +102,8 @@ received.remove()
 clicked.remove()
 ```
 
+A tap goes to the clicked listeners when at least one is attached at that moment. A tap that arrives while none is attached is kept, and `takeInitialClick()` returns the latest kept tap once. On UIKit the launch tap arrives after `application(_:didFinishLaunchingWithOptions:)` returns, so a listener added there receives it live and `takeInitialClick()` returns `nil`; with no listener yet, a later tap is also returned by `takeInitialClick()`. Handle a launch from both paths, whichever comes first.
+
 Remove a listener with `remove()` on the returned subscription. `Notti.addDeviceIdChangedListener` calls your handler on the main thread each time the device id changes, and is removed the same way.
 
 ## In-App Messages

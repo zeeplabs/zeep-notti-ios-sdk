@@ -168,8 +168,11 @@ public enum Notti {
         }
 
         /// Calls `handler` on the main thread when the user taps a notification
-        /// while the app runs. The tap that launched the app is not replayed:
-        /// use `takeInitialClick()`.
+        /// while at least one clicked listener is attached. A tap that arrives
+        /// with none attached is not replayed: it is kept for
+        /// `takeInitialClick()`. On UIKit the launch tap arrives after
+        /// `didFinishLaunching` returns, so a listener added there receives it
+        /// live. Handle a launch from both paths, whichever comes first.
         @discardableResult
         public static func addClickedListener(
             _ handler: @escaping (NottiNotificationPayload) -> Void
@@ -177,8 +180,9 @@ public enum Notti {
             NottiFacade.shared.addClickedListener(handler)
         }
 
-        /// The notification the user tapped to launch the app, once; `nil`
-        /// afterwards.
+        /// The latest tap that arrived while no clicked listener was attached
+        /// (normally the one that launched the app), once; `nil` afterwards and
+        /// when a listener already received it.
         public static func takeInitialClick() -> NottiNotificationPayload? {
             NottiFacade.shared.takeInitialClick()
         }

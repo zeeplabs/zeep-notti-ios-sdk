@@ -191,8 +191,11 @@ final class NottiRuntime {
     /// Returns the live core, or builds an uninitialized one and stores it as the
     /// current core. Lets the facade call `getDeviceId`, `setEmail` and `setPhone`
     /// before `initialize`, as RN's eagerly built core does (DPF-19). An
-    /// uninitialized core registers no observers and sends nothing. `start` still
-    /// invalidates whichever core is current and installs a new one.
+    /// uninitialized core sends nothing, but it is not inert (RN parity): it
+    /// registers its foreground/background observers, and when the app is active
+    /// it opens the process session gate, writes session telemetry and reports
+    /// the session start to the In-App engine; later cores adopt that session.
+    /// `start` still invalidates whichever core is current and installs a new one.
     func ensureCore() -> NottiCore {
         lifecycleLock.lock()
         defer { lifecycleLock.unlock() }

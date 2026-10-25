@@ -185,7 +185,9 @@ public final class NottiNotificationsObjC: NSObject {
         NottiFacade.shared.addClickedListener { handler($0.objcDictionary) }
     }
 
-    /// The notification that launched the app, once; `nil` afterwards.
+    /// The latest tap that arrived while no clicked listener was attached
+    /// (normally the launch tap), once; `nil` afterwards and when a listener
+    /// already received it.
     @objc(takeInitialClick)
     public static func takeInitialClick() -> NSDictionary? {
         NottiFacade.shared.takeInitialClick()?.objcDictionary

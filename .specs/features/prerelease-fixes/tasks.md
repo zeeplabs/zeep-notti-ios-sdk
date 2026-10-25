@@ -2,7 +2,7 @@
 
 **Spec**: `.specs/features/prerelease-fixes/spec.md` (design inline, D1-D9)
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: Execute in progress
+**Status**: Execute done (T1-T4, T6-T12; T5 dropped), Verifier pending
 
 ---
 
@@ -285,9 +285,9 @@ Sequential order used in Execute: T1 → T2 → ... → T12.
 
 **Done when**:
 
-- [ ] Docs match the buffer's behavior
-- [ ] Full gate green, counts not lower than baseline
-- [ ] Gate passes: full
+- [x] Docs match the buffer's behavior
+- [x] Full gate green, counts not lower than baseline
+- [x] Gate passes: full
 
 **Tests**: none
 **Gate**: full
