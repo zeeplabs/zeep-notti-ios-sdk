@@ -252,4 +252,100 @@ final class NottiObjCBridgeTests: XCTestCase {
         XCTAssertNil(NottiNotificationsObjC.takeInitialClick())
         XCTAssertTrue(StubURLProtocol.recordedRequests().isEmpty)
     }
+
+    // MARK: - In-App (IAM-24, IAM-44)
+
+    func test_inAppClickDictionaryHasExactlyThreeKeysAndALinkAction() {
+        let clicks = Log()
+        let subscription = NottiInAppMessagesObjC.addClickListener { clicks.append($0) }
+        let action = NottiInAppAction(type: .url, value: "https://example.invalid/x?y=1&z=%20#f")
+
+        XCTAssertTrue(runtime.inAppClicks.emit(NottiInAppClick(messageId: "fixture-msg", buttonId: "fixture-btn", action: action)))
+        subscription.remove()
+
+        XCTAssertEqual(clicks.values.count, 1)
+        let dict = clicks.values.first
+        XCTAssertEqual(Set((dict?.allKeys as? [String]) ?? []), ["messageId", "buttonId", "action"])
+        XCTAssertEqual(dict?["messageId"] as? String, "fixture-msg")
+        XCTAssertEqual(dict?["buttonId"] as? String, "fixture-btn")
+        let actionDict = dict?["action"] as? NSDictionary
+        XCTAssertEqual(Set((actionDict?.allKeys as? [String]) ?? []), ["type", "value"])
+        XCTAssertEqual(actionDict?["type"] as? String, "url")
+        XCTAssertEqual(actionDict?["value"] as? String, "https://example.invalid/x?y=1&z=%20#f")
+    }
+
+    func test_inAppClickDeeplinkTypeIsTheContractLiteral() {
+        let clicks = Log()
+        let subscription = NottiInAppMessagesObjC.addClickListener { clicks.append($0) }
+        let action = NottiInAppAction(type: .deeplink, value: "fixture://sentinel")
+
+        _ = runtime.inAppClicks.emit(NottiInAppClick(messageId: "fixture-msg", buttonId: "image", action: action))
+        subscription.remove()
+
+        let actionDict = clicks.values.first?["action"] as? NSDictionary
+        XCTAssertEqual(actionDict?["type"] as? String, "deeplink")
+        XCTAssertEqual(actionDict?["value"] as? String, "fixture://sentinel")
+        XCTAssertEqual(clicks.values.first?["buttonId"] as? String, "image")
+    }
+
+    func test_inAppClickActionIsNSNullWhenNilAndNeverAbsent() {
+        let clicks = Log()
+        let subscription = NottiInAppMessagesObjC.addClickListener { clicks.append($0) }
+
+        _ = runtime.inAppClicks.emit(NottiInAppClick(messageId: "fixture-msg", buttonId: "fixture-perm", action: nil))
+        subscription.remove()
+
+        let dict = clicks.values.first
+        XCTAssertEqual(dict?.count, 3)
+        XCTAssertTrue(dict?["action"] is NSNull, "action is NSNull, not absent")
+        XCTAssertEqual(dict?["buttonId"] as? String, "fixture-perm")
+        XCTAssertFalse(
+            runtime.inAppClicks.emit(NottiInAppClick(messageId: "fixture-msg", buttonId: "fixture-perm", action: nil)),
+            "after remove() the engine is told nobody listens"
+        )
+        XCTAssertEqual(clicks.values.count, 1)
+    }
+
+    func test_objcTrackEventReachesTheEngine() {
+        let scheduler = InAppFakeScheduler()
+        let session = sessions[0]
+        let engine = NottiInAppEngine(
+            store: NottiInAppEventStore(defaults: defaults),
+            identity: { nil },
+            presenter: InAppFakePresenter(),
+            scheduler: scheduler,
+            mainDispatcher: { $0() },
+            clientFactory: { _ in nil }
+        )
+        let isolated = NottiRuntime(
+            defaults: defaults,
+            providers: NottiPlatformProviders(tokenProvider: { _ in }, permissionRequester: { $0(true) }),
+            pathMonitor: FakePathMonitor(),
+            apiClientFactory: { appId, clientKey, baseUrl in
+                NottiApiClient(session: session, baseUrl: baseUrl, appId: appId, clientKey: clientKey, sleeper: { _ in })
+            },
+            sdkVersion: "",
+            startObservers: false,
+            inAppEngine: engine
+        )
+        NottiFacade.setSharedForTesting(NottiFacade(runtime: isolated, dispatcher: { $0() }))
+        defer {
+            NottiFacade.setSharedForTesting(facade)
+            let core = isolated.core
+            isolated.stop()
+            core?.waitForPendingWork(timeout: 20)
+        }
+
+        NottiObjC.trackEvent("fixture_before_initialize")
+        scheduler.drain()
+        XCTAssertEqual(engine.selector.earlyNames, [], "before initialize: a no-op")
+
+        StubURLProtocol.enqueue(.echoDevice())
+        NottiObjC.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        NottiObjC.trackEvent("fixture_event")
+        NottiObjC.trackEvent("  ")
+        scheduler.drain()
+
+        XCTAssertEqual(engine.selector.earlyNames, ["fixture_event"], "kept for the first session; blank ignored")
+    }
 }

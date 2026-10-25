@@ -3,8 +3,9 @@ import UIKit
 import UserNotifications
 
 // Objective-C interop layer (API-13). Swift namespaces (`Notti.User`, ...) are
-// invisible to Objective-C, so these three `NSObject` classes expose the same
-// capabilities under the ObjC names `Notti`, `NottiUser` and `NottiNotifications`.
+// invisible to Objective-C, so these `NSObject` classes expose the same
+// capabilities under the ObjC names `Notti`, `NottiUser`, `NottiNotifications`
+// and `NottiInAppMessages`.
 // The Swift names carry an `ObjC` suffix because `Notti` is the Swift namespace
 // enum. Swift hosts should use `Notti`; these classes exist for Objective-C hosts
 // and the React Native bridge.
@@ -15,6 +16,8 @@ import UserNotifications
 //
 // Notification payloads reach Objective-C as an `NSDictionary` with `title` and
 // `body` (absent when the push has none) and `data` (string keys and values).
+// In-App clicks reach it as an `NSDictionary` with exactly `messageId`,
+// `buttonId` and `action` (`@{type, value}`, or `NSNull`, never absent).
 
 /// Objective-C name: `Notti`. Initialize, identity, location sharing and log level.
 @objc(Notti)
@@ -61,6 +64,29 @@ public final class NottiObjC: NSObject {
     public static var logLevel: NottiLogLevelObjC {
         get { NottiFacade.shared.logLevel }
         set { NottiFacade.shared.logLevel = newValue }
+    }
+
+    /// Reports an app event for In-App messages. Matched on the device: the
+    /// name is never sent, stored or logged. Empty names and calls before
+    /// initialize do nothing.
+    @objc(trackEvent:)
+    public static func trackEvent(_ name: String) {
+        NottiFacade.shared.trackEvent(name)
+    }
+}
+
+/// Objective-C name: `NottiInAppMessages`. Taps on In-App messages.
+@objc(NottiInAppMessages)
+@available(iOSApplicationExtension, unavailable)
+public final class NottiInAppMessagesObjC: NSObject {
+
+    /// `handler` runs on the main thread with `messageId`, `buttonId` and
+    /// `action` (`@{type, value}`, or `NSNull` for a button without a valid
+    /// action and for a `push_permission` button). The SDK never opens the link.
+    @discardableResult
+    @objc(addClickListener:)
+    public static func addClickListener(_ handler: @escaping (NSDictionary) -> Void) -> NottiSubscription {
+        NottiFacade.shared.addInAppClickListener { handler($0.objcDictionary) }
     }
 }
 
@@ -196,5 +222,14 @@ extension NottiNotificationPayload {
         if let title { result["title"] = title }
         if let body { result["body"] = body }
         return result as NSDictionary
+    }
+}
+
+extension NottiInAppClick {
+    /// Exactly `messageId`, `buttonId` and `action`; `action` is `{type, value}` or `NSNull`, never absent
+    /// (RN `InAppClick.payload`).
+    var objcDictionary: NSDictionary {
+        let actionValue: Any = action.map { ["type": $0.type.rawValue, "value": $0.value] as NSDictionary } ?? NSNull()
+        return ["messageId": messageId, "buttonId": buttonId, "action": actionValue] as NSDictionary
     }
 }

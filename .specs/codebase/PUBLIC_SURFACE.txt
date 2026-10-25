@@ -49,9 +49,11 @@ Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func di
 Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
 Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func didRegisterForRemoteNotifications(deviceToken: Data) {
 Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func willPresent(_ notification: UNNotification) -> UNNotificationPresentationOptions {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public final class NottiInAppMessagesObjC: NSObject {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public final class NottiNotificationsObjC: NSObject {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public final class NottiObjC: NSObject {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public final class NottiUserObjC: NSObject {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func addClickListener(_ handler: @escaping (NSDictionary) -> Void) -> NottiSubscription {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func addClickedListener(_ handler: @escaping (NSDictionary) -> Void) -> NottiSubscription {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func addDeviceIdChangedListener(_ handler: @escaping (String) -> Void) -> NottiSubscription {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func addReceivedListener(_ handler: @escaping (NSDictionary) -> Void) -> NottiSubscription {
@@ -74,6 +76,7 @@ Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func setLocationShar
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func setPhone(_ phone: String) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func setSubscription(_ enabled: Bool) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func takeInitialClick() -> NSDictionary? {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func trackEvent(_ name: String) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func willPresent(_ notification: UNNotification) -> UNNotificationPresentationOptions {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static var deviceId: String? {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static var logLevel: NottiLogLevelObjC {
