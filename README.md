@@ -1,14 +1,14 @@
 # NottiSDK for iOS
 
-Native iOS SDK for [Zeep Notti](https://github.com/zeeplabs) push notifications: device registration, user identity, tags, engagement events (`received` / `opened` / `clicked`) and rich media in a Notification Service Extension.
+Native iOS SDK for [Zeep Notti](https://github.com/zeeplabs) push notifications: device registration, user identity, tags, engagement events (`received` / `opened` / `clicked`), rich media in a Notification Service Extension, and In-App Messages.
 
-> **Status: `0.1.0` release candidate.** The code is complete and tested in the Simulator, but the release is not tagged or published until the [device checklist](docs/DEVICE_CHECKLIST.md) passes. It ports `react-native-notti` 0.6.0 to iOS. Do not depend on it in production yet. See [Known limitations](#known-limitations) and the [CHANGELOG](CHANGELOG.md).
+> **Status: `0.1.0` release candidate.** The code is complete and tested in the Simulator, but the release is not tagged or published until the [device checklist](docs/DEVICE_CHECKLIST.md) and the In-App device checklist pass. It ports `react-native-notti` 0.8.0 to iOS, In-App Messages included. Do not depend on it in production yet. See [Known limitations](#known-limitations) and the [CHANGELOG](CHANGELOG.md).
 
 ## Requirements
 
 - iOS 15.0+
 - Xcode 15.3 or later. The extension target uses `nonisolated(unsafe)`, which needs Swift 5.10. Only Xcode 26.6 and 27.1 are tested.
-- A Notti backend (`zeep-notti`) that accepts what the SDK sends: v0.10.0 or later for the device-profile fields and v0.11.0 or later for the `opened` event (the same as `react-native-notti` 0.6.0). An older backend rejects those fields or events and the SDK drops them.
+- A Notti backend (`zeep-notti`) that accepts what the SDK sends: v0.10.0 or later for the device-profile fields, v0.11.0 or later for the `opened` event, v0.23.0 or later for In-App Messages and v0.24.0 or later for the `logout` unlink (see [Known limitations](#known-limitations)). An older backend rejects those fields or events and the SDK drops them.
 - An Apple Developer account with push notifications and an APNs key configured in your Notti app
 
 ## Installation
@@ -81,7 +81,7 @@ Other calls: `Notti.User.setPhone`, `clearEmail`, `clearPhone`, `addTag`, `remov
 
 ## Listeners
 
-Listeners receive the payload of a push that arrived while the app runs (`received`) and of a tap (`clicked`). The SDK never opens a URL: the push `data` reaches your code untouched and you decide what a link means.
+Listeners receive the payload of a push that arrived while the app runs (`received`) and of a tap (`clicked`). The SDK never opens a push URL: the push `data` reaches your code untouched and you decide what a link means. (The one URL the SDK opens is the system notification settings page, for an In-App `push_permission` button: see [In-App Messages](#in-app-messages).)
 
 <!-- snippet:listeners -->
 ```swift
@@ -103,6 +103,43 @@ clicked.remove()
 ```
 
 Remove a listener with `remove()` on the returned subscription. `Notti.addDeviceIdChangedListener` calls your handler on the main thread each time the device id changes, and is removed the same way.
+
+## In-App Messages
+
+> **Register a click listener.** The SDK never opens an In-App link. Without a listener, a tap on a button with a `url` or `deeplink` still reports `click` to Notti and closes the message, but nothing opens, and the SDK logs one warning (level `warn`).
+
+Messages are authored in the Notti dashboard and need `zeep-notti` v0.23.0 or later. The SDK asks the backend once per foreground session, after this process registered the device, which messages this device can see (`POST /v1/apps/<appId>/in-app-messages/eligible`). It shows the first `session_start` message at once and keeps `event` messages in memory until your app reports a matching event. At most one message is visible, and each message shows at most once per session. Whether it shows again in a later session is the backend's decision: the SDK keeps no "already shown" state.
+
+<!-- snippet:in-app -->
+```swift
+// Add it before `Notti.initialize`, so a message shown right after launch already has a listener.
+let inAppClicks = Notti.InAppMessages.addClickListener { click in
+    // nil for a `push_permission` button and for a button without a valid action.
+    guard let action = click.action else { return }
+    // `action.value` is the author's link, untouched. The SDK never opens it: you do.
+    if action.type == .deeplink {
+        print("route the deeplink inside the app")
+    } else {
+        print("open the url in Safari or an in-app browser")
+    }
+}
+
+// Shows the oldest waiting message whose trigger is this event name (exact, case-sensitive).
+Notti.trackEvent("checkout_completed")
+
+inAppClicks.remove()
+```
+
+- **`Notti.trackEvent(_:)`** matches on the device only: the name is never sent, stored or logged. An empty or whitespace-only name does nothing. A call before `Notti.initialize`, or in the background after a session ended, is ignored. A call after `Notti.initialize` and before the first session opens is remembered for that session (up to 32 distinct names), so `initialize` followed by `trackEvent` at launch works. This launch ordering is not yet proven on a device.
+- **The click listener** runs on the main thread for a tap on a button, on a tappable image, or on the body of a `top` or `bottom` message that has buttons (it acts as the first button). `NottiInAppClick` carries `messageId`, `buttonId` (`image` for the image) and `action`: a `NottiInAppAction` with `type` (`url` or `deeplink`) and the untouched `value`, or nil. Keep the returned subscription and call `remove()` to stop.
+- **`push_permission` buttons** run the system permission flow instead of a link: the listener gets the click with `action == nil`, the message closes, and then the SDK asks for push permission if it was never asked, opens the app's notification settings in the Settings app if permission is denied (iOS 16 and later; the app's settings page on iOS 15), and does nothing more if it is already granted. **That settings page is the only URL the SDK ever opens**, and it is a fixed system constant, never author data (one allowlisted file in `scripts/check-no-url-open.sh`). Author `url` and `deeplink` values are never opened. The dashboard cannot target devices with `push_permission` messages yet: the backend needs a per-SDK minimum version first.
+- **Events.** The SDK reports `impression` (once per display, always first), `click` (with the button id) and `dismiss` (reason `close_button`, `swipe`, `outside_tap` or `auto`). They are queued on the device, sent in order with a client-generated `event_id` that survives retries and restarts, and dropped after 7 days; past 100 queued events the oldest is dropped.
+- **Presentation.** Four layouts: `top` and `bottom` bars, a `center` card over a dimmed backdrop, and `full` inside the safe area. Each message has a close control (44 pt, label "Close", or "Fechar" when the first preferred language is Portuguese). Bars dismiss with a swipe, `center` with a tap on the backdrop, and `full` only with the close control or a button. An optional `dismiss_after_seconds` (1 to 300) closes the message on its own; the countdown pauses in the background.
+- **Its own window.** The message shows in a separate `UIWindow` at level `.alert` (above your app's windows, like `react-native-notti`) that never becomes the key window, so it does not take the keyboard focus from your app. Touches outside a bar reach your app. The window follows the root view controller of your key window for supported orientations and the status bar. How it stacks with the keyboard, Control Center and Picture in Picture is not yet proven on a device.
+- **Animation.** A bar slides 24 pt in from its edge while fading in (0.25 s); `center` and `full` fade in (0.25 s); every exit fades out in 0.2 s, and touches pass through while it does. With Reduce Motion on, entrance and exit are a 0.15 s cross-fade with no movement.
+- **Plain text only.** `title` and `body` are shown character for character: HTML, Markdown and links are not rendered. Colors from the dashboard (`#RRGGBB`) are applied as sent; an invalid value falls back to the default, and the defaults follow dark mode. Text scales with Dynamic Type; long text scrolls while the close control and the buttons stay reachable.
+- **Accessibility.** The title is a header, followed by the body and the buttons. `center` and `full` are modal for VoiceOver, take the focus, and close with the escape gesture (two-finger Z) as `close_button`; bars are announced and do not take the focus.
+- **Images.** Only `https` images, at most 5 MiB, downloaded without your client key, token or cookies. If the image is not ready within 3 seconds the message shows without it.
 
 ## Rich media (Notification Service Extension)
 
@@ -214,6 +251,10 @@ The SDK is usable from Objective-C through the same module. The names below come
 [NottiUser addTag:@"plan" value:@"premium"];
 NottiSubscription *sub = [NottiNotifications addClickedListener:^(NSDictionary *payload) { /* ... */ }];
 [sub remove];
+
+[Notti trackEvent:@"checkout_completed"];
+// payload: messageId, buttonId, action (@{@"type": @"url" or @"deeplink", @"value": ...} or NSNull)
+NottiSubscription *clicks = [NottiInAppMessages addClickListener:^(NSDictionary *payload) { /* ... */ }];
 ```
 
 ## Data the SDK handles
@@ -222,7 +263,7 @@ This section is derived from the code. Re-read it against `Sources/` before each
 
 ### Sent to the Notti backend
 
-The base URL is the production host named in [Quick start](#quick-start) unless you pass `Notti.Options(baseUrl:)`. Requests go to `/v1/apps/<appId>/devices` (registration), `/v1/apps/<appId>/devices/<deviceId>` (every later update, so the device id travels in the path) and `/v1/apps/<appId>/notifications/<id>/events`, authenticated with your client key. Every device update also carries the push `token`.
+The base URL is the production host named in [Quick start](#quick-start) unless you pass `Notti.Options(baseUrl:)`. Requests go to `/v1/apps/<appId>/devices` (registration), `/v1/apps/<appId>/devices/<deviceId>` (every later update, so the device id travels in the path), `/v1/apps/<appId>/notifications/<id>/events`, `/v1/apps/<appId>/in-app-messages/eligible` and `/v1/apps/<appId>/in-app-messages/<messageId>/events`, authenticated with your client key. Every device update also carries the push `token`.
 
 | When | Fields |
 |---|---|
@@ -235,6 +276,8 @@ The base URL is the production host named in [Quick start](#quick-start) unless 
 | Sessions | `first_session_at`, `last_session_at`, `session_count`, `session_time_seconds` |
 | Location sharing on, and your app already holds location permission | `country` only (`null` when you turn sharing off) |
 | A push is received, opened or clicked | `delivery_id`, `type` (`received`, `opened`, `clicked`), `token`, reported under the notification id |
+| In-App fetch, once per foreground session | `device_id`, `token` |
+| An In-App message is shown, tapped or closed | `device_id`, `token`, `event_id`, `type` (`impression`, `click`, `dismiss`), `occurred_at`, `button_id` (click only, the author's id), `reason` (dismiss only, a fixed value), reported under the message id |
 
 Do not put personal data in tag keys or values unless your own basis for processing covers it.
 
@@ -244,15 +287,15 @@ Country is resolved on the device by reverse-geocoding a location fix that your 
 
 `UserDefaults` suite `notti_prefs`, unencrypted. The keys are:
 
-`notti_device_id`, `notti_last_token`, `notti_external_user_id`, `notti_subscribed`, `notti_tags`, `notti_app_version`, `notti_first_session_at_ms`, `notti_last_session_at_ms`, `notti_session_count`, `notti_session_time_ms`, `notti_session_started_at_ms`, `notti_session_last_seen_at_ms`, `notti_location_sharing_enabled`, `notti_pending_country_clear`, `notti_pending_external_user_id_clear`, `notti_last_synced_country`, `notti_last_synced_device_os`, `notti_last_synced_device_model`, `notti_last_synced_sdk_version`, `notti_last_synced_timezone_id`, `notti_last_synced_language`, `notti_last_synced_permission_status`, `notti_last_unsubscribed_at_ms`, `notti_pending_unsubscribe_at_ms`, `notti_pending_permission_unsubscribe_at_ms`, `notti_email`, `notti_phone`, `notti_last_synced_email`, `notti_last_synced_phone`, `notti_profile_field_ack_migrated`, `notti_pending_events`.
+`notti_device_id`, `notti_last_token`, `notti_external_user_id`, `notti_subscribed`, `notti_tags`, `notti_app_version`, `notti_first_session_at_ms`, `notti_last_session_at_ms`, `notti_session_count`, `notti_session_time_ms`, `notti_session_started_at_ms`, `notti_session_last_seen_at_ms`, `notti_location_sharing_enabled`, `notti_pending_country_clear`, `notti_pending_external_user_id_clear`, `notti_last_synced_country`, `notti_last_synced_device_os`, `notti_last_synced_device_model`, `notti_last_synced_sdk_version`, `notti_last_synced_timezone_id`, `notti_last_synced_language`, `notti_last_synced_permission_status`, `notti_last_unsubscribed_at_ms`, `notti_pending_unsubscribe_at_ms`, `notti_pending_permission_unsubscribe_at_ms`, `notti_email`, `notti_phone`, `notti_last_synced_email`, `notti_last_synced_phone`, `notti_profile_field_ack_migrated`, `notti_pending_events`, `notti_pending_inapp_events`.
 
-The keys are the same as in `react-native-notti` 0.6.0, plus `notti_pending_external_user_id_clear` from 0.8.0 (AD-002 and AD-018 in `.specs/project/STATE.md`). That key is a flag with no personal data: a `logout` unlink the backend has not acknowledged yet.
+The keys are the same as in `react-native-notti` 0.8.0 (AD-017 and AD-018 in `.specs/project/STATE.md`). `notti_pending_external_user_id_clear` is a flag with no personal data: a `logout` unlink the backend has not acknowledged yet. `notti_pending_inapp_events` is the In-App event queue (message id, event type, button id or dismiss reason, time and app id; no token, device id, message text or event name), in the same format as `react-native-notti`, so pending events carry over when an app moves from the React Native module to this SDK.
 
-Logs go through one logger, default level `error`. They never contain email, phone, push token, external user id or tag values, and errors are logged as `domain#code`.
+Logs go through one logger, default level `error`. They never contain email, phone, push token, device id, external user id or tag values, nor In-App message ids, titles, bodies, button labels, links, image URLs or `trackEvent` names, and errors are logged as `domain#code`.
 
 ### Privacy manifests
 
-`NottiSDK` ships `PrivacyInfo.xcprivacy` with `NSPrivacyTracking` false and no tracking domains. It declares the required-reason API `UserDefaults` (`CA92.1`) and these collected data types, all linked and none used for tracking: Device ID, User ID, Email Address, Phone Number, Coarse Location, Product Interaction, Other Diagnostic Data and Other Data Types. Purposes are App Functionality for every type except Product Interaction, which declares Analytics only; Coarse Location declares both. `NottiSDKExtension` ships its own manifest with no collected data and no required-reason API.
+`NottiSDK` ships `PrivacyInfo.xcprivacy` with `NSPrivacyTracking` false and no tracking domains. It declares the required-reason API `UserDefaults` (`CA92.1`) and these collected data types, all linked and none used for tracking: Device ID, User ID, Email Address, Phone Number, Coarse Location, Product Interaction, Other Diagnostic Data and Other Data Types. Purposes are App Functionality for every type except Product Interaction, which declares Analytics only; Coarse Location declares both. `NottiSDKExtension` ships its own manifest with no collected data and no required-reason API. In-App Messages add no data type: their `impression`, `click` and `dismiss` events are Product Interaction, and the device id and push token sent with each In-App request are Device ID.
 
 Other Diagnostic Data and Other Data Types are a best-fit choice for fields Apple's list does not name. Confirm them with your privacy owner.
 
@@ -262,7 +305,7 @@ Your app's privacy answers must cover what the SDK collects in your configuratio
 
 ### LGPD
 
-This README describes what the SDK does. It is not legal advice and does not state that your use is compliant with the LGPD. Before shipping, have your legal and privacy teams review the data above, the legal basis, the notice shown to users, and retention and deletion in your Notti backend.
+This README describes what the SDK does. It is not legal advice and does not state that your use is compliant with the LGPD. Before shipping, have your legal and privacy teams review the data above, the legal basis, the notice shown to users, and retention and deletion in your Notti backend. That review includes In-App Messages: each In-App request carries the device id and the push token, and each message the user sees, taps or closes becomes an event linked to the device record. `trackEvent` names stay on the device.
 
 ## Known limitations
 
@@ -274,6 +317,9 @@ This README describes what the SDK does. It is not legal advice and does not sta
 - **Legacy-only delegates get no silent-push `received`.** A host app delegate that implements only `application(_:didReceiveRemoteNotification:)` (not the `fetchCompletionHandler` variant) is not given a replacement, so a silent push produces no `received` event. Implement the modern method or use the manual API.
 - **Double observation.** If your own delegate overrides a push callback and calls `super`, the SDK can observe the same callback twice.
 - **No `received` for visible pushes without `notification_id`.** A push from another sender, or one without that field, is not reported as `received`.
+- **In-App Messages on a device.** Rendering, VoiceOver, the window level against the keyboard, Control Center and Picture in Picture, legacy apps without scenes, iPad multitasking, the `push_permission` settings jump and the launch ordering of `initialize`, `trackEvent` and the first session are tested in the Simulator only until the In-App device checklist passes.
+- **`push_permission` messages are not delivered yet.** The backend has a single SDK minimum version for them, empty today, so no device receives them until `zeep-notti` adds a per-SDK minimum.
+- **In-App `403` does not re-register.** On a `403` from the In-App routes the SDK logs one warning and stops In-App on this device until the next registration; it does not re-register as the server contract suggests, and it keeps the queued events.
 - **No consent API in 0.1.0.** There is no call to hold collection until the user consents. Gate `Notti.initialize` and `Notti.login` yourself.
 - **Personal data in `UserDefaults`.** Email, phone, external user id and tags are stored unencrypted in the `notti_prefs` suite.
 - **No `Retry-After`.** A request is tried up to 5 times, with 2, 4, 8 and 16 second waits between attempts. Only network errors, 5xx, 408, 429 and (at registration) a 2xx without a valid device body are retried; other 4xx are final. Events that use up their attempts stay queued and are tried again at a later flush. A `Retry-After` header is ignored.
@@ -281,7 +327,7 @@ This README describes what the SDK does. It is not legal advice and does not sta
 
 ## Example app
 
-`Example/` is a SwiftUI app and a Notification Service Extension that call every public member. It needs [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`). From `Example/`, run `xcodegen generate --spec project.yml` for SPM, or `xcodegen generate --spec project-pods.yml` and `NOTTI_LINKAGE=static|libs|dynamic pod install` for CocoaPods, and open the project or the `.xcworkspace`. The app starts uninitialized: tap **Initialize** on the Setup tab. It needs an `Example.local.xcconfig` with your own app id and key; without it the app reads `fixture` and never calls the SDK. The README snippets are excerpts of files under `Example/`, checked by `scripts/check-readme-snippets.sh`.
+`Example/` is a SwiftUI app and a Notification Service Extension that call every public member. It needs [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`). From `Example/`, run `xcodegen generate --spec project.yml` for SPM, or `xcodegen generate --spec project-pods.yml` and `NOTTI_LINKAGE=static|libs|dynamic pod install` for CocoaPods, and open the project or the `.xcworkspace`. The app starts uninitialized: tap **Initialize** on the Setup tab (it also adds the In-App click listener, which logs only the action type). The Push tab has a **Track event** button that calls `Notti.trackEvent("example_event")`. It needs an `Example.local.xcconfig` with your own app id and key; without it the app reads `fixture` and never calls the SDK. The README snippets are excerpts of files under `Example/`, checked by `scripts/check-readme-snippets.sh`.
 
 ## License
 

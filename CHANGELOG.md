@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [0.1.0] - TBD
 
-First release. It is a native port of `react-native-notti` 0.6.0 for iOS, with the same backend contract and the same on-device storage. The date is set on release day, after the [device checklist](docs/DEVICE_CHECKLIST.md) passes.
+First release. It is a native port of `react-native-notti` 0.8.0 for iOS, In-App Messages included, with the same backend contract and the same on-device storage. The date is set on release day, after the [device checklist](docs/DEVICE_CHECKLIST.md) and the In-App device checklist pass.
 
 ### Added
 
@@ -18,6 +18,8 @@ First release. It is a native port of `react-native-notti` 0.6.0 for iOS, with t
 - Rich media in a Notification Service Extension (`NottiSDKExtension`, class `NottiNotificationServiceExtension`) with a 20 second download deadline and an expiry fallback.
 - Privacy manifests for both products. `NottiSDK` declares Device ID, User ID, Email Address, Phone Number, Coarse Location, Product Interaction, Other Diagnostic Data and Other Data Types (linked, no tracking); `NottiSDKExtension` declares no collected data and no required-reason API.
 - Distribution through Swift Package Manager (products `NottiSDK`, `NottiSDKExtension`) and CocoaPods (two root pods, `NottiSDK` and `NottiSDKExtension`), with static libraries, static frameworks and dynamic frameworks.
+- In-App Messages (needs `zeep-notti` v0.23.0 or later): one `eligible` fetch per foreground session after this process registered the device; `top`, `bottom`, `center` and `full` layouts in a dedicated non-key window at level `.alert`; plain text only, dashboard colors with safe fallbacks, Dynamic Type, VoiceOver (escape gesture closes `center` and `full`) and Reduce Motion; `https` images up to 5 MiB with a 3 second budget; auto dismiss; `impression`, `click` and `dismiss` events in a persistent ordered queue with client-generated `event_id`s. New API: `Notti.trackEvent(_:)` (matched on the device, never sent) and `Notti.InAppMessages.addClickListener(_:)` delivering `NottiInAppClick` (`messageId`, `buttonId`, `action: NottiInAppAction?`); Objective-C `[Notti trackEvent:]` and `[NottiInAppMessages addClickListener:]` with an `NSDictionary` (`messageId`, `buttonId`, `action` as `{type, value}` or `NSNull`).
+- `push_permission` In-App buttons: the SDK asks for push permission when it was never asked, and when permission is denied opens the system notification settings (`UIApplication.openNotificationSettingsURLString` on iOS 16+, `openSettingsURLString` on iOS 15). This fixed system URL is the only URL the SDK opens; author `url` and `deeplink` actions are never opened and reach the host through the click listener.
 - Example app (`Example/`) that calls every public member, built through SPM and CocoaPods, and an integrator README whose snippets are checked against the example sources.
 
 ### Known limitations
@@ -35,10 +37,14 @@ First release. It is a native port of `react-native-notti` 0.6.0 for iOS, with t
 - Email, phone, external user id and tags are stored unencrypted in `UserDefaults` (suite `notti_prefs`).
 - A request is tried up to 5 times with 2, 4, 8 and 16 second waits; only network errors, 5xx, 408 and 429 are retried, and `Retry-After` is ignored.
 - Location sharing needs your app to hold location permission; the SDK never requests it.
+- In-App Messages are tested in the Simulator only: rendering, VoiceOver, the window level against the keyboard, Control Center and Picture in Picture, legacy apps without scenes, iPad multitasking, the `push_permission` settings jump and the launch ordering of `initialize`, `trackEvent` and the first session wait for the In-App device checklist.
+- Without an In-App click listener, a tap on a link button reports `click` and closes the message but opens nothing.
+- On `403` from the In-App routes the SDK does **not** re-register as the server contract suggests: it logs one warning, stops In-App on the device until the next registration and keeps the queued events (same as `react-native-notti` 0.8.0).
+- `push_permission` messages reach no device until `zeep-notti` adds a per-SDK minimum version for them.
 
-### Migration notes from `react-native-notti` 0.6.0
+### Migration notes from `react-native-notti` (0.6.0 to 0.8.0)
 
-- **Storage.** The SDK keeps the same `UserDefaults` suite, `notti_prefs`, and the same key names as the iOS part of `react-native-notti` 0.6.0 (for example `notti_device_id`, `notti_last_token`, `notti_external_user_id`, `notti_tags`, `notti_pending_events`). No key was renamed. One key was added, with the name `react-native-notti` 0.8.0 uses: `notti_pending_external_user_id_clear`, a flag (no personal data) for a `logout` unlink not yet acknowledged by the backend.
+- **Storage.** The SDK keeps the same `UserDefaults` suite, `notti_prefs`, and the same key names as the iOS part of `react-native-notti` 0.8.0 (for example `notti_device_id`, `notti_last_token`, `notti_external_user_id`, `notti_tags`, `notti_pending_events`, `notti_pending_external_user_id_clear`, `notti_pending_inapp_events`). No key was renamed. `notti_pending_external_user_id_clear` is a flag (no personal data) for a `logout` unlink not yet acknowledged by the backend. `notti_pending_inapp_events` is the In-App event queue in RN's format, so In-App events queued by the React Native module are sent with their original `event_id` after the swap (not yet verified on a device).
 - **Device id continuity.** An app that replaces the React Native module with this SDK keeps its install container and its `notti_prefs` suite. The SDK does not send the stored `notti_device_id`: at registration it sends the push token and platform, and adopts the device id the backend returns for that token. So continuity depends on the APNs token not changing and on the backend upserting by token, and is **not yet verified on a device** (checklist item D20). Until it is, do not tell customers that device history is preserved.
 - **Behavior differences.**
   - A visible push without `notification_id` is no longer emitted as `received`.
