@@ -69,6 +69,27 @@ final class NottiInAppPresenterTests: XCTestCase {
         XCTAssertTrue(window.isHidden)
     }
 
+    /// An allocated, never-initialized `UIWindowScene`, used for identity only (no scene can be made in a test).
+    /// Kept for the whole run: it must never be deallocated or sent a message.
+    private static let identityOnlyScene: UIWindowScene = {
+        guard let object = class_createInstance(UIWindowScene.self, 0) else { fatalError("could not allocate UIWindowScene") }
+        return unsafeDowncast(object as AnyObject, to: UIWindowScene.self)
+    }()
+
+    /// PRF-09: the key matched against `UIScene.didDisconnectNotification` is the target's scene, also with no
+    /// window (UIKit may have cleared the window's weak `windowScene` by then); a screen target has none.
+    func test_theSceneKeyIsTheTargetSceneEvenWithoutAWindow() {
+        let scene = Self.identityOnlyScene
+        let sceneHost = NottiInAppWindowHost(target: .scene(scene), hostController: { _ in nil })
+        XCTAssertNil(sceneHost.window)
+        XCTAssertTrue(sceneHost.sceneKey === scene)
+
+        let screenHost = NottiInAppWindowHost(target: .screen(CGRect(x: 0, y: 0, width: 390, height: 844)), hostController: { _ in nil })
+        screenHost.show(NottiInAppWindowContent(overlay: UIView(), onLayout: {}, onEscape: { false }))
+        XCTAssertNil(screenHost.sceneKey)
+        screenHost.hide()
+    }
+
     func test_aBarWindowLetsTouchesOutsideTheBarReachTheApp() throws {
         let messageView = NottiInAppMessageView(message: InAppViewFixtures.message(.top))
         let window = try shownWindow(NottiInAppBarLayout(messageView: messageView))

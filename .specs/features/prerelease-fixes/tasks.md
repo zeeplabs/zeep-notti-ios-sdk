@@ -247,9 +247,9 @@ Sequential order used in Execute: T1 → T2 → ... → T12.
 
 **Done when**:
 
-- [ ] A host for `.scene(s)` reports `s` with no window; a `.screen` host reports nil
-- [ ] Test count: SDK +1
-- [ ] Gate passes: quick
+- [x] A host for `.scene(s)` reports `s` with no window; a `.screen` host reports nil
+- [x] Test count: SDK +1
+- [x] Gate passes: quick
 
 **Tests**: unit
 **Gate**: quick
