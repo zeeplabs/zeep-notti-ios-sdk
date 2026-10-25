@@ -354,6 +354,7 @@ No `[P]` task.
 ### T8: Image loader
 
 **What**: `NottiInAppImageLoader`, a port of RN `NottiInAppImageLoader.swift`: credential-free ephemeral session, delegate-based download that ends once (non-`https` redirect refused, non-2xx or declared length over 5 MiB refused, abort past 5 MiB, whole call bounded to 10 s), `decode(_:maxSidePx:)` always through `CGImageSourceCreateThumbnailAtIndex` with transform and `min(longest side, maxSidePx)`, LRU cache of 5 cleared on a memory warning, `load(url:maxSidePx:done:)`.
+**SPEC_DEVIATION**: (1) `load(url:maxSidePx:done:)` takes a `URL` (the model's `imageUrl`), not RN's `String`. (2) The 10 s whole-call bound runs on an injected `TimerStarter` whose production value is `asyncAfter(wallDeadline:)` (RN uses `asyncAfter(deadline:)`, an uptime clock; D8); the size and time limits are not injectable, so tests exercise the real 5 MiB and 10 s. (3) The tests use a routed stub (`Tests/NottiSDKTests/Support/RoutedStubURLProtocol.swift`, adapted from the extension tests' stub) because the ported `StubURLProtocol` has no redirect, declared length, chunked or never-ending body. (4) A followed `https` redirect also drops any `Authorization` header (defensive; none is ever set).
 **Where**: `Sources/NottiSDK/InApp/Image/NottiInAppImageLoader.swift`, `Tests/NottiSDKTests/NottiInAppImageLoaderTests.swift`
 **Depends on**: None
 **Reuses**: the redirect and early-cancel technique proved in `nse-rich-media` (`NottiRichMediaJob`), `StubURLProtocol`
@@ -361,13 +362,13 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] A synthetic 4000 x 1000 PNG decoded with `maxSidePx: 1000` has a longest side of 1000; a 200 x 100 PNG with `maxSidePx: 1000` stays 200 x 100 (never upscaled); a small JPEG with EXIF orientation 6 decodes upright (width and height swapped)
-- [ ] A stub declaring 6 MiB, and one sending 6 MiB without a length, are cancelled early and return nil; a 404 returns nil; a response that never ends returns nil at 10 s
-- [ ] A redirect to an `http` URL returns nil; a non-image body returns nil; a transport error returns nil
-- [ ] The captured request has no `Authorization` header and no cookies; the session configuration has no URL cache, cookie storage or credential storage; the initializer takes no credentials
-- [ ] The second request for the same URL is served from the cache (one request in the stub); the sixth distinct URL evicts the least recently used; a memory warning empties the cache
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 12 new, total at least B + 126
+- [x] A synthetic 4000 x 1000 PNG decoded with `maxSidePx: 1000` has a longest side of 1000; a 200 x 100 PNG with `maxSidePx: 1000` stays 200 x 100 (never upscaled); a small JPEG with EXIF orientation 6 decodes upright (width and height swapped)
+- [x] A stub declaring 6 MiB, and one sending 6 MiB without a length, are cancelled early and return nil; a 404 returns nil; a response that never ends returns nil at 10 s
+- [x] A redirect to an `http` URL returns nil; a non-image body returns nil; a transport error returns nil
+- [x] The captured request has no `Authorization` header and no cookies; the session configuration has no URL cache, cookie storage or credential storage; the initializer takes no credentials
+- [x] The second request for the same URL is served from the cache (one request in the stub); the sixth distinct URL evicts the least recently used; a memory warning empties the cache
+- [x] Gate check passes: quick
+- [x] Test count: at least 12 new, total at least B + 126
 
 **Tests**: unit
 **Gate**: quick
