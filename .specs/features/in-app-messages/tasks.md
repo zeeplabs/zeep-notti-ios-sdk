@@ -379,6 +379,7 @@ No `[P]` task.
 ### T9: Engine, display state machine and timer
 
 **What**: Add to the engine: `NottiInAppDisplay` (states `preparing`, `visible`, `closed`), `displayAttached`, `becameVisible`, `userTapped(displayId:buttonId:action:)`, `userDismissed`, `displayFailed`, the clock by remaining wall-clock time (paused while detached or in background), taps and dismisses ignored until `visible` (RN), event recording plus a flush request, the click emission through the injected closure, the `push_permission` path (listener gets `action: nil`, no warning, close, then `pushPermissionPort` on main; nil port: report and close only) and `setPushPermissionPort`. `resetForNewConfig()` and `sessionEnded()` teardown of a display (visible kept at session end, preparing dropped). Invariants of the design.
+**SPEC_DEVIATION**: (1) `NottiInAppClick` is defined here as an internal value with `action: NottiInAppLinkAction?` because `emitClick` needs it; T11 makes it public and swaps the action for the public `NottiInAppAction`. (2) `emitClick` is called synchronously on the engine queue (it only reports whether a listener exists); the main-thread delivery belongs to the hub in T11. (3) The clock counts whole wall-clock milliseconds read from the injected `now` (RN counts uptime milliseconds; D8), and a clock moving backwards counts as no elapsed time. As in RN, it runs only after `becameVisible` **and** `displayAttached(true)` while in foreground, so the T17 presenter must report the attachment. (4) The display types (`NottiInAppDisplay`, its state, the clock, `NottiInAppClick`, the dismiss reasons) live in `NottiInAppEngine+Display.swift`, and the engine members the extension uses moved from `private` to `internal`.
 **Where**: `Sources/NottiSDK/InApp/Engine/NottiInAppEngine.swift` (extension in `NottiInAppEngine+Display.swift`), `Tests/NottiSDKTests/NottiInAppEngineDisplayTests.swift`
 **Depends on**: T7, T8
 **Reuses**: everything above
@@ -386,17 +387,17 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] `becameVisible` three times records one `impression`; a tap or dismiss before `becameVisible` is ignored and queues nothing (RN `NottiInAppSession.swift:258-262`)
-- [ ] A button tap records `click` with that `button_id`, emits one click with the link action, asks the presenter to close, records no `dismiss`; an image tap records `click` with `image`; a second tap in the same turn is ignored; a tap with an unknown action emits `action: nil`
-- [ ] With no listener (`emitClick` returns false) a link tap logs exactly one fixed `.warn`; a `push_permission` tap logs nothing
-- [ ] A `push_permission` tap records `click` with the button id, emits `action: nil`, closes, then calls the port exactly once on the main dispatcher (call order recorded: enqueue, emit, close, port); with no port set it only records, emits and closes; a port set through `setPushPermissionPort` is read on the engine queue
-- [ ] Dismiss reasons `close_button`, `swipe`, `outside_tap` are recorded as given; the timer records `auto`
-- [ ] `dismiss_after_seconds: 8` fires at 8 s on the fake clock; a 3 s background pause (`appBackgrounded` / `appForegrounded`) moves it to 11 s; `displayAttached(false)` pauses it too; a close at 2 s cancels the timer and records `close_button`; null, 0, 301 give no timer
-- [ ] Every recorded event has a lowercase UUID `eventId` generated at record time; two events never share one
-- [ ] At most one display exists at any time; an event while visible is ignored; a message id is presented once per session; `sessionEnded` keeps a visible display and drops a preparing one with no event
-- [ ] A config change while a message is visible tears the display down with **no** event recorded, the pending timer never fires, and a late `becameVisible`, tap or close for the old display id is ignored; a same-config `configure` leaves the display untouched
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 22 new, total at least B + 148
+- [x] `becameVisible` three times records one `impression`; a tap or dismiss before `becameVisible` is ignored and queues nothing (RN `NottiInAppSession.swift:258-262`)
+- [x] A button tap records `click` with that `button_id`, emits one click with the link action, asks the presenter to close, records no `dismiss`; an image tap records `click` with `image`; a second tap in the same turn is ignored; a tap with an unknown action emits `action: nil`
+- [x] With no listener (`emitClick` returns false) a link tap logs exactly one fixed `.warn`; a `push_permission` tap logs nothing
+- [x] A `push_permission` tap records `click` with the button id, emits `action: nil`, closes, then calls the port exactly once on the main dispatcher (call order recorded: enqueue, emit, close, port); with no port set it only records, emits and closes; a port set through `setPushPermissionPort` is read on the engine queue
+- [x] Dismiss reasons `close_button`, `swipe`, `outside_tap` are recorded as given; the timer records `auto`
+- [x] `dismiss_after_seconds: 8` fires at 8 s on the fake clock; a 3 s background pause (`appBackgrounded` / `appForegrounded`) moves it to 11 s; `displayAttached(false)` pauses it too; a close at 2 s cancels the timer and records `close_button`; null, 0, 301 give no timer
+- [x] Every recorded event has a lowercase UUID `eventId` generated at record time; two events never share one
+- [x] At most one display exists at any time; an event while visible is ignored; a message id is presented once per session; `sessionEnded` keeps a visible display and drops a preparing one with no event
+- [x] A config change while a message is visible tears the display down with **no** event recorded, the pending timer never fires, and a late `becameVisible`, tap or close for the old display id is ignored; a same-config `configure` leaves the display untouched
+- [x] Gate check passes: quick
+- [x] Test count: at least 22 new, total at least B + 148 (30 new in `NottiInAppEngineDisplayTests`; `NottiSDKTests` 656 → 686)
 
 **Tests**: unit
 **Gate**: quick
