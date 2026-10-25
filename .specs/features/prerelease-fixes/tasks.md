@@ -171,9 +171,9 @@ Sequential order used in Execute: T1 → T2 → ... → T12.
 
 **Done when**:
 
-- [ ] The delegate is not read until the main hop runs; the production hop runs a background caller's task on main
-- [ ] Test count: SDK +2
-- [ ] Gate passes: quick
+- [x] The delegate is not read until the main hop runs; the production hop runs a background caller's task on main
+- [x] Test count: SDK +2
+- [x] Gate passes: quick
 
 **Tests**: unit
 **Gate**: quick

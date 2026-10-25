@@ -152,7 +152,7 @@ See `tasks.md`.
 | PRF-02 | P1: Identity calls before initialize | Tasks (T3) | Done |
 | PRF-03 | P1: One observation | Tasks (T4) | Not implemented: premise disproved, regression tests only |
 | PRF-04 | P1: One observation | Tasks (T5) | Not implemented: premise disproved |
-| PRF-05 | P1: One observation | Tasks (T6) | Pending |
+| PRF-05 | P1: One observation | Tasks (T6) | Done |
 | PRF-06 | P2: Low defects | Tasks (T7) | Pending |
 | PRF-07 | P2: Low defects | Tasks (T8) | Pending |
 | PRF-08 | P2: Low defects | Tasks (T9) | Pending |
