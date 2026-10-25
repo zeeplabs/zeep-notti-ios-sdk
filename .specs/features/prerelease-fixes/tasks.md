@@ -113,10 +113,10 @@ Sequential order used in Execute: T1 → T2 → ... → T12.
 
 **Done when**:
 
-- [ ] Each dropped call logs its fixed line once; none after initialize; no sentinel in any line
-- [ ] Doc comment, README and CHANGELOG corrected
-- [ ] Test count: SDK +2
-- [ ] Gate passes: quick
+- [x] Each dropped call logs its fixed line once; none after initialize; no sentinel in any line
+- [x] Doc comment, README and CHANGELOG corrected
+- [x] Test count: SDK +2
+- [x] Gate passes: quick
 
 **Tests**: unit
 **Gate**: quick

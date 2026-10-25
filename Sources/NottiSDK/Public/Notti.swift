@@ -3,9 +3,11 @@ import Foundation
 /// Entry point of the Notti SDK for Swift hosts.
 ///
 /// Call `Notti.initialize(appId:clientKey:)` once at launch, as early as
-/// possible. Every other call is safe before it: email and phone are kept and
-/// sent at registration, and calls that need a registered device (login, tags,
-/// subscription) are dropped with a warning, as in the React Native SDK.
+/// possible. Every other call is safe before it, but not every call is kept:
+/// email, phone and `logout` are kept and sent at registration (`logout` is the
+/// only identity call kept from before `initialize`), while `login`, tags and
+/// `setSubscription` are dropped, each with one warning (level `warn`), as in the
+/// React Native SDK. Call them after `initialize`.
 ///
 /// All callbacks (`requestPermission`, listeners) run on the main thread. No
 /// method throws, and none logs email, phone, push token, external user id,
@@ -51,7 +53,8 @@ public enum Notti {
         )
     }
 
-    /// Associates this device with the host's own user id.
+    /// Associates this device with the host's own user id. Dropped before
+    /// `initialize` (one warning): call it after `initialize`.
     public static func login(_ externalUserId: String) {
         NottiFacade.shared.login(externalUserId)
     }
@@ -90,6 +93,8 @@ public enum Notti {
     // MARK: - User profile
 
     /// Profile data of the current user: tags, email, phone and subscription.
+    /// Tag and subscription calls are dropped before `initialize` (one warning
+    /// each); email and phone are kept and sent at registration.
     public enum User {
         /// Adds or updates one tag.
         public static func addTag(_ key: String, value: String) {
