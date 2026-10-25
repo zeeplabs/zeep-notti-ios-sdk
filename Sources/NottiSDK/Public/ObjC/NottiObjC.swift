@@ -28,16 +28,20 @@ import UserNotifications
 @available(iOSApplicationExtension, unavailable)
 public final class NottiObjC: NSObject {
 
-    /// Starts the SDK. `baseUrl` may be `nil` (default host). Invalid values are
-    /// logged without their content and ignored.
+    /// Starts the SDK. `baseUrl` may be `nil` (default host). Same as passing
+    /// `opensInAppURLs:YES`: a call with this selector turns In-App link opening
+    /// back on after `opensInAppURLs:NO`. Invalid values are logged without their
+    /// content and ignored.
     @objc(initializeWithAppId:clientKey:baseUrl:)
     public static func initialize(appId: String, clientKey: String, baseUrl: String?) {
         NottiFacade.shared.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
     }
 
-    /// Same as `initializeWithAppId:clientKey:baseUrl:`, which opens In-App
-    /// `http`/`https` `url` actions in the browser after the click listeners.
-    /// Pass `NO` to `opensInAppURLs` to open none (`Notti.Options.opensInAppURLs`).
+    /// Starts the SDK and sets whether it opens In-App `http`/`https` `url`
+    /// actions in the browser after the click listeners (`YES` is what
+    /// `initializeWithAppId:clientKey:baseUrl:` uses). `NO` opens none
+    /// (`Notti.Options.opensInAppURLs`). Every valid call sets the option, so use
+    /// this selector with the same value on every call.
     @objc(initializeWithAppId:clientKey:baseUrl:opensInAppURLs:)
     public static func initialize(appId: String, clientKey: String, baseUrl: String?, opensInAppURLs: Bool) {
         NottiFacade.shared.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl, opensInAppURLs: opensInAppURLs)
