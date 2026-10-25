@@ -20,6 +20,8 @@ final class InAppFakeScheduler: NottiInAppScheduling {
     private var timers: [Timer] = []
     private var seq = 0
     private(set) var delays: [TimeInterval] = []
+    /// Guards `ready`: core hooks enqueue from the core's work queue (wiring tests).
+    private let readyLock = NSLock()
 
     init(base: Date = Date(timeIntervalSince1970: 1_700_000_000)) {
         self.base = base
@@ -28,7 +30,7 @@ final class InAppFakeScheduler: NottiInAppScheduling {
     var now: Date { base.addingTimeInterval(TimeInterval(elapsedMs) / 1000) }
 
     func execute(_ task: @escaping () -> Void) {
-        ready.append(task)
+        readyLock.withLock { ready.append(task) }
     }
 
     func schedule(after seconds: TimeInterval, _ task: @escaping () -> Void) {
@@ -38,7 +40,7 @@ final class InAppFakeScheduler: NottiInAppScheduling {
     }
 
     func drain() {
-        while !ready.isEmpty { ready.removeFirst()() }
+        while let next = readyLock.withLock({ ready.isEmpty ? nil : ready.removeFirst() }) { next() }
     }
 
     /// Runs the queue, then every timer due within `seconds`, in deadline order.
