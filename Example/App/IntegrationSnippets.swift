@@ -54,11 +54,13 @@ enum IntegrationSnippets {
         let inAppClicks = Notti.InAppMessages.addClickListener { click in
             // nil for a `push_permission` button and for a button without a valid action.
             guard let action = click.action else { return }
-            // `action.value` is the author's link, untouched. The SDK never opens it: you do.
+            // `action.value` is the author's link, untouched.
             if action.type == .deeplink {
+                // The SDK never opens a deeplink: route it inside the app.
                 print("route the deeplink inside the app")
             } else {
-                print("open the url in Safari or an in-app browser")
+                // The SDK opens an http(s) url in Safari after this listener returns: do not open it again.
+                print("url click, opened by the SDK")
             }
         }
 

@@ -61,7 +61,7 @@ Task {
 }
 ```
 
-Without options the SDK talks to the production host `https://app.zeepnotti.app`. To target another host, pass `Notti.Options(baseUrl:)`. The SDK never requests location permission.
+Without options the SDK talks to the production host `https://app.zeepnotti.app`. To target another host, pass `Notti.Options(baseUrl:)`. `Notti.Options(opensInAppURLs: false)` stops the SDK from opening In-App web links (see [In-App Messages](#in-app-messages)). The SDK never requests location permission.
 
 ## Identity and tags
 
@@ -81,7 +81,7 @@ Other calls: `Notti.User.setPhone`, `clearEmail`, `clearPhone`, `addTag`, `remov
 
 ## Listeners
 
-Listeners receive the payload of a push that arrived while the app runs (`received`) and of a tap (`clicked`). The SDK never opens a push URL: the push `data` reaches your code untouched and you decide what a link means. (The one URL the SDK opens is the system notification settings page, for an In-App `push_permission` button: see [In-App Messages](#in-app-messages).)
+Listeners receive the payload of a push that arrived while the app runs (`received`) and of a tap (`clicked`). The SDK never opens a push URL: the push `data` reaches your code untouched and you decide what a link means. (In-App Messages differ: the SDK opens an In-App `http`/`https` `url` action and, for a `push_permission` button, the system notification settings page: see [In-App Messages](#in-app-messages).)
 
 <!-- snippet:listeners -->
 ```swift
@@ -106,7 +106,7 @@ Remove a listener with `remove()` on the returned subscription. `Notti.addDevice
 
 ## In-App Messages
 
-> **Register a click listener.** The SDK never opens an In-App link. Without a listener, a tap on a button with a `url` or `deeplink` still reports `click` to Notti and closes the message, but nothing opens, and the SDK logs one warning (level `warn`).
+> **Links.** By default the SDK opens an In-App `url` action whose value is an `http` or `https` link in Safari, after your click listener ran: **do not open it again in the listener**. It never opens a `deeplink`, nor a `url` with any other scheme (`tel:`, `sms:`, custom schemes): those are yours, through the click listener. Without a listener, a tap on such a button still reports `click` to Notti and closes the message, nothing opens, and the SDK logs one warning (level `warn`). To open web links yourself, pass `Notti.Options(opensInAppURLs: false)` to `Notti.initialize`.
 
 Messages are authored in the Notti dashboard and need `zeep-notti` v0.23.0 or later. The SDK asks the backend once per foreground session, after this process registered the device, which messages this device can see (`POST /v1/apps/<appId>/in-app-messages/eligible`). It shows the first `session_start` message at once and keeps `event` messages in memory until your app reports a matching event. At most one message is visible, and each message shows at most once per session. Whether it shows again in a later session is the backend's decision: the SDK keeps no "already shown" state.
 
@@ -116,11 +116,13 @@ Messages are authored in the Notti dashboard and need `zeep-notti` v0.23.0 or la
 let inAppClicks = Notti.InAppMessages.addClickListener { click in
     // nil for a `push_permission` button and for a button without a valid action.
     guard let action = click.action else { return }
-    // `action.value` is the author's link, untouched. The SDK never opens it: you do.
+    // `action.value` is the author's link, untouched.
     if action.type == .deeplink {
+        // The SDK never opens a deeplink: route it inside the app.
         print("route the deeplink inside the app")
     } else {
-        print("open the url in Safari or an in-app browser")
+        // The SDK opens an http(s) url in Safari after this listener returns: do not open it again.
+        print("url click, opened by the SDK")
     }
 }
 
@@ -132,7 +134,8 @@ inAppClicks.remove()
 
 - **`Notti.trackEvent(_:)`** matches on the device only: the name is never sent, stored or logged. An empty or whitespace-only name does nothing. A call before `Notti.initialize`, or in the background after a session ended, is ignored. A call after `Notti.initialize` and before the first session opens is remembered for that session (up to 32 distinct names), so `initialize` followed by `trackEvent` at launch works. This launch ordering is not yet proven on a device.
 - **The click listener** runs on the main thread for a tap on a button, on a tappable image, or on the body of a `top` or `bottom` message that has buttons (it acts as the first button). `NottiInAppClick` carries `messageId`, `buttonId` (`image` for the image) and `action`: a `NottiInAppAction` with `type` (`url` or `deeplink`) and the untouched `value`, or nil. Keep the returned subscription and call `remove()` to stop.
-- **`push_permission` buttons** run the system permission flow instead of a link: the listener gets the click with `action == nil`, the message closes, and then the SDK asks for push permission if it was never asked, opens the app's notification settings in the Settings app if permission is denied (iOS 16 and later; the app's settings page on iOS 15), and does nothing more if it is already granted. **That settings page is the only URL the SDK ever opens**, and it is a fixed system constant, never author data (one allowlisted file in `scripts/check-no-url-open.sh`). Author `url` and `deeplink` values are never opened. The dashboard cannot target devices with `push_permission` messages yet: the backend needs a per-SDK minimum version first.
+- **Web links.** With `opensInAppURLs` true (the default), after the listeners ran and the message closed, the SDK opens a `url` action in the external browser (`UIApplication.open`) when its value is an `http` or `https` URL (any letter case) with a host and no spaces. An `https` universal link opens its app, as iOS decides. Any other value is not opened and logs one fixed line at level `debug`; a failed open is not retried. The listener receives every click either way, with the value untouched, and the SDK never logs the link. A `deeplink` is never opened by the SDK. A second `Notti.initialize` with the same app id, client key and base URL and another `opensInAppURLs` applies the option without restarting the SDK.
+- **`push_permission` buttons** run the system permission flow instead of a link: the listener gets the click with `action == nil`, the message closes, and then the SDK asks for push permission if it was never asked, opens the app's notification settings in the Settings app if permission is denied (iOS 16 and later; the app's settings page on iOS 15), and does nothing more if it is already granted. That settings page is a fixed system constant, never author data. Apart from it, the only URLs the SDK opens are the `http`/`https` `url` actions above (two allowlisted files in `scripts/check-no-url-open.sh`). The dashboard cannot target devices with `push_permission` messages yet: the backend needs a per-SDK minimum version first.
 - **Events.** The SDK reports `impression` (once per display, always first), `click` (with the button id) and `dismiss` (reason `close_button`, `swipe`, `outside_tap` or `auto`). They are queued on the device, sent in order with a client-generated `event_id` that survives retries and restarts, and dropped after 7 days; past 100 queued events the oldest is dropped.
 - **Presentation.** Four layouts: `top` and `bottom` bars, a `center` card over a dimmed backdrop, and `full` inside the safe area. Each message has a close control (44 pt, label "Close", or "Fechar" when the first preferred language is Portuguese). Bars dismiss with a swipe, `center` with a tap on the backdrop, and `full` only with the close control or a button. An optional `dismiss_after_seconds` (1 to 300) closes the message on its own; the countdown pauses in the background.
 - **Its own window.** The message shows in a separate `UIWindow` at level `.alert` (above your app's windows, like `react-native-notti`) that never becomes the key window, so it does not take the keyboard focus from your app. Touches outside a bar reach your app. The window follows the root view controller of your key window for supported orientations and the status bar. How it stacks with the keyboard, Control Center and Picture in Picture is not yet proven on a device.
@@ -246,6 +249,8 @@ The SDK is usable from Objective-C through the same module. The names below come
 @import NottiSDK;
 
 [Notti initializeWithAppId:@"YOUR_APP_ID" clientKey:@"YOUR_CLIENT_KEY" baseUrl:nil];
+// Or, to open In-App web links in your own code instead of the SDK:
+// [Notti initializeWithAppId:@"YOUR_APP_ID" clientKey:@"YOUR_CLIENT_KEY" baseUrl:nil opensInAppURLs:NO];
 [NottiNotifications requestPermission:^(BOOL granted) { /* ... */ }];
 [Notti login:@"user-123"];
 [NottiUser addTag:@"plan" value:@"premium"];
