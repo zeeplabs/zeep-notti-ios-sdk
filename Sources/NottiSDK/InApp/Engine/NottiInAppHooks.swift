@@ -16,11 +16,13 @@ struct NottiInAppHooks {
         self.onDeviceRegistered = onDeviceRegistered
     }
 
-    /// Forwards both edges to `engine`.
-    static func forwarding(to engine: NottiInAppEngine) -> NottiInAppHooks {
+    /// Forwards both edges to `engine`. The registration is tagged with `config`, the In-App config the core was
+    /// built for, so the engine ignores a replaced core's late success (PRF-07); a core built without one (the
+    /// pre-`initialize` core, which never registers) forwards no registration.
+    static func forwarding(to engine: NottiInAppEngine, config: NottiInAppConfig?) -> NottiInAppHooks {
         NottiInAppHooks(
             onSessionStarted: { engine.sessionStarted() },
-            onDeviceRegistered: { engine.deviceRegistered() }
+            onDeviceRegistered: { if let config { engine.deviceRegistered(for: config) } }
         )
     }
 }

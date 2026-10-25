@@ -408,6 +408,25 @@ final class NottiInAppEngineFetchTests: XCTestCase {
         XCTAssertEqual(logs.messages, ["Notti.inapp: eligible failed (HTTP 422)"])
     }
 
+    /// PRF-07: a registration tagged with a config the engine left behind is ignored; the current one counts.
+    func test_aRegistrationForAPreviousConfigIsIgnored() {
+        configure()
+        let previous = NottiInAppConfig(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        configure("fixture-app-2")
+        sessionStarted()
+
+        engine.deviceRegistered(for: previous)
+        scheduler.drain()
+        XCTAssertFalse(engine.registeredInProcess)
+        XCTAssertTrue(network.routes.isEmpty, "no eligible for the new app with the old registration")
+
+        network.enqueue(.messages())
+        engine.deviceRegistered(for: NottiInAppConfig(appId: "fixture-app-2", clientKey: clientKey, baseUrl: baseUrl))
+        scheduler.drain()
+        XCTAssertTrue(engine.registeredInProcess)
+        XCTAssertEqual(network.routes, ["eligible"])
+    }
+
     func test_the403WarningIsLoggedOncePerSessionPerRoute() {
         configure()
         registered()
