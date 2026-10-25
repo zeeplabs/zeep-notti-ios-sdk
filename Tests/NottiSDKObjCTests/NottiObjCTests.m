@@ -39,6 +39,22 @@
     XCTAssertEqual(deviceIdCalls, 0);
 }
 
+// IAM-24, IAM-44: the In-App entry points compile only with these selector names. Before initialize
+// `trackEvent:` is a no-op, so nothing reaches the network.
+- (void)testInAppEntryPointsAreCallable {
+    [Notti trackEvent:@"fixture_event"];
+    [Notti trackEvent:@""];
+
+    __block NSInteger clicks = 0;
+    NottiSubscription *subscription = [NottiInAppMessages addClickListener:^(NSDictionary *click) {
+        (void)click;
+        clicks += 1;
+    }];
+    XCTAssertNotNil(subscription);
+    [subscription remove];
+    XCTAssertEqual(clicks, 0);
+}
+
 - (void)testLogLevelRoundTripsThroughTheObjCEnum {
     XCTAssertEqual(Notti.logLevel, NottiLogLevelError, @"default level");
     NSArray<NSNumber *> *levels = @[

@@ -484,6 +484,7 @@ No `[P]` task.
 ### T12: Objective-C mirror
 
 **What**: `NottiObjC.trackEvent(_:)` (`@objc(trackEvent:)`) and `NottiInAppMessagesObjC` (`@objc(NottiInAppMessages)`) with `addClickListener:` delivering an `NSDictionary` with exactly `messageId`, `buttonId` and `action` (`{type, value}` or `NSNull`, never absent, RN `InAppClick.payload`); ObjC compile check and smoke test; surface file regenerated.
+**SPEC_DEVIATION**: (1) The bridge tests deliver clicks through the runtime's click relay (`runtime.inAppClicks.emit`, T11) instead of driving a display through the engine; the engine-to-hub path is covered end to end by `NottiInAppPublicApiTests`. (2) `test_objcTrackEventReachesTheEngine` builds its own runtime with an engine on the fake scheduler, routes the shared facade to it for the test and restores the class's facade afterwards.
 **Where**: `Sources/NottiSDK/Public/ObjC/NottiObjC.swift`, `Tests/NottiSDKObjCTests/NottiObjCTests.m`, `Tests/NottiSDKTests/NottiObjCBridgeTests.swift`, `.specs/codebase/PUBLIC_SURFACE.txt`
 **Depends on**: T11
 **Reuses**: the `objcDictionary` pattern (`NottiObjC.swift:190-199`)
@@ -491,11 +492,11 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] The Objective-C test calls `[Notti trackEvent:]` and `[NottiInAppMessages addClickListener:]` and compiles only with these selector names
-- [ ] The bridge test checks that the dictionary has exactly three keys, that `action` is `@{type, value}` for a link and `NSNull` for a nil action
-- [ ] `scripts/check-public-surface.sh` passes
-- [ ] Gate check passes: **full**
-- [ ] Test count: at least 4 new, total at least B + 183
+- [x] The Objective-C test calls `[Notti trackEvent:]` and `[NottiInAppMessages addClickListener:]` and compiles only with these selector names
+- [x] The bridge test checks that the dictionary has exactly three keys, that `action` is `@{type, value}` for a link and `NSNull` for a nil action
+- [x] `scripts/check-public-surface.sh` passes
+- [ ] Gate check passes: **full** (local `ci.yml` equivalent on `de5a981`: DONE 0 failures, but SwiftLint and the Linux mawk guards were SKIPPED because the local Docker daemon (OrbStack) stopped answering; open until SwiftLint runs)
+- [x] Test count: at least 4 new, total at least B + 183 (4 new in `NottiObjCBridgeTests`; `NottiSDKTests` 722 → 726; `NottiSDKObjCTests` 6 → 7)
 
 **Tests**: unit (Swift bridge) + ObjC compile check
 **Gate**: full
