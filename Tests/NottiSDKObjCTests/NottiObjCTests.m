@@ -23,6 +23,7 @@
     // Invalid on purpose: empty appId is ignored by the facade (no network).
     [Notti initializeWithAppId:@"" clientKey:@"" baseUrl:nil];
     [Notti initializeWithAppId:@"" clientKey:@"" baseUrl:@"https://notti.example.invalid"];
+    [Notti initializeWithAppId:@"" clientKey:@"" baseUrl:nil opensInAppURLs:NO]; // AD-020 selector, ignored
     [Notti login:@"user-fixture"];   // dropped before initialize
     [Notti logout];
     (void)Notti.deviceId;            // nil or a persisted id

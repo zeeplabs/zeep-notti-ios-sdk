@@ -348,4 +348,45 @@ final class NottiObjCBridgeTests: XCTestCase {
 
         XCTAssertEqual(engine.selector.earlyNames, ["fixture_event"], "kept for the first session; blank ignored")
     }
+
+    /// IOU-04: the ObjC overload carries `opensInAppURLs` to the engine; the three-argument form keeps the default.
+    func test_objcInitializeCarriesOpensInAppURLsToTheEngine() {
+        let scheduler = InAppFakeScheduler()
+        let session = sessions[0]
+        let engine = NottiInAppEngine(
+            store: NottiInAppEventStore(defaults: defaults),
+            identity: { nil },
+            presenter: InAppFakePresenter(),
+            scheduler: scheduler,
+            mainDispatcher: { $0() },
+            clientFactory: { _ in nil }
+        )
+        let isolated = NottiRuntime(
+            defaults: defaults,
+            providers: NottiPlatformProviders(tokenProvider: { _ in }, permissionRequester: { $0(true) }),
+            pathMonitor: FakePathMonitor(),
+            apiClientFactory: { appId, clientKey, baseUrl in
+                NottiApiClient(session: session, baseUrl: baseUrl, appId: appId, clientKey: clientKey, sleeper: { _ in })
+            },
+            sdkVersion: "",
+            startObservers: false,
+            inAppEngine: engine
+        )
+        NottiFacade.setSharedForTesting(NottiFacade(runtime: isolated, dispatcher: { $0() }))
+        defer {
+            NottiFacade.setSharedForTesting(facade)
+            let core = isolated.core
+            isolated.stop()
+            core?.waitForPendingWork(timeout: 20)
+        }
+
+        StubURLProtocol.enqueue(.echoDevice())
+        NottiObjC.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl, opensInAppURLs: false)
+        scheduler.drain()
+        XCTAssertFalse(engine.opensURLs)
+
+        NottiObjC.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        scheduler.drain()
+        XCTAssertTrue(engine.opensURLs, "the three-argument selector keeps the default")
+    }
 }

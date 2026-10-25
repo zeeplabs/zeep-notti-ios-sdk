@@ -21,7 +21,8 @@ enum NottiInAppLinkType: String, Equatable {
     case deeplink
 }
 
-/// A link the integrator handles. The SDK never opens it; `value` is exactly what the server sent.
+/// A link the integrator receives; `value` is exactly what the server sent. The SDK opens only an `http`/`https`
+/// `url` itself (AD-020, `NottiInAppURLOpener`), never a `deeplink`.
 struct NottiInAppLinkAction: Equatable {
     let type: NottiInAppLinkType
     let value: String

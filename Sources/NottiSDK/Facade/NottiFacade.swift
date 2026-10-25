@@ -102,7 +102,10 @@ final class NottiFacade {
     /// - the same configuration as the running one is a no-op (no second
     ///   registration);
     /// - a different one stops the old core and starts a new one.
-    func initialize(appId: String, clientKey: String, baseUrl: String?) {
+    ///
+    /// `opensInAppURLs` (AD-020) is applied on every valid call, before that check, and is not part of
+    /// `Config`: changing only it never restarts the core.
+    func initialize(appId: String, clientKey: String, baseUrl: String?, opensInAppURLs: Bool = true) {
         installDelegates()
         guard
             !appId.isEmpty,
@@ -115,6 +118,7 @@ final class NottiFacade {
         let config = Config(appId: appId, clientKey: clientKey, baseUrl: normalizedBaseUrl)
         lock.lock()
         defer { lock.unlock() }
+        runtime.setOpensInAppURLs(opensInAppURLs)
         guard _activeConfig != config else { return }
         _activeConfig = config
         runtime.start(appId: config.appId, clientKey: config.clientKey, baseUrl: config.baseUrl)

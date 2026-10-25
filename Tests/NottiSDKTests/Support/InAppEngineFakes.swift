@@ -224,6 +224,7 @@ final class InAppLevelLogSink {
 
     var messages: [String] { lock.withLock { storage.map(\.1) } }
     var warnings: [String] { lock.withLock { storage.filter { $0.0 == .warn }.map(\.1) } }
+    var debugs: [String] { lock.withLock { storage.filter { $0.0 == .debug }.map(\.1) } }
 }
 
 /// Synthetic `eligible` entries.

@@ -29,7 +29,8 @@ final class NottiRuntime {
             providers: .live(),
             inAppEngine: .live(defaults: defaults, clicks: clicks, presenter: NottiInAppPresenter()),
             inAppClicks: clicks,
-            pushPermissionPlatform: .system
+            pushPermissionPlatform: .system,
+            urlOpenPlatform: .system
         )
     }()
 
@@ -73,6 +74,9 @@ final class NottiRuntime {
     ///   - notificationCenter: where the process observers listen.
     ///   - pushPermissionPlatform: the OS side of the In-App `push_permission`
     ///     button (`shared` passes `.system`); nil sets no port (tests).
+    ///   - urlOpenPlatform: the OS side of opening an In-App `url` action in the
+    ///     browser (AD-020; `shared` passes `.system`); nil sets no port, so the
+    ///     SDK opens nothing (tests).
     init(
         defaults: UserDefaults,
         providers: NottiPlatformProviders,
@@ -85,7 +89,8 @@ final class NottiRuntime {
         inAppEngine: NottiInAppEngine? = nil,
         inAppClicks: NottiInAppClickRelay = NottiInAppClickRelay(),
         notificationCenter: NotificationCenter = .default,
-        pushPermissionPlatform: NottiPushPermissionAction.Platform? = nil
+        pushPermissionPlatform: NottiPushPermissionAction.Platform? = nil,
+        urlOpenPlatform: NottiInAppURLOpener.Platform? = nil
     ) {
         self.defaults = defaults
         self.inAppClicks = inAppClicks
@@ -106,6 +111,11 @@ final class NottiRuntime {
             self?.onNetworkAvailable()
         }
         self.networkObserver = observer
+        // AD-020: the engine holds the opener through its port; no port, no SDK open.
+        if let platform = urlOpenPlatform {
+            let opener = NottiInAppURLOpener(platform: platform)
+            self.inAppEngine.setURLOpenPort { opener.open($0) }
+        }
         guard startObservers else { return }
         // RN `processBackgroundObserver`: close the gate on background even when
         // no core is alive to hear about it, then end the In-App session and pause
@@ -190,6 +200,12 @@ final class NottiRuntime {
             _core = created
             return created
         }
+    }
+
+    /// `Notti.Options.opensInAppURLs` (AD-020): whether the In-App engine opens `url` actions itself. Local
+    /// behavior only: it never restarts the core.
+    func setOpensInAppURLs(_ enabled: Bool) {
+        inAppEngine.setOpensURLs(enabled)
     }
 
     /// Invalidates and drops the live core. Persisted state is left alone.

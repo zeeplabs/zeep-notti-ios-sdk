@@ -24,18 +24,31 @@ public enum Notti {
         /// Backend host (`https://...`). `nil` uses the Notti default host.
         public var baseUrl: String?
 
-        public init(baseUrl: String? = nil) {
+        /// Whether the SDK opens an In-App `url` action in the external browser, after the click listeners
+        /// ran. Default `true`. Only `http` and `https` links with a host are opened; a `deeplink` or any
+        /// other scheme is never opened by the SDK and reaches the listener only. With `false` the SDK opens
+        /// no In-App link: handle `url` actions in `Notti.InAppMessages.addClickListener`.
+        public var opensInAppURLs: Bool
+
+        public init(baseUrl: String? = nil, opensInAppURLs: Bool = true) {
             self.baseUrl = baseUrl
+            self.opensInAppURLs = opensInAppURLs
         }
     }
 
     // MARK: - Initialize and identity
 
     /// Starts the SDK. Calling it again with the same values does nothing; with
-    /// different values it restarts the SDK. Invalid values are logged (without
-    /// the values) and ignored.
+    /// a different app id, client key or base URL it restarts the SDK, and a
+    /// different `opensInAppURLs` alone is applied without a restart. Invalid
+    /// values are logged (without the values) and ignored.
     public static func initialize(appId: String, clientKey: String, options: Options = Options()) {
-        NottiFacade.shared.initialize(appId: appId, clientKey: clientKey, baseUrl: options.baseUrl)
+        NottiFacade.shared.initialize(
+            appId: appId,
+            clientKey: clientKey,
+            baseUrl: options.baseUrl,
+            opensInAppURLs: options.opensInAppURLs
+        )
     }
 
     /// Associates this device with the host's own user id.

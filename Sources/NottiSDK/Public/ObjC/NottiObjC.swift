@@ -31,6 +31,14 @@ public final class NottiObjC: NSObject {
         NottiFacade.shared.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
     }
 
+    /// Same as `initializeWithAppId:clientKey:baseUrl:`, which opens In-App
+    /// `http`/`https` `url` actions in the browser after the click listeners.
+    /// Pass `NO` to `opensInAppURLs` to open none (`Notti.Options.opensInAppURLs`).
+    @objc(initializeWithAppId:clientKey:baseUrl:opensInAppURLs:)
+    public static func initialize(appId: String, clientKey: String, baseUrl: String?, opensInAppURLs: Bool) {
+        NottiFacade.shared.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl, opensInAppURLs: opensInAppURLs)
+    }
+
     @objc(login:)
     public static func login(_ externalUserId: String) {
         NottiFacade.shared.login(externalUserId)
@@ -82,7 +90,9 @@ public final class NottiInAppMessagesObjC: NSObject {
 
     /// `handler` runs on the main thread with `messageId`, `buttonId` and
     /// `action` (`@{type, value}`, or `NSNull` for a button without a valid
-    /// action and for a `push_permission` button). The SDK never opens the link.
+    /// action and for a `push_permission` button). After it, the SDK opens an
+    /// `http`/`https` `url` in the browser unless `opensInAppURLs` was `NO`;
+    /// it never opens a `deeplink`.
     @discardableResult
     @objc(addClickListener:)
     public static func addClickListener(_ handler: @escaping (NSDictionary) -> Void) -> NottiSubscription {
