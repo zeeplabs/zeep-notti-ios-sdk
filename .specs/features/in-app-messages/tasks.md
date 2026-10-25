@@ -202,11 +202,11 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] `#102030`, `#e94b8b`, `#FFFFFF` parse to the exact components; `#FFF`, `102030`, `#10203040`, `#GGGGGG`, `#+12345`, empty, `red`, a number and nil give nil and no throw
-- [ ] `text_align` `left`, `center`, `right` map; absent or unknown is `left`; `margin` true, false, absent (true), non-boolean (true)
-- [ ] An invalid token does not affect the others in the same `style`
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 10 new, total at least B + 24
+- [x] `#102030`, `#e94b8b`, `#FFFFFF` parse to the exact components; `#FFF`, `102030`, `#10203040`, `#GGGGGG`, `#+12345`, empty, `red`, a number and nil give nil and no throw
+- [x] `text_align` `left`, `center`, `right` map; absent or unknown is `left`; `margin` true, false, absent (true), non-boolean (true)
+- [x] An invalid token does not affect the others in the same `style`
+- [x] Gate check passes: quick
+- [x] Test count: at least 10 new, total at least B + 24
 
 **Tests**: unit
 **Gate**: quick
