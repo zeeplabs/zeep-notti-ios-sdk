@@ -147,7 +147,7 @@ See `tasks.md`.
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
 | PRF-01 | P1: ObjC names | Tasks (T2) | Done |
-| PRF-02 | P1: Identity calls before initialize | Tasks (T3) | Pending |
+| PRF-02 | P1: Identity calls before initialize | Tasks (T3) | Done |
 | PRF-03 | P1: One observation | Tasks (T4) | Pending |
 | PRF-04 | P1: One observation | Tasks (T5) | Pending |
 | PRF-05 | P1: One observation | Tasks (T6) | Pending |

@@ -127,8 +127,10 @@ final class NottiFacade {
     // MARK: - Identity and profile (API-04 ... API-08)
     //
     // One-line forwards. They go through `ensureCore()` so email and phone are
-    // persisted even before `initialize` (DPF-19); the core itself drops what
-    // needs a registered device (login, tags, subscription).
+    // persisted even before `initialize` (DPF-19), and `logout`'s unlink is kept
+    // (AD-018). The core drops `login`, tags and `setSubscription` before
+    // `initialize` (no API client, RN parity); the facade only makes that visible
+    // with one fixed warning per dropped call (PRF-02).
 
     /// The persisted device id, also before `initialize`; nil for a device that never registered.
     var deviceId: String? {
@@ -136,6 +138,7 @@ final class NottiFacade {
     }
 
     func login(_ externalUserId: String) {
+        warnIfDroppedBeforeInitialize("login")
         runtime.ensureCore().login(externalUserId)
     }
 
@@ -144,10 +147,12 @@ final class NottiFacade {
     }
 
     func addTags(_ tags: [String: String]) {
+        warnIfDroppedBeforeInitialize("addTags")
         runtime.ensureCore().mutateTags(add: tags, remove: nil)
     }
 
     func removeTags(_ keys: [String]) {
+        warnIfDroppedBeforeInitialize("removeTags")
         runtime.ensureCore().mutateTags(add: nil, remove: keys)
     }
 
@@ -168,7 +173,14 @@ final class NottiFacade {
     }
 
     func setSubscription(_ enabled: Bool) {
+        warnIfDroppedBeforeInitialize("setSubscription")
         runtime.ensureCore().setSubscription(enabled)
+    }
+
+    /// One fixed `.warn` line naming the method, never an argument, while no valid `initialize` was accepted.
+    private func warnIfDroppedBeforeInitialize(_ method: StaticString) {
+        guard activeConfig == nil else { return }
+        NottiLogger.log(.warn, "Notti: \(method) called before initialize was dropped; call Notti.initialize first")
     }
 
     /// Runs on the caller's thread: the core writes the preference synchronously

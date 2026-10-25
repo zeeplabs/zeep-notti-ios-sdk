@@ -29,12 +29,12 @@ First release. It is a native port of `react-native-notti` 0.8.0 for iOS, In-App
 - The Notification Service Extension is not exercised in the Simulator by this repo.
 - A SwiftUI app without `@UIApplicationDelegateAdaptor`: the SDK does not swizzle SwiftUI's internal app delegate, logs one warning (level `warn`, invisible at the default `error` level) and does not receive the APNs token. Use the adaptor or the manual forwarding API.
 - `logout` and re-registration need `zeep-notti` v0.24.0 or later. On an older backend, the `logout` unlink answers 2xx but the device stays linked to the previous user until the next launch, the SDK does not retry it, and every launch registration resets `external_user_id` and tags (call `login` and `addTags` at each launch). Tags always survive `logout`.
-- `logout` sends `external_user_id: null` to unlink the device on the backend, like `react-native-notti` 0.8.0. The unlink is durable: a `logout` made offline, before `initialize`, or whose request failed is sent again at the next registration, and a later `login` replaces it. Before the first registration, only the latest `login` or `logout` call is sent.
+- `logout` sends `external_user_id: null` to unlink the device on the backend, like `react-native-notti` 0.8.0. The unlink is durable: a `logout` made offline, before `initialize`, or whose request failed is sent again at the next registration, and a later `login` made after `initialize` replaces it. `login`, tag and `setSubscription` calls made before `initialize` are dropped, each with one warning (level `warn`); `logout` is the only identity call kept from before `initialize`. After `initialize` and before the first registration, only the latest `login` or `logout` call is sent.
 - The `notti_prefs` suite is included in iOS device backups and can carry the device identity to another device when restored.
 - A host app delegate that implements only the legacy `application(_:didReceiveRemoteNotification:)` gets no silent-push `received` event.
 - If your own delegate overrides a push callback and calls `super`, the SDK can observe the same callback twice.
 - A visible push without `notification_id` (for example from another SDK) is not reported as `received`.
-- There is no consent API: gate `Notti.initialize` and `Notti.login` yourself.
+- There is no consent API: gate `Notti.initialize` and `Notti.login` yourself, and call `login` after `initialize` (before it, `login` is dropped).
 - Email, phone, external user id and tags are stored unencrypted in `UserDefaults` (suite `notti_prefs`).
 - A request is tried up to 5 times with 2, 4, 8 and 16 second waits; only network errors, 5xx, 408 and 429 are retried, and `Retry-After` is ignored.
 - Location sharing needs your app to hold location permission; the SDK never requests it.

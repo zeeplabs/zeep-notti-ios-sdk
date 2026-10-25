@@ -320,6 +320,64 @@ final class NottiFacadeProfileTests: XCTestCase {
         XCTAssertEqual(store.getTags(), [:])
     }
 
+    // MARK: - Dropped-call warning (PRF-02)
+
+    /// Captures every log line at `.verbose` while `body` runs, then restores the logger.
+    private func captureLogs(_ body: () -> Void) -> [(NottiLogLevel, String)] {
+        let lock = NSLock()
+        var lines: [(NottiLogLevel, String)] = []
+        let savedLevel = NottiLogger.level
+        NottiLogger.level = .verbose
+        NottiLogger.sink = { level, message in lock.withLock { lines.append((level, message)) } }
+        defer {
+            NottiLogger.sink = nil
+            NottiLogger.level = savedLevel
+        }
+        body()
+        return lock.withLock { lines }
+    }
+
+    func test_identityCallsBeforeInitializeLogOneFixedWarningEachAndNoValue() {
+        let lines = captureLogs {
+            facade.initialize(appId: "", clientKey: clientKey, baseUrl: baseUrl) // invalid: still not initialized
+            facade.login("sentinel-user-fixture")
+            facade.addTags(["sentinel-key-fixture": "sentinel-value-fixture"])
+            facade.removeTags(["sentinel-key-fixture"])
+            facade.setSubscription(false)
+            facade.logout()
+            facade.setEmail("sentinel@example.invalid")
+            drain()
+        }
+
+        let warnings = lines.filter { $0.0 == .warn }.map(\.1)
+        XCTAssertEqual(warnings, [
+            "Notti: login called before initialize was dropped; call Notti.initialize first",
+            "Notti: addTags called before initialize was dropped; call Notti.initialize first",
+            "Notti: removeTags called before initialize was dropped; call Notti.initialize first",
+            "Notti: setSubscription called before initialize was dropped; call Notti.initialize first"
+        ])
+        XCTAssertFalse(lines.contains { $0.1.contains("sentinel") }, "no external user id, tag or email in any line")
+        XCTAssertTrue(StubURLProtocol.recordedRequests().isEmpty, "the calls are still dropped")
+        XCTAssertNil(store.getExternalUserId())
+        XCTAssertTrue(store.getPendingExternalUserIdClear(), "logout stays the one durable identity call")
+    }
+
+    func test_identityCallsAfterInitializeLogNoDroppedWarning() {
+        initializeFacade()
+        for _ in 0..<3 { StubURLProtocol.enqueue(.echoDevice()) }
+
+        let lines = captureLogs {
+            facade.login("user-fixture")
+            facade.addTags(["plan": "vip"])
+            facade.removeTags(["plan"])
+            facade.setSubscription(false)
+            drain()
+        }
+
+        XCTAssertFalse(lines.contains { $0.1.contains("called before initialize") })
+        XCTAssertTrue(bodies("PATCH").contains { $0["external_user_id"] as? String == "user-fixture" })
+    }
+
     func test_deviceIdIsThePersistedIdBeforeInitialize() {
         store.setDeviceId("device-persisted-fixture")
 
