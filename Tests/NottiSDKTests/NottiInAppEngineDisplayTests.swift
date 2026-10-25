@@ -207,7 +207,7 @@ final class NottiInAppEngineDisplayTests: XCTestCase {
         XCTAssertEqual(clicks, [NottiInAppClick(
             messageId: messageId,
             buttonId: "fixture-btn",
-            action: NottiInAppLinkAction(type: .url, value: "https://example.invalid/sentinel")
+            action: NottiInAppAction(type: .url, value: "https://example.invalid/sentinel")
         )])
         XCTAssertEqual(order, ["emit(clickQueued: true)", "close"])
         XCTAssertEqual(presenter.closed, [display.id])
@@ -223,7 +223,7 @@ final class NottiInAppEngineDisplayTests: XCTestCase {
 
         XCTAssertEqual(types, ["impression", "click"])
         XCTAssertEqual(records.last?.buttonId, "image")
-        XCTAssertEqual(clicks.first?.action, NottiInAppLinkAction(type: .deeplink, value: "fixture://sentinel"))
+        XCTAssertEqual(clicks.first?.action, NottiInAppAction(type: .deeplink, value: "fixture://sentinel"))
     }
 
     func test_aSecondTapInTheSameTurnIsIgnored() {

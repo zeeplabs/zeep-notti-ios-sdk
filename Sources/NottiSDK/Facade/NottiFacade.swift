@@ -24,7 +24,7 @@ final class NottiFacade {
         let baseUrl: String
     }
 
-    private let runtime: NottiRuntime
+    let runtime: NottiRuntime
     private let dispatcher: NottiMainDispatcher
     private let installDelegates: () -> Void
 
@@ -36,6 +36,8 @@ final class NottiFacade {
     private let receivedHub: NottiListenerHub<NottiNotificationPayload>
     private let clickedHub: NottiListenerHub<NottiNotificationPayload>
     private let deviceIdHub: NottiListenerHub<String>
+    /// In-App clicks, attached to the runtime's click relay (`NottiFacade+InApp.swift`).
+    let inAppClickHub: NottiListenerHub<NottiInAppClick>
 
     /// Guards `activeConfig` and makes "decide + `runtime.start`" one step, so two
     /// racing different `initialize` calls end with one consistent core.
@@ -62,6 +64,12 @@ final class NottiFacade {
         deviceIdHub = NottiListenerHub<String>(
             attach: { handler in runtime.onDeviceIdChanged = handler },
             detach: { runtime.onDeviceIdChanged = nil },
+            dispatcher: dispatcher
+        )
+        let clicks = runtime.inAppClicks
+        inAppClickHub = NottiListenerHub<NottiInAppClick>(
+            attach: { handler in clicks.handler = handler },
+            detach: { clicks.handler = nil },
             dispatcher: dispatcher
         )
     }
