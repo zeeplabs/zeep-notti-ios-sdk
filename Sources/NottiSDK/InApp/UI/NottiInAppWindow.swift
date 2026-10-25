@@ -99,7 +99,16 @@ final class NottiInAppWindowHost: NottiInAppWindowHosting {
         self.hostController = hostController
     }
 
-    var sceneKey: AnyObject? { window?.windowScene }
+    /// The scene of the target, held strongly here: `UIWindow.windowScene` is weak and UIKit may clear it before
+    /// it posts `UIScene.didDisconnectNotification` (PRF-09).
+    var sceneKey: AnyObject? {
+        switch target {
+        case .scene(let scene):
+            return scene
+        case .screen:
+            return nil
+        }
+    }
 
     func show(_ content: NottiInAppWindowContent) {
         let window: NottiInAppWindow
