@@ -32,13 +32,13 @@ Today an In-App `url` action leaves the SDK only as data: the click listener rec
 | Scheme allowlist | `http` and `https`, case-insensitive, with a non-empty host; a value with whitespace or control characters is refused before parsing | A `url` action is author data from the dashboard: `tel:`, `sms:`, custom schemes or `javascript:` would let a message call, text or drive another app without the host's consent. Refusing whitespace keeps the result the same on iOS 15/16 and iOS 17+ (Foundation percent-encodes invalid characters only from iOS 17) | y (Julio, AD-020) |
 | Order | Listener delivery, then the close, then the open; all on the main thread (the open is queued after the listener's main-thread block) | Owner decision ("first delivers the click to the listeners"); the message is gone before Safari comes forward | y (Julio, AD-020) |
 | Default | On (`opensInAppURLs: true`) | Owner decision | y (Julio, AD-020) |
-| `initialize` with only the option changed | Applies the option without restarting the core or re-registering; the same appId, clientKey and baseUrl stay a no-op for the core | The option is local In-App behavior; a restart would re-register the device for a UI choice | n (proposed, D1) |
+| `initialize` with only the option changed | Applies the option without restarting the core or re-registering; the same appId, clientKey and baseUrl stay a no-op for the core | The option is local In-App behavior; a restart would re-register the device for a UI choice | y (D1, confirmed by Julio 2026-10-25) |
 | Option on an invalid `initialize` | Ignored with the rest of the call | "Invalid values are logged and ignored" (API-01) | n (proposed) |
 | Refusal log | One fixed `.debug` line, no value, when a `url` action is not opened because of its value; nothing when the option is off | Diagnosable at `debug`, invisible at the default level, no data | y (owner brief allows warn or debug) |
 | Open failure | No retry; one fixed `.warn` line, no URL | Owner decision | y (Julio, AD-020) |
 | No-listener warning | Logged only when the SDK did not handle the tap itself: no listener and (a `deeplink`, a `url` not opened, or no action); never for `push_permission` | Owner decision; a tap the SDK opened is handled | y (Julio, AD-020) |
 
-**Open questions:** none blocking. D1 (option-only re-initialize) is a proposal recorded here and in AD-020.
+**Open questions:** none blocking. D1 (option-only re-initialize) confirmed by Julio on 2026-10-25.
 
 ---
 
