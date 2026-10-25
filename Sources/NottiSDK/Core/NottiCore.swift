@@ -91,6 +91,7 @@ class NottiCore {
     /// time lost) and opening another. `NottiImpl` injects one process-wide
     /// instance; the default is a fresh gate so every test core is isolated.
     private let sessionGate: SessionGate
+    private let inAppHooks: NottiInAppHooks
 
     /// Thread-safe process-level session flag. Opened by the first core that
     /// starts a session in this process, closed on `didEnterBackground`.
@@ -269,6 +270,7 @@ class NottiCore {
         platform: String = "ios",
         logger: @escaping (NottiLogLevel, String) -> Void = { _, _ in },
         onDeviceIdChanged: @escaping (String) -> Void = { _ in },
+        inAppHooks: NottiInAppHooks = NottiInAppHooks(),
         sessionGate: SessionGate = SessionGate()
     ) {
         self.deviceStore = deviceStore
@@ -291,6 +293,7 @@ class NottiCore {
         self.logger = logger
         self.onDeviceIdChanged = onDeviceIdChanged
         self.sessionGate = sessionGate
+        self.inAppHooks = inAppHooks
         workQueue.setSpecific(key: Self.workQueueKey, value: 1)
         observeAppForeground()
         observeAppBackground()
@@ -757,6 +760,7 @@ class NottiCore {
                 enqueueExternalUserIdClear(client, description: "resyncLogout")
             }
             flushEventQueue()
+            inAppHooks.onDeviceRegistered?()
         case .failure(let message):
             registrationState = .failed
             logger(.error, "Notti.initialize: device registration failed: \(message)")
@@ -1041,6 +1045,7 @@ class NottiCore {
                 self.appIsInBackground = false
                 if self.sessionGate.tryOpen() {
                     self.handleSessionStartOnQueue(nowMs: activatedAtMs)
+                    self.inAppHooks.onSessionStarted?()
                 } else {
                     // Another core of this same process (pre-reload) already opened
                     // the foreground session: adopt it instead of closing it as an

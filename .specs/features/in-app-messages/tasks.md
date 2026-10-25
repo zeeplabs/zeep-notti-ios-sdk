@@ -408,6 +408,7 @@ No `[P]` task.
 ### T10: Core hooks and runtime wiring
 
 **What**: Add `NottiInAppHooks` (two optional closures, no-op default) to `NottiCore.init` and call them: `onSessionStarted` in the `tryOpen() == true` branch (`NottiCore.swift:1020`), `onDeviceRegistered` after the success bookkeeping in `registerDevice` (after `:722`). `NottiRuntime` owns the engine (production client factory, `NottiDeviceStore` identity reader, a placeholder no-op presenter until T17), passes the hooks in `makeCore()`, calls `configure` in `start` before `core.initialize` (D12), extends the existing `didEnterBackground` observer (`NottiRuntime.swift:74-83`) to call `engine.sessionEnded()` then `engine.appBackgrounded()` after `gate.close()`, adds a process `willEnterForeground` observer that calls `engine.appForegrounded()`, and forwards `onNetworkAvailable` to the engine (RN `NottiImpl.swift:46-85`, `NottiNetworkObserver.swift:66-67`).
+**SPEC_DEVIATION**: (1) `onDeviceRegistered` is called at the end of the `.success` branch, after `flushEventQueue()`, where RN calls it (`NottiCore.swift:763`), not on the line right after `setLastToken`; it still runs after the id and token are stored. The `NottiCore.swift` diff is 5 inserted lines (stored property, init parameter, its assignment, the two calls; 1489 → 1494 lines). (2) `NottiInAppHooks` (two optional closures, `forwarding(to:)`), the placeholder presenter, `NottiInAppEngine.live(defaults:)` and the `NottiDeviceStore` identity reader live in the new `Sources/NottiSDK/InApp/Engine/NottiInAppHooks.swift`. (3) `NottiRuntime.init` gains `inAppEngine: NottiInAppEngine?` and `notificationCenter: NotificationCenter = .default` (the observers' center, so tests post to an isolated one). Only `shared` passes the production engine; a nil engine gets one whose client factory returns nil, so the existing runtime-based tests never reach the network. (4) `start` configures the engine only for a non-empty appId and clientKey and a base URL that `NottiApiClient.validatedBaseUrl` accepts, passing the normalized URL (RN `NottiImpl.initialize`). (5) The "blocked work queue" test holds a real core's queue inside the HTTP client's retry sleep (a `500` then `200` registration), the production cause of the delay.
 **Where**: `Sources/NottiSDK/Core/NottiCore.swift`, `Sources/NottiSDK/Runtime/NottiRuntime.swift`, `Tests/NottiSDKTests/NottiInAppWiringTests.swift`
 **Depends on**: T9
 **Reuses**: `NottiCore.SessionGate`, the runtime's observers
@@ -415,15 +416,15 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] A core with a fake gate and fake registration calls `onSessionStarted` once per real session and never for the adopted session, and `onDeviceRegistered` after each registration `.success` and not after a failure
-- [ ] An isolated runtime delivers both hooks to its engine; replacing the core (`start` with a different config) keeps the same engine instance, and the engine's session state is reset only for a changed config
-- [ ] Posting `didEnterBackground` to the runtime's notification center ends the engine session even with no live core; posting `willEnterForeground` after a first session opens the next one and sends `eligible` while the fake core's work queue is blocked (a semaphore held for the whole test step), and the core's late `onSessionStarted` adds no request
-- [ ] `runtime.onNetworkAvailable()` triggers an engine flush and the transient-resume path
-- [ ] Race test at runtime level: `runtime.start(...)` immediately followed by `engine.trackEvent` on the same thread with an app-state provider that reports inactive: no session yet, the name is kept; flipping the provider to active opens the session through the core hook, and the response then matches the name once
-- [ ] Re-initialize through `start`: the same config leaves the engine state untouched; a different config resets it and purges other apps' queue records (the persisted suite is inspected)
-- [ ] The existing `NottiCoreTests`, `NottiRuntimeTests` and `NottiContinuityTests` pass unchanged, and the diff of `NottiCore.swift` is the init parameter plus the two call lines
-- [ ] Gate check passes: **full**
-- [ ] Test count: at least 14 new, total at least B + 162
+- [x] A core with a fake gate and fake registration calls `onSessionStarted` once per real session and never for the adopted session, and `onDeviceRegistered` after each registration `.success` and not after a failure
+- [x] An isolated runtime delivers both hooks to its engine; replacing the core (`start` with a different config) keeps the same engine instance, and the engine's session state is reset only for a changed config
+- [x] Posting `didEnterBackground` to the runtime's notification center ends the engine session even with no live core; posting `willEnterForeground` after a first session opens the next one and sends `eligible` while the fake core's work queue is blocked (a semaphore held for the whole test step), and the core's late `onSessionStarted` adds no request
+- [x] `runtime.onNetworkAvailable()` triggers an engine flush and the transient-resume path
+- [x] Race test at runtime level: `runtime.start(...)` immediately followed by `engine.trackEvent` on the same thread with an app-state provider that reports inactive: no session yet, the name is kept; flipping the provider to active opens the session through the core hook, and the response then matches the name once
+- [x] Re-initialize through `start`: the same config leaves the engine state untouched; a different config resets it and purges other apps' queue records (the persisted suite is inspected)
+- [x] The existing `NottiCoreTests`, `NottiRuntimeTests` and `NottiContinuityTests` pass unchanged, and the diff of `NottiCore.swift` is the init parameter plus the two call lines
+- [x] Gate check passes: **full** (local `ci.yml` equivalent on `4ed9ea5`: DONE 0 failures)
+- [x] Test count: at least 14 new, total at least B + 162 (15 new in `NottiInAppWiringTests`; `NottiSDKTests` 686 → 701)
 
 **Tests**: unit
 **Gate**: full

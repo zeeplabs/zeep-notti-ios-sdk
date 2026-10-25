@@ -21,14 +21,17 @@ final class NottiRuntime {
 
     /// The process-wide runtime, wired to `defaultsSuiteName` and the OS providers.
     @available(iOSApplicationExtension, unavailable)
-    static let shared = NottiRuntime(
-        defaults: UserDefaults(suiteName: defaultsSuiteName) ?? .standard,
-        providers: .live()
-    )
+    static let shared: NottiRuntime = {
+        let defaults = UserDefaults(suiteName: defaultsSuiteName) ?? .standard
+        return NottiRuntime(defaults: defaults, providers: .live(), inAppEngine: .live(defaults: defaults))
+    }()
 
     let eventStore: NottiEventStore
     let eventBuffer = NottiEventBuffer()
     let sessionGate = NottiCore.SessionGate()
+    /// Process-wide In-App engine: survives core replacement, hears the two core hooks and the process
+    /// observers (design D4, D14).
+    let inAppEngine: NottiInAppEngine
 
     private let defaults: UserDefaults
     private let providers: NottiPlatformProviders
@@ -44,6 +47,8 @@ final class NottiRuntime {
 
     private var networkObserver: NottiNetworkObserver?
     private var backgroundObserver: NSObjectProtocol?
+    private var foregroundObserver: NSObjectProtocol?
+    private let notificationCenter: NotificationCenter
 
     /// - Parameters:
     ///   - sdkVersion: value sent as `sdk_version`. Production passes the native
@@ -51,6 +56,9 @@ final class NottiRuntime {
     ///   - startObservers: starts the background observer (closes the session
     ///     gate on `didEnterBackground`) and the network observer (flushes on
     ///     reconnect). Tests that don't need them pass `false`.
+    ///   - inAppEngine: `shared` passes the production engine; when nil the
+    ///     runtime gets one with no client, which sends nothing (tests).
+    ///   - notificationCenter: where the process observers listen.
     init(
         defaults: UserDefaults,
         providers: NottiPlatformProviders,
@@ -59,9 +67,18 @@ final class NottiRuntime {
             NottiApiClient(baseUrl: $2, appId: $0, clientKey: $1)
         },
         sdkVersion: String = NottiSDKVersion.current,
-        startObservers: Bool = true
+        startObservers: Bool = true,
+        inAppEngine: NottiInAppEngine? = nil,
+        notificationCenter: NotificationCenter = .default
     ) {
         self.defaults = defaults
+        self.inAppEngine = inAppEngine ?? NottiInAppEngine(
+            store: NottiInAppEventStore(defaults: defaults),
+            identity: NottiInAppEngine.deviceIdentity(defaults: defaults),
+            presenter: NottiInAppPlaceholderPresenter(),
+            clientFactory: { _ in nil }
+        )
+        self.notificationCenter = notificationCenter
         self.providers = providers
         self.apiClientFactory = apiClientFactory
         self.sdkVersion = sdkVersion
@@ -72,21 +89,37 @@ final class NottiRuntime {
         self.networkObserver = observer
         guard startObservers else { return }
         // RN `processBackgroundObserver`: close the gate on background even when
-        // no core is alive to hear about it.
+        // no core is alive to hear about it, then end the In-App session and pause
+        // its display clock (RN `handleProcessBackground`).
         let gate = sessionGate
-        backgroundObserver = NotificationCenter.default.addObserver(
+        let engine = self.inAppEngine
+        backgroundObserver = notificationCenter.addObserver(
             forName: UIApplication.didEnterBackgroundNotification,
             object: nil,
             queue: nil
         ) { _ in
             gate.close()
+            engine.sessionEnded()
+            engine.appBackgrounded()
+        }
+        // RN `processForegroundObserver`: later In-App sessions open here, without
+        // waiting for the core's work queue (IAM-51).
+        foregroundObserver = notificationCenter.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: nil
+        ) { _ in
+            engine.appForegrounded()
         }
         observer.start()
     }
 
     deinit {
         if let backgroundObserver {
-            NotificationCenter.default.removeObserver(backgroundObserver)
+            notificationCenter.removeObserver(backgroundObserver)
+        }
+        if let foregroundObserver {
+            notificationCenter.removeObserver(foregroundObserver)
         }
         networkObserver?.cancel()
         _core?.invalidate()
@@ -113,6 +146,11 @@ final class NottiRuntime {
         lifecycleLock.lock()
         defer { lifecycleLock.unlock() }
         invalidateCurrentCore()
+        // In-App first, from this thread, so a `trackEvent` right after `start`
+        // finds the config (D12). Invalid input is left to the core, which logs it.
+        if !appId.isEmpty, !clientKey.isEmpty, let normalized = NottiApiClient.validatedBaseUrl(baseUrl) {
+            inAppEngine.configure(appId: appId, clientKey: clientKey, baseUrl: normalized)
+        }
         let core = makeCore()
         lock.withLock { _core = core }
         core.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkVersion: sdkVersion)
@@ -141,9 +179,12 @@ final class NottiRuntime {
         invalidateCurrentCore()
     }
 
-    /// Flush trigger (RN `NottiNetworkObserver.shared`'s callback). No-op without a core.
+    /// Flush trigger (RN `NottiNetworkObserver.shared`'s callback): the core's part
+    /// is a no-op without a core; the In-App engine flushes and resumes a fetch
+    /// that gave up on a transient failure (IAM-52).
     func onNetworkAvailable() {
         core?.onNetworkAvailable()
+        inAppEngine.networkAvailable()
     }
 
     /// APNs token callback. Hex conversion from RN `NottiBridge` (NottiPushDelegate.swift:17-20).
@@ -212,6 +253,7 @@ final class NottiRuntime {
             beginBackgroundTask: providers.beginBackgroundTask,
             logger: { level, message in NottiLogger.log(level, message) },
             onDeviceIdChanged: { [weak self] deviceId in self?.onDeviceIdChanged?(deviceId) },
+            inAppHooks: .forwarding(to: inAppEngine),
             sessionGate: sessionGate
         )
     }
