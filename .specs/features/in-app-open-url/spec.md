@@ -96,15 +96,15 @@ Today an In-App `url` action leaves the SDK only as data: the click listener rec
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| IOU-01 | P1: SDK opens web links | Execute | Implementing |
-| IOU-02 | P1: SDK opens web links | Execute | Implementing |
-| IOU-03 | P1: SDK opens web links | Execute | Implementing |
-| IOU-04 | P1: SDK opens web links | Execute | Implementing |
-| IOU-05 | P1: Unchanged parts and logging | Execute | Implementing |
-| IOU-06 | P1: Unchanged parts and logging | Execute | Implementing |
-| IOU-07 | P1: Unchanged parts and logging | Execute | Implementing |
-| IOU-08 | P1: Unchanged parts and logging | Execute | Implementing |
-| IOU-09 | P1: Unchanged parts and logging | Execute | Implementing |
+| IOU-01 | P1: SDK opens web links | Execute | Implemented, tested in the Simulator |
+| IOU-02 | P1: SDK opens web links | Execute | Implemented, tested in the Simulator |
+| IOU-03 | P1: SDK opens web links | Execute | Implemented, tested in the Simulator |
+| IOU-04 | P1: SDK opens web links | Execute | Implemented, tested in the Simulator |
+| IOU-05 | P1: Unchanged parts and logging | Execute | Implemented, tested in the Simulator |
+| IOU-06 | P1: Unchanged parts and logging | Execute | Implemented, tested in the Simulator |
+| IOU-07 | P1: Unchanged parts and logging | Execute | Implemented, tested in the Simulator |
+| IOU-08 | P1: Unchanged parts and logging | Execute | Implemented, tested in the Simulator |
+| IOU-09 | P1: Unchanged parts and logging | Execute | Implemented, tested in the Simulator |
 
 ## Success Criteria
 
