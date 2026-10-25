@@ -85,7 +85,7 @@ final class NottiInAppQueueScheduler: NottiInAppScheduling {
 /// bodies (IAM-43).
 final class NottiInAppEngine {
 
-    static let inactiveWarning = "Notti: in-app messages are inactive on this device until the next registration (HTTP 403)"
+    static let inactiveWarning = "Notti: in-app messages are refused for this session (HTTP 403); queued events are kept"
 
     /// Builds the production client; nil when the base URL is not usable.
     static func clientFactory(session: URLSession = .shared) -> (NottiInAppConfig) -> NottiInAppTransport? {

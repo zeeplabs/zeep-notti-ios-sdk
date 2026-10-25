@@ -379,7 +379,7 @@ final class NottiInAppEngineFetchTests: XCTestCase {
         scheduler.advance(600)
         XCTAssertEqual(network.routes, ["eligible"])
         XCTAssertEqual(engine.fetchState, .gaveUp(transient: false))
-        XCTAssertEqual(logs.warnings, ["Notti: in-app messages are inactive on this device until the next registration (HTTP 403)"])
+        XCTAssertEqual(logs.warnings, ["Notti: in-app messages are refused for this session (HTTP 403); queued events are kept"])
         XCTAssertEqual(logs.messages.count, 1)
         assertNoSentinelInLogs()
     }
@@ -435,7 +435,7 @@ final class NottiInAppEngineFetchTests: XCTestCase {
         sessionStarted()
         foregrounded()
         XCTAssertEqual(network.routes, ["events:fixture-old", "eligible", "events:fixture-old"])
-        let warning = "Notti: in-app messages are inactive on this device until the next registration (HTTP 403)"
+        let warning = "Notti: in-app messages are refused for this session (HTTP 403); queued events are kept"
         XCTAssertEqual(logs.warnings, [warning, warning])
     }
 

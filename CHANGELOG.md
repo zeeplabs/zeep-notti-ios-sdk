@@ -40,7 +40,7 @@ First release. It is a native port of `react-native-notti` 0.8.0 for iOS, In-App
 - Location sharing needs your app to hold location permission; the SDK never requests it.
 - In-App Messages are tested in the Simulator only: rendering, VoiceOver, the window level against the keyboard, Control Center and Picture in Picture, legacy apps without scenes, iPad multitasking, the `push_permission` settings jump and the launch ordering of `initialize`, `trackEvent` and the first session wait for the In-App device checklist.
 - Without an In-App click listener, a tap on a `deeplink` button, or on a `url` button the SDK does not open (another scheme, or `opensInAppURLs: false`), reports `click` and closes the message but opens nothing. A listener that also opens an `http`/`https` `url` while `opensInAppURLs` is true opens it twice.
-- On `403` from the In-App routes the SDK does **not** re-register as the server contract suggests: it logs one warning, stops In-App on the device until the next registration and keeps the queued events (same as `react-native-notti` 0.8.0).
+- On `403` from the In-App routes the SDK does **not** re-register as the server contract suggests: it logs one warning per session and route, stops fetching messages for the rest of the session (the next foreground session fetches again) and keeps the queued events (same behavior as `react-native-notti` 0.8.0, whose warning text says "until the next registration").
 - `push_permission` messages reach no device until `zeep-notti` adds a per-SDK minimum version for them.
 
 ### Migration notes from `react-native-notti` (0.6.0 to 0.8.0)
