@@ -224,14 +224,14 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] Two session-start messages: only the first is returned and the second never is, in the same session
-- [ ] Two event messages with the same name: the first `track` returns the older, the second `track` returns the other, the third returns nil; `Checkout_Done` does not match `checkout_done`; `" checkout_done"` does not match
-- [ ] `track` while visible returns nil and does not consume the message
-- [ ] Names noted before `load` are replayed in call order, once, returning at most one message; a repeated name is kept once; 33 distinct names keep the **first** 32 (the 33rd is ignored)
-- [ ] `startSession` clears held messages and `shown`, keeps the early names (replayed by a later `load`), and adds a visible id to `shown`; `endSession(wasOpen: true)` clears the early names, `endSession(wasOpen: false)` keeps them; `reset()` clears everything
-- [ ] `load` with a visible id skips that id and returns no session-start message
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 15 new, total at least B + 39
+- [x] Two session-start messages: only the first is returned and the second never is, in the same session
+- [x] Two event messages with the same name: the first `track` returns the older, the second `track` returns the other, the third returns nil; `Checkout_Done` does not match `checkout_done`; `" checkout_done"` does not match
+- [x] `track` while visible returns nil and does not consume the message
+- [x] Names noted before `load` are replayed in call order, once, returning at most one message; a repeated name is kept once; 33 distinct names keep the **first** 32 (the 33rd is ignored)
+- [x] `startSession` clears held messages and `shown`, keeps the early names (replayed by a later `load`), and adds a visible id to `shown`; `endSession(wasOpen: true)` clears the early names, `endSession(wasOpen: false)` keeps them; `reset()` clears everything
+- [x] `load` with a visible id skips that id and returns no session-start message
+- [x] Gate check passes: quick
+- [x] Test count: at least 15 new, total at least B + 39
 
 **Tests**: unit
 **Gate**: quick
