@@ -76,6 +76,8 @@ The pre-release review of `main` @ `2a38261` (2026-10-25) found one public-contr
 
 **Acceptance Criteria:**
 
+> **Verification result (T4, 2026-10-25): the double observation does not happen, so PRF-03 and PRF-04 were not implemented as code.** The review assumed `type(of:)` answers the isa class. A probe in the test bundle showed that Swift's `type(of:)` on an Objective-C object answers `-class`: for a GoogleUtilities/KVO-style dynamic subclass it is the host class, which the registry already holds, so a late `observe` is a no-op and each callback reaches the SDK once (`NottiAppDelegateSwizzlerTests.test_aDelegateIsaSwizzledAfterTheSdkIsObservedOncePerCallback`, `test_typeOfAnswersTheClassAnIsaSwizzlingSdkHides`, `test_anIsaSwizzledSwiftUIInternalDelegateStillTakesTheAdaptorPath` pin it). The probe exposed a different gap: when the dynamic subclass exists **before** the SDK swizzles (the proxy captured the host original), the SDK swizzles the host class and never sees the callback. That needs `object_getClass` plus the skip rule below, which swizzles a third-party dynamic class; it is left for Julio's decision (STATE todo). PRF-05 (main thread) is independent and implemented.
+
 1. PRF-03: WHEN `observe(delegate:)` sees a delegate whose isa class is a dynamic subclass of its logical class (`-class`) AND the SDK already swizzled a selector on the logical class THEN the SDK SHALL NOT swizzle that selector on the dynamic subclass, and each callback SHALL reach the adapter once and the host original once.
 2. PRF-03 (continued): WHEN the dynamic subclass exists before the SDK swizzled the logical class THEN the SDK SHALL swizzle the dynamic subclass only, and each callback SHALL reach the adapter once and the host original once.
 3. PRF-03 (continued): WHEN the logical class is SwiftUI's internal delegate THEN the SDK SHALL take the adaptor path (AD-016) even when the isa class is a dynamic subclass of it.
@@ -148,8 +150,8 @@ See `tasks.md`.
 | --- | --- | --- | --- |
 | PRF-01 | P1: ObjC names | Tasks (T2) | Done |
 | PRF-02 | P1: Identity calls before initialize | Tasks (T3) | Done |
-| PRF-03 | P1: One observation | Tasks (T4) | Pending |
-| PRF-04 | P1: One observation | Tasks (T5) | Pending |
+| PRF-03 | P1: One observation | Tasks (T4) | Not implemented: premise disproved, regression tests only |
+| PRF-04 | P1: One observation | Tasks (T5) | Not implemented: premise disproved |
 | PRF-05 | P1: One observation | Tasks (T6) | Pending |
 | PRF-06 | P2: Low defects | Tasks (T7) | Pending |
 | PRF-07 | P2: Low defects | Tasks (T8) | Pending |

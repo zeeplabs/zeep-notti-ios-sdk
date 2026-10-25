@@ -501,6 +501,86 @@ final class NottiAppDelegateSwizzlerTests: XCTestCase {
         XCTAssertEqual(runtime.eventStore.all().map(\.type), ["received"])
     }
 
+    // MARK: - Isa-swizzled delegates (PRF-03)
+    //
+    // Swift's `type(of:)` on an Objective-C object answers `-class`, so a dynamic subclass that hides itself
+    // behind `-class` (GoogleUtilities' app delegate proxy, KVO) resolves to the host class, which the
+    // registry already holds: a late `observe` adds nothing. These tests pin that.
+
+    /// A fake GoogleUtilities/KVO-style proxy: a dynamic subclass of the object's class that owns `selectors`
+    /// with the implementations the class had at that moment (it calls the captured original), and whose
+    /// `-class` answers the original class. The object is isa-swizzled to it.
+    @discardableResult
+    private func isaSwizzle(_ object: AnyObject, owning selectors: [Selector]) -> AnyClass {
+        let original: AnyClass = type(of: object)
+        let name = "NottiFixtureProxy\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))"
+        guard let proxy = objc_allocateClassPair(original, name, 0) else {
+            XCTFail("could not allocate fixture proxy class")
+            return original
+        }
+        for selector in selectors {
+            guard let method = class_getInstanceMethod(original, selector) else { continue }
+            class_addMethod(proxy, selector, method_getImplementation(method), method_getTypeEncoding(method))
+        }
+        let classBlock: @convention(block) (AnyObject) -> AnyClass = { _ in original }
+        class_addMethod(proxy, NSSelectorFromString("class"), imp_implementationWithBlock(classBlock), "#@:")
+        objc_registerClassPair(proxy)
+        object_setClass(object, proxy)
+        return proxy
+    }
+
+    private var failureLogCount: Int {
+        capturedLogs.filter { $0.0 == .error && $0.1.contains("failed to register for remote notifications") }.count
+    }
+
+    /// The premise of the tests below: `observe(delegate:)` reads `type(of:)`, which answers the hidden class,
+    /// not the isa class. If a Swift release changes that, the dynamic subclass would be swizzled too.
+    func test_typeOfAnswersTheClassAnIsaSwizzlingSdkHides() {
+        let cls = makeDelegateClass(.all)
+        let delegate = makeInstance(cls)
+        let proxy = isaSwizzle(delegate, owning: [failureSel])
+
+        XCTAssertTrue(object_getClass(delegate) == proxy, "the isa class is the dynamic subclass")
+        XCTAssertTrue(type(of: delegate) == cls, "type(of:) answers -class")
+    }
+
+    func test_aDelegateIsaSwizzledAfterTheSdkIsObservedOncePerCallback() {
+        let cls = makeDelegateClass(.all)
+        let delegate = makeInstance(cls)
+        let sdk = makeSwizzler()
+        XCTAssertTrue(sdk.observe(delegate: delegate), "the setDelegate: hook")
+
+        isaSwizzle(delegate, owning: [tokenSel, failureSel, fetchSel])
+        XCTAssertTrue(sdk.observe(delegate: delegate), "the late look after the other SDK")
+        sendFailure(delegate, NSError(domain: "fixture.apns", code: 1))
+        let results = sendFetch(delegate, silentUserInfo())
+
+        XCTAssertEqual(failureLogCount, 1, "the adapter saw the failure once")
+        XCTAssertEqual(runtime.eventStore.all().map(\.type), ["received"], "one received, not two")
+        XCTAssertEqual(calls, ["original:failure", "original:fetch"], "each host original once")
+        XCTAssertEqual(results, [.newData])
+    }
+
+    func test_anIsaSwizzledSwiftUIInternalDelegateStillTakesTheAdaptorPath() {
+        let hostClass = makeDelegateClass(.token)
+        let host = makeInstance(hostClass)
+        let internalClass = makeForwardingDelegateClass { host }
+        let swiftUIDelegate = makeInstance(internalClass)
+        let proxy = isaSwizzle(swiftUIDelegate, owning: [])
+        let sdk = NottiAppDelegateSwizzler(
+            swizzler: swizzler,
+            adapter: adapterRecordingFirstUse(),
+            isSwiftUIInternalDelegate: { $0 == internalClass }
+        )
+
+        XCTAssertTrue(sdk.observe(delegate: swiftUIDelegate))
+        sendToken(swiftUIDelegate, Data([0x01]))
+
+        XCTAssertEqual(calls, ["adapter", "original:token"])
+        XCTAssertFalse(responds(proxy, tokenSel), "neither SwiftUI's class nor the proxy gets a method")
+        XCTAssertTrue(capturedLogs.filter { $0.0 == .warn }.isEmpty)
+    }
+
     func test_observingAnExistingDelegateSwizzlesItsClassDirectly() {
         let cls = makeDelegateClass(.all)
         let sdk = makeSwizzler()

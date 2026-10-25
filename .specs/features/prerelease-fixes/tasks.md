@@ -51,7 +51,7 @@ T1 ──→ T2
 T1 ──→ T3
 T1 ──→ T4
 T4 ──→ T5
-T5 ──→ T6
+T4 ──→ T6
 T1 ──→ T7
 T1 ──→ T8
 T1 ──→ T9
@@ -124,42 +124,41 @@ Sequential order used in Execute: T1 → T2 → ... → T12.
 
 ---
 
-### T4: Resolve the logical class of an isa-swizzled app delegate
+### T4: Pin one observation behind an isa-swizzled app delegate
 
-**What**: `observe(delegate:)` uses `-class` and skips selectors the SDK already swizzled on the logical class.
-**Where**: `Sources/NottiSDK/Delegates/NottiAppDelegateSwizzler.swift`, `Tests/NottiSDKTests/NottiAppDelegateSwizzlerTests.swift`
+**What**: Verify the review's M2 in code. Result: `type(of:)` already answers `-class`, so no double observation; no source change. Regression tests pin the single observation and the premise.
+**Where**: `Tests/NottiSDKTests/NottiAppDelegateSwizzlerTests.swift`
 **Depends on**: T1
 **Requirement**: PRF-03
 
 **Done when**:
 
-- [ ] SDK-first and proxy-first orders observe each callback once and call the host original once
-- [ ] A proxied SwiftUI internal delegate takes the adaptor path
-- [ ] Test count: SDK +3
-- [ ] Gate passes: quick
+- [x] SDK-first order observes each callback once and calls the host original once (test)
+- [x] A proxied SwiftUI internal delegate takes the adaptor path (test)
+- [x] `type(of:)` answering `-class` pinned (test)
+- [x] Test count: SDK +3
+- [x] Gate passes: quick
 
 **Tests**: unit
 **Gate**: quick
-**Commit**: `fix(delegates): observe an isa-swizzled app delegate once`
+**Commit**: `test(delegates): pin one observation behind an isa-swizzled app delegate`
 
 ---
 
-### T5: Look at existing delegates once
+### T5: Look at existing delegates once (not implemented)
 
-**What**: The installer's late look runs on the first `ensureInstalled` only.
-**Where**: `Sources/NottiSDK/Delegates/NottiDelegateInstaller.swift`, `Tests/NottiSDKTests/NottiDelegateInstallerTests.swift`
+**What**: Dropped: its only reason was the double observation that T4 disproved; the repeated late look is idempotent.
+**Where**: `Sources/NottiSDK/Delegates/NottiDelegateInstaller.swift`
 **Depends on**: T4
 **Requirement**: PRF-04
 
 **Done when**:
 
-- [ ] A delegate that appears after the first `ensureInstalled` is not swizzled by a later one; the fallback still evaluates
-- [ ] Test count: SDK +1
-- [ ] Gate passes: quick
+- [x] Recorded as not implemented in the spec traceability
 
-**Tests**: unit
-**Gate**: quick
-**Commit**: `fix(delegates): look at existing delegates on the first initialize only`
+**Tests**: none
+**Gate**: build
+**Commit**: none
 
 ---
 
@@ -167,7 +166,7 @@ Sequential order used in Execute: T1 → T2 → ... → T12.
 
 **What**: The late look goes through `Environment.runOnMain` (sync on main, async otherwise).
 **Where**: `Sources/NottiSDK/Delegates/NottiDelegateInstaller.swift`, `Tests/NottiSDKTests/NottiDelegateInstallerTests.swift`
-**Depends on**: T5
+**Depends on**: T4
 **Requirement**: PRF-05
 
 **Done when**:
