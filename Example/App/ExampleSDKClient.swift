@@ -7,6 +7,8 @@ enum ExampleLogLevel: String, CaseIterable, Identifiable {
 }
 
 typealias PayloadHandler = @MainActor @Sendable ([String]) -> Void
+/// An In-App click reaches the model as the action type only: the link value and the ids stay in `LiveSDKClient`.
+typealias InAppClickHandler = @MainActor @Sendable (InAppActionKind) -> Void
 
 /// The calls `ExampleModel` makes into the SDK. A seam so hosted tests drive the model without
 /// touching the real SDK (its delegate hooks are live in the test host process). Payloads reach the
@@ -35,4 +37,6 @@ protocol ExampleSDKClient {
     func addClickedListener(_ handler: @escaping PayloadHandler) -> () -> Void
     func addDeviceIdChangedListener(_ handler: @escaping @MainActor @Sendable (String) -> Void) -> () -> Void
     func takeInitialClick() -> [String]?
+    func trackEvent(_ name: String)
+    func addInAppClickListener(_ handler: @escaping InAppClickHandler) -> () -> Void
 }

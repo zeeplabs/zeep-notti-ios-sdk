@@ -16,6 +16,10 @@ final class ExampleModel: ObservableObject {
     let manualForwardingEnabled: Bool
     private let sdk: ExampleSDKClient
     private var removers: [() -> Void] = []
+    private var removeInAppClickListener: (() -> Void)?
+
+    /// The event name the "Track event" button reports. Synthetic; a real app uses its own names.
+    nonisolated static let exampleEventName = "example_event"
 
     init(config: ExampleConfig, sdk: ExampleSDKClient, log: ExampleLog? = nil, manualForwardingEnabled: Bool = false) {
         self.config = config
@@ -38,6 +42,12 @@ final class ExampleModel: ObservableObject {
 
     func initialize() {
         run(.initialize) {
+            // Registered before the first initialize, so a message shown right after it already has a listener.
+            if removeInAppClickListener == nil {
+                removeInAppClickListener = sdk.addInAppClickListener { [weak self] kind in
+                    self?.log.record(.inAppClick(action: kind))
+                }
+            }
             sdk.initialize(appId: config.appId, clientKey: config.clientKey, baseUrl: config.baseUrl)
             isInitialized = true
             deviceId = sdk.deviceId()
@@ -149,6 +159,12 @@ final class ExampleModel: ObservableObject {
         run(.takeInitialClick) {
             if let keys = sdk.takeInitialClick() { log.record(.payload(.clicked, keys: keys)) }
         }
+    }
+
+    // MARK: In-App messages
+
+    func trackEvent() {
+        run(.trackEvent) { sdk.trackEvent(Self.exampleEventName) }
     }
 
     // MARK: Internals

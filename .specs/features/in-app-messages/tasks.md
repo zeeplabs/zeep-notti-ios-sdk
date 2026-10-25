@@ -661,6 +661,7 @@ No `[P]` task.
 ### T19: Example app
 
 **What**: Edit the existing Example app (`example-and-release`): a button "Track event" that calls `Notti.trackEvent("example_event")` and a click listener registered at launch that logs only the action type (`url`, `deeplink` or `none`, never the value) to the on-screen log; a hosted test that the button and the listener are wired.
+**SPEC_DEVIATION**: (1) The calls go through the Example's existing seam instead of `ExampleApp.swift`: `ExampleSDKClient` gains `trackEvent(_:)` and `addInAppClickListener(_:)`, `LiveSDKClient` maps a click to its action type (`InAppActionKind`: `url`, `deeplink`, `none`) before it reaches the model, so the link value and the ids never leave `LiveSDKClient`; `ExampleModel.trackEvent()` sends `example_event`; the "Track event" button is in the Push tab (`ExampleViews.swift`); `ExampleLog` gains the `trackEvent` call row and `LogEvent.inAppClick(action:)` (`in-app click: action url`); `SpySDKClient` records both. Files touched: `ExampleSDKClient.swift`, `LiveSDKClient.swift`, `ExampleModel.swift`, `ExampleViews.swift`, `ExampleLog.swift`, `Example/Tests/SpySDKClient.swift`, `Example/Tests/InAppExampleTests.swift`; `ExampleApp.swift` is unchanged. (2) The listener is added at **Initialize** (once, before `Notti.initialize`), not at app launch: the Example never calls the SDK while unconfigured (EXR-05), and no message can show before `initialize`, so no click is lost. (3) `scripts/check-example-coverage.sh` now also requires `Notti.trackEvent` and `Notti.InAppMessages.addClickListener` (functions of `Public/NottiInAppMessages.swift`; the click fields are read, not called), proved by a mutant that removes the `trackEvent` call (fails with `sdk trackEvent`). (4) The hosted tests cover the wiring through the spy; the `NottiInAppClick` to `InAppActionKind` mapping in `LiveSDKClient` has no hosted test because the click has no public initializer.
 **Where**: `Example/App/ExampleApp.swift`, `Example/Tests/InAppExampleTests.swift`
 **Depends on**: T12, T17
 **Reuses**: the `example-and-release` structure and hosted tests (`ExampleSDKClient`, `ExampleLog`)
@@ -669,9 +670,9 @@ No `[P]` task.
 **Done when**:
 
 - [ ] The example builds for the simulator and device with the strict flags and the hosted test passes; `check-example-coverage.sh` and `check-example-config.sh` pass
-- [ ] The sample config in `Example/Config/Example.xcconfig.sample` is unchanged (no real keys)
+- [x] The sample config in `Example/Config/Example.xcconfig.sample` is unchanged (no real keys)
 - [ ] Gate check passes: Example build and hosted tests plus quick
-- [ ] Test count: at least 2 new hosted tests (not counted in the SDK total)
+- [x] Test count: at least 2 new hosted tests (not counted in the SDK total) (5 new in `InAppExampleTests`; Example hosted 36 → 41 on the SPM leg, local run before the commit)
 
 **Tests**: unit (hosted)
 **Gate**: quick

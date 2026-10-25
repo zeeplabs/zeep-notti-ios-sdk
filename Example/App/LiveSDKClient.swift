@@ -81,6 +81,22 @@ struct LiveSDKClient: ExampleSDKClient {
         Notti.Notifications.takeInitialClick().map(Self.keys(of:))
     }
 
+    func trackEvent(_ name: String) { Notti.trackEvent(name) }
+
+    func addInAppClickListener(_ handler: @escaping InAppClickHandler) -> () -> Void {
+        let subscription = Notti.InAppMessages.addClickListener { click in
+            let kind = Self.actionKind(of: click)
+            Task { @MainActor in handler(kind) }
+        }
+        return { subscription.remove() }
+    }
+
+    /// The action type only. The SDK never opens the link; a real app would route `click.action?.value` here.
+    private static func actionKind(of click: NottiInAppClick) -> InAppActionKind {
+        guard let action = click.action else { return .noAction }
+        return InAppActionKind(rawValue: action.type.rawValue) ?? .noAction
+    }
+
     /// Key names only. `title` and `body` count as keys by presence; no value is read out.
     private static func keys(of payload: NottiNotificationPayload) -> [String] {
         var keys = Array(payload.data.keys)
