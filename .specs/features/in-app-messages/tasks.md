@@ -292,6 +292,7 @@ No `[P]` task.
 ### T6: Event flusher
 
 **What**: `NottiInAppEventFlusher`: one pass (`runPass(appId:identity:singleAttempt:headFailures:) -> Outcome`), a port of RN `runFlushPass` (`NottiInAppCoordinator.swift:568-603`): purge other apps, expire (one fixed log line), oldest first for the current app, the status table of IAM-31, outcomes `done`, `paused(seconds)`, `unauthorized`, `forbidden`, `failed`, `backoff(failures)`. Defines `NottiInAppScheduling` (`execute`, `schedule(after:)`) used by later tasks. The engine owns the outcome handling (T7).
+**SPEC_DEVIATION (accepted)**: `runPass` delivers the outcome through `completion: @escaping (NottiInAppFlushOutcome) -> Void` instead of returning it. The T5 client is non-blocking (D5), and a synchronous return would need a semaphore on the engine queue; RN returns synchronously only because its client blocks. Each response hops through `scheduler.execute` and the completion runs inside that hop.
 **Where**: `Sources/NottiSDK/InApp/Engine/NottiInAppEventFlusher.swift`, `Tests/NottiSDKTests/NottiInAppEventFlusherTests.swift`
 **Depends on**: T4, T5
 **Reuses**: the store and the client
