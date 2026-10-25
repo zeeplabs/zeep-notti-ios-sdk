@@ -557,6 +557,7 @@ No `[P]` task.
 ### T15: `top` and `bottom` layouts
 
 **What**: The bar layouts: placement under or above the safe area with the `margin` inset measured from the safe-area edge, height capped at min(40% of the container, safe height minus the margins), the 56 pt leading thumbnail, the pan swipe (begins only when mostly vertical, in the dismiss direction, and the text cannot scroll that way; follows the finger; dismisses at min(card height / 3, 44 pt); snaps back otherwise), the body tap recognizer (bars with buttons only, excluding the close control, buttons and a tappable image; acts as the first button), all with handlers callable by tests (RN `NottiInAppViews.swift:415-529`).
+**SPEC_DEVIATION**: (1) `NottiInAppBarLayout` is the bar overlay view (placement, pass-through `hitTest`); the swipe and body tap live in its `NottiInAppBarInteraction` (an `NSObject` gesture delegate, RN `InAppInteraction`), whose handlers (`panChanged`, `panEnded`, `settle`, `startsSwipe(horizontal:vertical:)`, `handleBodyTap`, `bodyTapAccepts`) the tests call. (2) The thumbnail arithmetic itself is in the T14 card layout pass (RN computes it there); this task asserts it. (3) The card is placed with `bounds` and `center`, not `frame`, so a swipe transform in progress survives a layout pass. (4) "Never reports an impression": the views have no impression path at all (D9); the test asserts that re-layout delivers no outcome.
 **Where**: `Sources/NottiSDK/InApp/UI/NottiInAppBarLayout.swift`, `Tests/NottiSDKTests/NottiInAppBarLayoutTests.swift`
 **Depends on**: T14
 **Reuses**: `NottiInAppLayout`
@@ -564,14 +565,14 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] At 390 x 844 and 844 x 390 with notch insets: `top` sits at the safe area top, `bottom` at the safe area bottom, heights at most min(40% of the window, safe height minus 32) with a 500-character body; with `margin: true` or absent the bar is 16 pt from the safe-area edge (top or bottom, leading and trailing); with `margin: false` its frame touches the safe-area edges on those sides
-- [ ] In landscape with left and right safe-area insets (for example 59 pt): the leading and trailing edges are at the insets plus 16 (`margin: true`) or at the insets exactly (`margin: false`)
-- [ ] The thumbnail is 56 x 56 at the leading edge (trailing under right-to-left)
-- [ ] `top` dismisses with `swipe` on a pan ending at -44 pt for a 300 pt card and at -20 pt for a 60 pt card (one third), snaps back at -43 pt for the 300 pt card, and ignores a downward pan; `bottom` the mirror; a pan does not begin while the text can still scroll in that direction; the close control yields `close_button`
-- [ ] A body tap yields the first button's id and action; with no buttons there is no body recognizer; a tap on a button or the close control does not also fire the body tap
-- [ ] Re-layout (rotation sizes in sequence) leaves one view hierarchy and the view never reports an impression
-- [ ] Gate check passes: quick
-- [ ] Test count: at least 13 new, total at least B + 215
+- [x] At 390 x 844 and 844 x 390 with notch insets: `top` sits at the safe area top, `bottom` at the safe area bottom, heights at most min(40% of the window, safe height minus 32) with a 500-character body; with `margin: true` or absent the bar is 16 pt from the safe-area edge (top or bottom, leading and trailing); with `margin: false` its frame touches the safe-area edges on those sides
+- [x] In landscape with left and right safe-area insets (for example 59 pt): the leading and trailing edges are at the insets plus 16 (`margin: true`) or at the insets exactly (`margin: false`)
+- [x] The thumbnail is 56 x 56 at the leading edge (trailing under right-to-left)
+- [x] `top` dismisses with `swipe` on a pan ending at -44 pt for a 300 pt card and at -20 pt for a 60 pt card (one third), snaps back at -43 pt for the 300 pt card, and ignores a downward pan; `bottom` the mirror; a pan does not begin while the text can still scroll in that direction; the close control yields `close_button`
+- [x] A body tap yields the first button's id and action; with no buttons there is no body recognizer; a tap on a button or the close control does not also fire the body tap
+- [x] Re-layout (rotation sizes in sequence) leaves one view hierarchy and the view never reports an impression
+- [x] Gate check passes: quick
+- [x] Test count: at least 13 new, total at least B + 215 (18 new in `NottiInAppBarLayoutTests`; `NottiSDKTests` 755 → 773)
 
 **Tests**: unit
 **Gate**: quick
