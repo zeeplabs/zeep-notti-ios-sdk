@@ -60,20 +60,22 @@ final class NottiInAppApiClient {
             return
         }
         send(url: url, body: ["device_id": deviceId, "token": token]) { status, data, retryAfter in
-            switch status {
-            case 200..<300:
-                guard let messages = NottiInAppMessageParser.parse(data) else {
-                    completion(.transient)
-                    return
-                }
-                completion(.messages(messages))
-            case 429: completion(.rateLimited(retryAfterSeconds: Self.parseRetryAfter(retryAfter)))
-            case 401: completion(.unauthorized)
-            case 403: completion(.forbidden)
-            case 408: completion(.transient)
-            case 400..<500: completion(.terminal(status: status))
-            default: completion(.transient)
-            }
+            completion(Self.eligibleResult(status: status, body: data, retryAfter: retryAfter))
+        }
+    }
+
+    /// The `eligible` status table. `status` is -1 for a transport error.
+    static func eligibleResult(status: Int, body: Data, retryAfter: String?) -> NottiInAppEligibleResult {
+        switch status {
+        case 200..<300:
+            guard let messages = NottiInAppMessageParser.parse(body) else { return .transient }
+            return .messages(messages)
+        case 429: return .rateLimited(retryAfterSeconds: parseRetryAfter(retryAfter))
+        case 401: return .unauthorized
+        case 403: return .forbidden
+        case 408: return .transient
+        case 400..<500: return .terminal(status: status)
+        default: return .transient
         }
     }
 
@@ -99,15 +101,20 @@ final class NottiInAppApiClient {
         if event.type == NottiInAppEventType.click, let buttonId = event.buttonId { body["button_id"] = buttonId }
         if event.type == NottiInAppEventType.dismiss, let reason = event.reason { body["reason"] = reason }
         send(url: url, body: body) { status, _, retryAfter in
-            switch status {
-            case 200..<300: completion(.recorded)
-            case 429: completion(.rateLimited(retryAfterSeconds: Self.parseRetryAfter(retryAfter)))
-            case 401: completion(.unauthorized)
-            case 403: completion(.forbidden)
-            case 408: completion(.transient)
-            case 400..<500: completion(.drop)
-            default: completion(.transient)
-            }
+            completion(Self.eventResult(status: status, retryAfter: retryAfter))
+        }
+    }
+
+    /// The events status table (IAM-31). `status` is -1 for a transport error.
+    static func eventResult(status: Int, retryAfter: String?) -> NottiInAppEventResult {
+        switch status {
+        case 200..<300: return .recorded
+        case 429: return .rateLimited(retryAfterSeconds: parseRetryAfter(retryAfter))
+        case 401: return .unauthorized
+        case 403: return .forbidden
+        case 408: return .transient
+        case 400..<500: return .drop
+        default: return .transient
         }
     }
 
