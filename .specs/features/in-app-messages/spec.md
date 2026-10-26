@@ -1,6 +1,6 @@
 # In-App Messages Specification
 
-**Status**: Approved by Julio 2026-10-24 (scope and the four AD-019 decisions), reconciled with `react-native-notti` 0.8.0 (tag `v0.8.0`, `291d5a7`). Execute done 2026-10-25 (T1-T20, T22); not verified until the device checklist (T21) and the Verifier pass.
+**Status**: Approved by Julio 2026-10-24 (scope and the four AD-019 decisions), reconciled with `react-native-notti` 0.8.0 (tag `v0.8.0`, `291d5a7`). Execute done 2026-10-25 (T1-T20, T22); T21 closed 2026-10-26 by owner decision (internal device report, no independent Verifier; `validation.md`).
 
 ## Problem Statement
 
@@ -377,13 +377,13 @@ Legend: `y` confirmed. Evidence tags: [Certo] verified in code or contract, [Pro
 | IAM-45 | P1: Privacy and surface (extension safety, scripts with the one allowlisted file, packaging) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
 | IAM-46 | P1: Privacy and surface (privacy manifest) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
 | IAM-47 | P2: Documentation and example | Execute | Implemented, tested in the Simulator (`traceability.md`) |
-| IAM-48 | P2: Documentation and example (device checklist) | Validate | Pending (T21 device checklist) |
+| IAM-48 | P2: Documentation and example (device checklist) | Validate | Closed (T21, owner report) |
 | IAM-49 | P1: Push permission button (click, null action, close, then the platform action) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
 | IAM-50 | P1: Push permission button (state table, the only URL opened, allowlisted file) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
 | IAM-51 | P1: Sessions and network regain (foreground session open, idempotent core report, process-observer end) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
 | IAM-52 | P1: Sessions and network regain (resume a transient give-up once per reconnect) | Execute | Implemented, tested in the Simulator (`traceability.md`) |
 
-**Coverage:** 52 total, mapped to stories; task mapping in `tasks.md`; tests per requirement in `traceability.md` (51 covered, IAM-48 pending T21).
+**Coverage:** 52 total, mapped to stories; task mapping in `tasks.md`; tests per requirement in `traceability.md` (51 covered, IAM-48 closed on the owner's report in T21).
 
 ---
 

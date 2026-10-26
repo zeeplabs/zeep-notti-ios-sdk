@@ -4,7 +4,7 @@
 **Spec**: `.specs/features/in-app-messages/spec.md`
 **Testing**: `.specs/codebase/TESTING.md`
 **Depends on feature**: none blocking. Part of M1 / `0.1.0` (AD-017): T19 edits the existing `Example/` app, T20 the `[0.1.0]` release notes. Server: `zeep-notti` v0.23.0 or later serves the payload (OQ-6 closed). Recorded dependency, not a task: the `zeep-notti` per-SDK minimum for `push_permission` (AD-019 decision 4). The AD-018 core fixes land first as separate commits
-**Status**: Approved by Julio 2026-10-24 (scope and the four AD-019 decisions), reconciled with `react-native-notti` 0.8.0. Execute done 2026-10-25 for T1-T20 and T22; T21 (device checklist and Verifier) not run
+**Status**: Approved by Julio 2026-10-24 (scope and the four AD-019 decisions), reconciled with `react-native-notti` 0.8.0. Execute done 2026-10-25 for T1-T20 and T22; T21 closed 2026-10-26 by owner decision (`validation.md`; no independent Verifier)
 
 ---
 
@@ -715,10 +715,12 @@ No `[P]` task.
 
 **Done when**:
 
-- [ ] Every checklist line is marked pass, fail or not run with the device, OS version and server release
-- [ ] A fail is either fixed with a regression test or recorded as a todo in `STATE.md` with the owner's decision
-- [ ] `python3 .claude/skills/tlc-spec-driven/scripts/validate_state.py .specs/features/in-app-messages` exits 0
-- [ ] Gate check passes: **full**
+- [x] Every checklist line is marked pass, fail or not run with the device, OS version and server release
+- [x] A fail is either fixed with a regression test or recorded as a todo in `STATE.md` with the owner's decision
+- [x] `python3 .claude/skills/tlc-spec-driven/scripts/validate_state.py .specs/features/in-app-messages` exits 0
+- [x] Gate check passes: **full**
+
+**Status**: Closed 2026-10-26 by owner decision. Julio reported every item run internally; item 9 is recorded per action, device models, iOS versions and server release are not recorded line by line, and no independent Verifier ran. A beta tester runs the SDK in a real host app after 0.1.0.
 
 **Tests**: none
 **Gate**: full
