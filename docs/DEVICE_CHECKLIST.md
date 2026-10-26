@@ -224,8 +224,8 @@ Result:
 **Steps:** Archive, **Validate App**, read the report. Check the privacy report in Organizer (**Generate Privacy Report**).
 **Expected:** Validation accepts both manifests with no warning about a missing or unjustified required-reason API in `NottiSDKExtension`, and no ITMS error about `PrivacyInfo.xcprivacy`.
 
-- [ ] Pass  - [ ] Fail
-Result:
+- [x] Pass  - [ ] Fail
+Result: 2026-10-26, Julio. Throwaway CocoaPods host app (static frameworks, with a Notification Service Extension linking `NottiSDKExtension`), SDK code of `main` `49b021e`: Xcode **Validate App** passed with no error or warning about either manifest (the only errors on the first try were the host app's missing icons). ITMS privacy-manifest emails (`ITMS-91053`/`91061`) arrive only after a real upload: confirm on the first TestFlight upload of the beta.
 
 ## D18. App Store Connect: privacy labels match the manifest
 
@@ -234,8 +234,8 @@ Result:
 **Steps:** Compare the report with the README section "What your app declares in App Store Connect".
 **Expected:** The report lists Device ID, User ID, Email Address, Phone Number, Coarse Location, Product Interaction, Other Diagnostic Data and Other Data Types, linked and not used for tracking. The legal and privacy wording of the **Other** categories and of User ID was confirmed by Julio on 2026-10-22; this item only checks that the uploaded build reports the same categories.
 
-- [ ] Pass  - [ ] Fail
-Result (reviewer and date):
+- [x] Pass  - [ ] Fail
+Result (reviewer and date): Julio, 2026-10-26. The Organizer privacy report of the D17 archive lists exactly the eight README types from `NottiSDK_Privacy.bundle`, all linked and not tracking; purposes App Functionality, Product Interaction Analytics only, Coarse Location App Functionality and Analytics. `NottiSDKExtension` lists nothing (its manifest declares no collected data). Legal wording confirmed by Julio on 2026-10-22.
 
 ## D19. App Store acceptance of the dynamic-framework layout
 
@@ -244,8 +244,8 @@ Result (reviewer and date):
 **Steps:** **Validate App** on that archive.
 **Expected:** No error about the extension's `@executable_path/../../Frameworks` rpath or embedded frameworks. If Apple rejects it, record the message: the `NottiSDKExtension` pod then needs a different packaging before `0.1.0`.
 
-- [ ] Pass  - [ ] Fail
-Result:
+- [x] Pass  - [ ] Fail
+Result: 2026-10-26, Julio. Same host app with `NOTTI_LINKAGE=dynamic`: the archive embeds `NottiSDK.framework` and `NottiSDKExtension.framework` (dynamic Mach-O) in the app's `Frameworks/`, the extension links `@rpath/NottiSDKExtension.framework`, and **Validate App** passed. D13 (device behavior with dynamic frameworks) was not run separately.
 
 ## D20. Device id continuity from `react-native-notti` 0.6.0
 
