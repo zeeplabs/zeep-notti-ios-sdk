@@ -21,20 +21,40 @@ In Xcode: **File → Add Package Dependencies…** and enter:
 https://github.com/zeeplabs/zeep-notti-ios-sdk.git
 ```
 
+Choose the dependency rule **Up to Next Major Version** from `0.1.0`.
+
 - Add the **`NottiSDK`** product to your app target.
 - Add the **`NottiSDKExtension`** product to your Notification Service Extension target (optional, for rich media).
+
+In a `Package.swift`:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/zeeplabs/zeep-notti-ios-sdk.git", from: "0.1.0"),
+],
+targets: [
+    .target(name: "YourApp", dependencies: [.product(name: "NottiSDK", package: "zeep-notti-ios-sdk")]),
+    .target(name: "YourNotificationServiceExtension", dependencies: [.product(name: "NottiSDKExtension", package: "zeep-notti-ios-sdk")]),
+]
+```
+
+Swift Package Manager is the recommended way for native apps.
 
 ### CocoaPods
 
 ```ruby
+platform :ios, '15.0'
+
 target 'YourApp' do
-  pod 'NottiSDK'
+  pod 'NottiSDK', '~> 0.1'
 end
 
 target 'YourNotificationServiceExtension' do
-  pod 'NottiSDKExtension'
+  pod 'NottiSDKExtension', '~> 0.1'
 end
 ```
+
+Then run `pod install` and open the `.xcworkspace`.
 
 Linking `NottiSDKExtension` into the app target builds, but exposes no app API. Use `NottiSDK` there. In the extension, `import NottiSDKExtension`, the same line as with SPM. Both pods work with dynamic frameworks, static frameworks and static libraries.
 
