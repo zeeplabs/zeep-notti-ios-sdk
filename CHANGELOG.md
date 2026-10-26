@@ -6,9 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-## [0.1.0] - TBD
+## [0.1.0] - 2026-10-26
 
-First release. It is a native port of `react-native-notti` 0.8.0 for iOS, In-App Messages included, with the same backend contract and the same on-device storage. The date is set on release day, after the [device checklist](docs/DEVICE_CHECKLIST.md) and the In-App device checklist pass.
+First release. It is a native port of `react-native-notti` 0.8.0 for iOS, In-App Messages included, with the same backend contract and the same on-device storage.
 
 ### Added
 
@@ -25,7 +25,7 @@ First release. It is a native port of `react-native-notti` 0.8.0 for iOS, In-App
 
 ### Known limitations
 
-- Several behaviors are not proven on a physical device. See [docs/DEVICE_CHECKLIST.md](docs/DEVICE_CHECKLIST.md).
+- The [device checklist](docs/DEVICE_CHECKLIST.md) passed on the maintainer's devices, without a per-item record of device and iOS version; App Store validation (privacy manifests, static and dynamic frameworks) passed with Xcode Validate App. A beta in a production host app follows this release.
 - The Notification Service Extension is not exercised in the Simulator by this repo.
 - A SwiftUI app without `@UIApplicationDelegateAdaptor`: the SDK does not swizzle SwiftUI's internal app delegate, logs one warning (level `warn`, invisible at the default `error` level) and does not receive the APNs token. Use the adaptor or the manual forwarding API.
 - `logout` and re-registration need `zeep-notti` v0.24.0 or later. On an older backend, the `logout` unlink answers 2xx but the device stays linked to the previous user until the next launch, the SDK does not retry it, and every launch registration resets `external_user_id` and tags (call `login` and `addTags` at each launch). Tags always survive `logout`.
@@ -38,7 +38,7 @@ First release. It is a native port of `react-native-notti` 0.8.0 for iOS, In-App
 - Email, phone, external user id and tags are stored unencrypted in `UserDefaults` (suite `notti_prefs`).
 - A request is tried up to 5 times with 2, 4, 8 and 16 second waits; only network errors, 5xx, 408 and 429 are retried, and `Retry-After` is ignored.
 - Location sharing needs your app to hold location permission; the SDK never requests it.
-- In-App Messages are tested in the Simulator only: rendering, VoiceOver, the window level against the keyboard, Control Center and Picture in Picture, legacy apps without scenes, iPad multitasking, the `push_permission` settings jump and the launch ordering of `initialize`, `trackEvent` and the first session wait for the In-App device checklist.
+- In-App Messages passed the maintainer's device checks without a per-item record. The window level against the keyboard, Control Center and Picture in Picture, legacy apps without scenes, and the launch ordering of `initialize`, `trackEvent` and the first session are not separately proven and are confirmed in the beta.
 - Without an In-App click listener, a tap on a `deeplink` button, or on a `url` button the SDK does not open (another scheme, or `opensInAppURLs: false`), reports `click` and closes the message but opens nothing. A listener that also opens an `http`/`https` `url` while `opensInAppURLs` is true opens it twice.
 - On `403` from the In-App routes the SDK does **not** re-register as the server contract suggests: it logs one warning per session and route, stops fetching messages for the rest of the session (the next foreground session fetches again) and keeps the queued events (same behavior as `react-native-notti` 0.8.0, whose warning text says "until the next registration").
 - `push_permission` messages reach no device until `zeep-notti` adds a per-SDK minimum version for them.
