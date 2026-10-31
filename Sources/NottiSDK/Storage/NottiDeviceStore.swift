@@ -28,6 +28,7 @@ struct DeviceState {
     let lastSyncedDeviceOs: String?
     let lastSyncedDeviceModel: String?
     let lastSyncedSdkVersion: String?
+    let lastSyncedSdkName: String?
     let lastSyncedTimezoneId: String?
     let lastSyncedLanguage: String?
     let lastSyncedPermissionStatus: String?
@@ -53,6 +54,7 @@ struct DeviceState {
         lastSyncedDeviceOs: String? = nil,
         lastSyncedDeviceModel: String? = nil,
         lastSyncedSdkVersion: String? = nil,
+        lastSyncedSdkName: String? = nil,
         lastSyncedTimezoneId: String? = nil,
         lastSyncedLanguage: String? = nil,
         lastSyncedPermissionStatus: String? = nil,
@@ -77,6 +79,7 @@ struct DeviceState {
         self.lastSyncedDeviceOs = lastSyncedDeviceOs
         self.lastSyncedDeviceModel = lastSyncedDeviceModel
         self.lastSyncedSdkVersion = lastSyncedSdkVersion
+        self.lastSyncedSdkName = lastSyncedSdkName
         self.lastSyncedTimezoneId = lastSyncedTimezoneId
         self.lastSyncedLanguage = lastSyncedLanguage
         self.lastSyncedPermissionStatus = lastSyncedPermissionStatus
@@ -110,6 +113,9 @@ class NottiDeviceStore {
     private static let keyLastSyncedDeviceOs = "notti_last_synced_device_os"
     private static let keyLastSyncedDeviceModel = "notti_last_synced_device_model"
     private static let keyLastSyncedSdkVersion = "notti_last_synced_sdk_version"
+    /// Not an RN 0.8.0 key: added by this SDK in 0.2.0 (AD-024). Absent after an
+    /// upgrade from RN, so `sdk_name` is sent once.
+    private static let keyLastSyncedSdkName = "notti_last_synced_sdk_name"
     private static let keyLastSyncedTimezoneId = "notti_last_synced_timezone_id"
     private static let keyLastSyncedLanguage = "notti_last_synced_language"
     private static let keyLastSyncedPermissionStatus = "notti_last_synced_permission_status"
@@ -322,6 +328,7 @@ class NottiDeviceStore {
             lastSyncedDeviceOs: getLastSyncedDeviceOs(),
             lastSyncedDeviceModel: getLastSyncedDeviceModel(),
             lastSyncedSdkVersion: getLastSyncedSdkVersion(),
+            lastSyncedSdkName: getLastSyncedSdkName(),
             lastSyncedTimezoneId: getLastSyncedTimezoneId(),
             lastSyncedLanguage: getLastSyncedLanguage(),
             lastSyncedPermissionStatus: getLastSyncedPermissionStatus(),
@@ -366,8 +373,8 @@ class NottiDeviceStore {
     func clearProfileFieldAcks() {
         for key in [
             Self.keyAppVersion, Self.keyLastSyncedDeviceOs, Self.keyLastSyncedDeviceModel,
-            Self.keyLastSyncedSdkVersion, Self.keyLastSyncedTimezoneId, Self.keyLastSyncedLanguage,
-            Self.keyLastSyncedPermissionStatus
+            Self.keyLastSyncedSdkVersion, Self.keyLastSyncedSdkName, Self.keyLastSyncedTimezoneId,
+            Self.keyLastSyncedLanguage, Self.keyLastSyncedPermissionStatus
         ] {
             defaults.removeObject(forKey: key)
         }
@@ -391,6 +398,14 @@ class NottiDeviceStore {
 
     func setLastSyncedSdkVersion(_ value: String?) {
         defaults.set(value, forKey: Self.keyLastSyncedSdkVersion)
+    }
+
+    func getLastSyncedSdkName() -> String? {
+        defaults.string(forKey: Self.keyLastSyncedSdkName)
+    }
+
+    func setLastSyncedSdkName(_ value: String?) {
+        defaults.set(value, forKey: Self.keyLastSyncedSdkName)
     }
 
     func getLastSyncedTimezoneId() -> String? {

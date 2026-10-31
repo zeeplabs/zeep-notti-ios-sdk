@@ -16,7 +16,7 @@ struct DeviceResponse {
 }
 
 /// Device fields the SDK syncs once per registration and acks via the echo.
-let profileFieldKeys = ["app_version", "device_os", "device_model", "sdk_version", "timezone_id", "language"]
+let profileFieldKeys = ["app_version", "device_os", "device_model", "sdk_version", "sdk_name", "timezone_id", "language"]
 
 enum ApiResult {
     case success(DeviceResponse)

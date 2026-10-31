@@ -9,6 +9,8 @@ import XCTest
 /// device id, session counters and acks only if every key stays byte-identical.
 /// The test writes through the store's public surface and reads the raw
 /// persistent domain, so it checks the strings that actually reach disk.
+/// Keys this SDK added after RN 0.8.0 live in `sdkOnlyKeys`: an RN upgrade finds
+/// them absent, which each one must tolerate.
 final class NottiDeviceStoreKeysTests: XCTestCase {
     private static let frozenKeys: Set<String> = [
         "notti_device_id",
@@ -41,6 +43,11 @@ final class NottiDeviceStoreKeysTests: XCTestCase {
         "notti_last_synced_email",
         "notti_last_synced_phone",
         "notti_profile_field_ack_migrated"
+    ]
+
+    /// Added by this SDK, never written by RN (AD-024, 0.2.0).
+    private static let sdkOnlyKeys: Set<String> = [
+        "notti_last_synced_sdk_name"
     ]
 
     private var suiteName: String!
@@ -82,6 +89,7 @@ final class NottiDeviceStoreKeysTests: XCTestCase {
             ("notti_last_synced_device_os", { store.setLastSyncedDeviceOs("os-fixture") }),
             ("notti_last_synced_device_model", { store.setLastSyncedDeviceModel("model-fixture") }),
             ("notti_last_synced_sdk_version", { store.setLastSyncedSdkVersion("0.0.0") }),
+            ("notti_last_synced_sdk_name", { store.setLastSyncedSdkName("ios") }),
             ("notti_last_synced_timezone_id", { store.setLastSyncedTimezoneId("UTC") }),
             ("notti_last_synced_language", { store.setLastSyncedLanguage("xx") }),
             ("notti_last_synced_permission_status", { store.setLastSyncedPermissionStatus("granted") }),
@@ -103,9 +111,11 @@ final class NottiDeviceStoreKeysTests: XCTestCase {
             written.formUnion(added)
         }
 
-        XCTAssertEqual(Set(writers.map(\.key)), Self.frozenKeys, "every frozen key needs a writer")
-        XCTAssertEqual(written, Self.frozenKeys)
-        XCTAssertEqual(Set(persistedKeys()), Self.frozenKeys)
+        let allKeys = Self.frozenKeys.union(Self.sdkOnlyKeys)
+        XCTAssertTrue(Self.frozenKeys.isDisjoint(with: Self.sdkOnlyKeys))
+        XCTAssertEqual(Set(writers.map(\.key)), allKeys, "every key needs a writer")
+        XCTAssertEqual(written, allKeys)
+        XCTAssertEqual(Set(persistedKeys()), allKeys)
     }
 
     /// The production runtime (`NottiRuntime.shared`) opens this suite. RN 0.6.0
