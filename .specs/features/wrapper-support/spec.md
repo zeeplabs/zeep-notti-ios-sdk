@@ -22,7 +22,14 @@ and found three gaps on this side:
    alone in under a second. This repo has the same `setUp`/`tearDown` and `StubURLProtocol` harness;
    whether it flakes here too is not known (CI here is blocked by billing).
 
-Gap 1 blocks RN T3 (`sdk_version`). Gap 2 is worked around in RN (never qualify) but hits any native
+4. **No `sdk_name`.** (Added 2026-10-31, after the backend decision AD-044 in `zeep-notti`.) The backend
+   gates the In-App `push_permission` button by a minimum version per SDK, keyed on a new device field
+   `sdk_name` (`react-native`, `ios`, `android`; PATCH only, like `sdk_version`). A device without it is
+   judged as `react-native` (minimum 0.8.0). This SDK sends no `sdk_name`, so a native iOS 0.1.0/0.2.0
+   device is judged as RN below 0.8.0 and never gets such a message; and an RN app on top of this SDK must
+   say `react-native`, not `ios`.
+
+Gap 1 blocks RN T3 (`sdk_version`); gap 4 is the same entry point. Gap 2 is worked around in RN (never qualify) but hits any native
 CocoaPods consumer. Gap 3 makes CI unreliable in both repos.
 
 Distribution: `NottiSDK` and `NottiSDKExtension` 0.2.0 must reach the CocoaPods trunk before it turns
@@ -31,7 +38,8 @@ G3 and AD-022.
 
 ## Goals
 
-- [ ] A wrapper SDK sets the `sdk_version` the backend receives, without a public API addition.
+- [ ] A wrapper SDK sets the `sdk_version` and `sdk_name` the backend receives, without a public API addition.
+- [ ] Native hosts report `sdk_name: "ios"`.
 - [ ] `NottiSDK.Notti` either compiles for CocoaPods Swift consumers, or the limitation is documented and
       tested (decision G-A below).
 - [ ] The `NottiCore` drain flake has a recorded root cause and a fix; the full suite passes repeatedly.
@@ -45,7 +53,8 @@ G3 and AD-022.
 | Confirming the swizzling opt-out key name (AD-014 D4) | RN chose swizzling (G1); not needed for M2 |
 | Own spec repo `zeeplabs/specs` | Only needed for versions after the trunk cutoff (AD-022) |
 | Backend change for per-SDK minimum versions | `zeep-notti` repo; recorded as a cross-repo risk below |
-| `sdk_type` / wrapper name field | Backend has no such field today; would need a contract change first |
+| Backend `sdk_name` column, validation and per-SDK gate | `zeep-notti` (AD-044, branch `fix/inapp-push-permission-sdk-gate`); this SDK only sends the field |
+| `sdk_name` on Android (native or RN) | Other repos; absent already means `react-native` |
 
 ---
 
@@ -72,12 +81,41 @@ native SDK, so that the backend sees the same `sdk_version` an RN 0.8.0 app sent
 5. WHEN `scripts/check-public-surface.sh` runs THEN SPI declarations SHALL NOT count as public surface, and
    the script SHALL still fail on any other added `public` symbol.
 6. WHEN the wrapper entry point is called again with the same app id, client key and base URL but a
-   different `sdkVersion` THEN the SDK SHALL behave as decided in Design (apply without restart, like
-   `opensInAppURLs`, is the proposed default) and a test SHALL pin it.
+   different `sdkVersion` (or `sdkName`) THEN the SDK SHALL restart the core, as for a different app id
+   (decided in Design), and a test SHALL pin it.
 
 **Independent Test**: unit test through an isolated facade/runtime with `StubURLProtocol`: the PATCH body
 carries the wrapper's `sdk_version`; a second test with the public initialize carries
 `NottiSDKVersion.current`.
+
+---
+
+### P1: SDK identity (`sdk_name`) ⭐ MVP
+
+**User Story**: As the Notti backend, I want each device to say which SDK it runs, so that per-SDK minimum
+versions (AD-044) judge native iOS and RN-on-native devices correctly.
+
+**Why P1**: Without it native iOS devices never get `push_permission` In-App messages, and RN 0.9.0 on this
+SDK would need a later release to say `react-native`. 0.2.0 is the last release before the trunk cutoff.
+
+**Acceptance Criteria**:
+
+1. WHEN a host calls the public `Notti.initialize(appId:clientKey:options:)` THEN the device profile SHALL
+   send `sdk_name: "ios"`, with the same sync rules as `sdk_version`: sent once per registration when it
+   differs from the last acked value, acked only when the backend echoes it.
+2. WHEN a wrapper calls the `@_spi(Wrapper)` entry point with `sdkName: "react-native"` THEN the profile
+   SHALL send `sdk_name: "react-native"`.
+3. WHEN the wrapper passes an empty `sdkName` THEN the SDK SHALL omit `sdk_name`.
+4. WHEN the backend answers 2xx but does not echo `sdk_name` (a backend before AD-044) THEN the SDK SHALL
+   leave it unacked and re-send it on the next registration; WHEN the backend rejects the value (4xx) THEN
+   only that PATCH SHALL fail (each profile field is its own PATCH), and the other fields SHALL still sync.
+5. WHEN registration answers with a new device id THEN the `sdk_name` ack SHALL be cleared with the other
+   profile acks, so the new row gets it.
+6. WHEN the wrapper entry point is called again with the same app id, client key and base URL but a
+   different `sdkName` THEN the SDK SHALL behave as for a different `sdkVersion` (WRAP-06).
+
+**Independent Test**: core test with `StubURLProtocol`: PATCH body carries `sdk_name`, ack stored only on
+echo; runtime test: public path sends `ios`.
 
 ---
 
@@ -140,10 +178,18 @@ so that it does not clash with my own `Notti` symbols.
 - WHEN `sdkVersion` contains whitespace or is longer than the backend accepts THEN the SDK SHALL send it
   as given (no validation today); Design confirms the backend limit.
 - WHEN the SPM product is used (not CocoaPods) THEN `@_spi(Wrapper)` SHALL work the same way.
+- WHEN an RN 0.8.x install upgrades to RN on this SDK THEN `notti_last_synced_sdk_name` is absent (RN never
+  wrote it), so `sdk_name` is sent once; every RN 0.8.0 key keeps its meaning (the new key is additive).
+- WHEN the wrapper passes a value outside the backend enum THEN the backend answers 422 for that PATCH; the
+  SDK logs it (no PII) and does not retry, like any profile field. No client-side validation.
 
 ---
 
 ## Cross-repo risk (not built here)
+
+**Update 2026-10-31:** resolved on the backend side by AD-044 (`devices.sdk_name`, per-SDK minimums,
+absent = `react-native`), in progress in `zeep-notti`. This SDK's part is P1 SDK identity above. The text
+below is the original analysis.
 
 The backend gates the In-App `push_permission` button on one constant,
 `MinSDKVersionPushPermission` (`zeep-notti/internal/inapp/sdkversion.go`, empty today, so no device gets
@@ -159,7 +205,12 @@ field) before that constant is set. [Certo] on the code read; the fix belongs to
 
 - Assumption: the backend accepts any `sdk_version` string the RN wrapper sends today (RN 0.8.0 already sends
   its own version through the same field). Not re-validated against `zeep-notti` limits.
-- Open (cross-repo, not blocking 0.2.0): per-SDK minimum versions in the backend (see Cross-repo risk).
+- Assumption [Certo, code read 2026-10-31]: the device PATCH in `zeep-notti` decodes without
+  `DisallowUnknownFields`, so a backend before AD-044 ignores `sdk_name` and answers 2xx; the echo-based ack
+  keeps it unacked until the backend stores it. Release order between the backend and 0.2.0 does not matter.
+- Assumption: AD-044's enum (`react-native`, `ios`, `android`) and the echo of `sdk_name` in the device
+  response ship as in that branch. If the backend changes them, P1 SDK identity changes with it.
+- Resolved: per-SDK minimum versions in the backend (AD-044).
 - Resolved: G-A below (rename), P2 scope (narrowed by evidence, design section 3).
 
 ## Gray areas (to decide)
@@ -198,13 +249,19 @@ renaming.
 | WRAP-13 | P2 flake: RN repo notified | Specify | Pending |
 | WRAP-14 | P3 qualification: `NottiSDK.Notti` compiles after renaming the Obj-C class to `NottiSDKFacade` (G-A) | Specify | Pending |
 | WRAP-15 | P3 qualification: Obj-C upgrade note if renamed | Specify | Pending |
+| WRAP-16 | P1 identity: public initialize sends `sdk_name: "ios"`, echo-acked | Specify | Pending |
+| WRAP-17 | P1 identity: SPI entry point sends the wrapper's `sdkName` | Specify | Pending |
+| WRAP-18 | P1 identity: empty `sdkName` omitted | Specify | Pending |
+| WRAP-19 | P1 identity: unechoed stays unacked and re-sent; rejected fails only its own PATCH | Specify | Pending |
+| WRAP-20 | P1 identity: new device id clears the `sdk_name` ack | Specify | Pending |
 
-**Coverage:** 15 total, 0 mapped to tasks.
+**Coverage:** 20 total, 0 mapped to tasks.
 
 ---
 
 ## Success Criteria
 
-- [ ] RN `ios-native-sdk` T3 can pass `sdkVersion` through `@_spi(Wrapper) import NottiSDK`.
+- [ ] RN `ios-native-sdk` T3 can pass `sdkName` and `sdkVersion` through `@_spi(Wrapper) import NottiSDK`.
+- [ ] A native iOS device on 0.2.0 has `sdk_name = ios` in the backend once AD-044 is deployed.
 - [ ] `NottiSDK` and `NottiSDKExtension` 0.2.0 resolve from the trunk in a clean `pod install`.
 - [ ] 10 consecutive green full-suite runs.

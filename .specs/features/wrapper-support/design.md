@@ -25,14 +25,15 @@ extension Notti {
     /// For wrapper SDKs (react-native-notti, Flutter). Same as `initialize(appId:clientKey:options:)`,
     /// but `sdk_version` reports the wrapper's version instead of the native one. Not public API:
     /// visible only with `@_spi(Wrapper) import NottiSDK`, outside the semver promise.
-    @_spi(Wrapper) public static func initialize(appId: String, clientKey: String, options: Options = Options(), sdkVersion: String)
+    @_spi(Wrapper) public static func initialize(appId: String, clientKey: String, options: Options = Options(), sdkName: String, sdkVersion: String)
 }
 ```
 
-- `NottiFacade.initialize` gains `sdkVersion: String? = nil`. `Config` gains `sdkVersion: String?`
+- `NottiFacade.initialize` gains `sdkName: String? = nil, sdkVersion: String? = nil`. `Config` gains both
   (nil = native default). The public entry point passes nil.
-- `NottiRuntime.start` gains `sdkVersion: String? = nil` and uses `sdkVersion ?? self.sdkVersion`.
-- **WRAP-06 decision**: `sdkVersion` is part of `Config`, so a different value restarts the core, like a
+- `NottiRuntime.start` gains the same two parameters and uses `sdkName ?? self.sdkName`,
+  `sdkVersion ?? self.sdkVersion`. The runtime's `sdkName` defaults to `NottiSDKVersion.name` (section 1b).
+- **WRAP-06 decision** (also WRAP-17's re-initialize criterion for `sdkName`): `sdkVersion` is part of `Config`, so a different value restarts the core, like a
   different app id. Not applied in place like `opensInAppURLs`: a wrapper passes one constant per process,
   so a change only happens in tests or a misconfigured host, and the restart path is the one already
   tested. A restart re-syncs `sdk_version` through the existing ack key.
@@ -63,6 +64,48 @@ extension Notti {
 | `..._aDifferentWrapperSdkVersionRestartsTheCore` | same | WRAP-06 |
 | Script mutation runs, recorded in `validation.md` | script | WRAP-05 |
 | `NottiSDKTests` uses `@_spi(Wrapper) @testable import`; WRAP-04 relies on the compiler (SPI is invisible without the attribute), proved once by a scratch consumer in `validation.md` | compiler | WRAP-04 |
+
+---
+
+## 1b. `sdk_name` profile field (WRAP-16..20, added 2026-10-31 after backend AD-044)
+
+### Change
+
+- `NottiSDKVersion` (`NottiShared`) gains `package static let name = "ios"`, next to `current`: the SDK's
+  identity and version live in one file.
+- `NottiCore.initialize` gains `sdkName: String = ""` (empty becomes nil, field omitted), stored like
+  `sdkVersion`, with `sdkNameProvider`.
+- The profile-field sync (`NottiCore`, the `sync(...)` list) gains `sdk_name` right after `sdk_version`,
+  with `TelemetryKey.sdkName = "telemetry.sdkName"` as coalesce key. Same rules as every read-once
+  profile field: one PATCH per field, sent only when different from the acked value, acked only when the
+  response echoes it (WRAP-19 comes for free from the existing echo ack and per-field PATCH).
+- `NottiApiClient.profileFieldKeys` gains `sdk_name`, so the echo is parsed.
+- `NottiDeviceStore`: new key **`notti_last_synced_sdk_name`** with get/set; added to
+  `clearProfileFieldAcks()` (WRAP-20) and to the state snapshot; **not** added to
+  `migrateProfileFieldAckIfNeeded()` (that one-shot step fixes pre-0.6.0 acks; the new key never had
+  them).
+- `NottiRuntime.init` gains `sdkName: String = NottiSDKVersion.name`; `start` passes it (section 1).
+- README storage-key list gains the key. `NottiDeviceStoreKeysTests` keeps the frozen RN 0.8.0 list and
+  adds an explicit list of SDK-only keys, so the RN-continuity guarantee (every RN key byte-identical)
+  still holds and the new key is visible as an addition.
+
+### Why no typed enum for `sdkName`
+
+The backend enum (`react-native`, `ios`, `android`) can grow (Flutter) without an SDK release on the
+wrapper side, and a wrong value only fails its own PATCH (422, logged, no retry). A `String` keeps the SPI
+small; the only caller today is the RN adapter.
+
+### Tests
+
+| Test | Layer | Proves |
+| --- | --- | --- |
+| `NottiCoreTests.test_sdkNamePassedThroughInitializeReachesThePayloadAndIsAckedOnEcho` | core, `StubURLProtocol` | WRAP-16/17 at the core |
+| `..._unechoedSdkNameStaysUnackedAndIsResentOnTheNextRegistration` | core | WRAP-19 (backend before AD-044) |
+| `..._rejectedSdkNameDoesNotBlockTheOtherProfileFields` | core | WRAP-19 (422) |
+| `..._emptySdkNameOmitsTheField` | core | WRAP-18 |
+| `NottiDeviceStoreTests` (or keys test): `clearProfileFieldAcks` clears `notti_last_synced_sdk_name` | store | WRAP-20 |
+| `NottiRuntimeTests.test_startSendsSdkNameIos` | runtime | WRAP-16 |
+| facade tests of section 1 extended with `sdkName` | facade | WRAP-17, WRAP-06 |
 
 ---
 
