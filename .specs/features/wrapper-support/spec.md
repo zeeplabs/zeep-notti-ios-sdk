@@ -155,6 +155,13 @@ field) before that constant is set. [Certo] on the code read; the fix belongs to
 
 ---
 
+## Assumptions & Open Questions
+
+- Assumption: the backend accepts any `sdk_version` string the RN wrapper sends today (RN 0.8.0 already sends
+  its own version through the same field). Not re-validated against `zeep-notti` limits.
+- Open (cross-repo, not blocking 0.2.0): per-SDK minimum versions in the backend (see Cross-repo risk).
+- Resolved: G-A below (rename), P2 scope (narrowed by evidence, design section 3).
+
 ## Gray areas (to decide)
 
 **Decided (Julio, 2026-10-31): option (b), rename the Obj-C facade class to `NottiSDKFacade`.** No host
