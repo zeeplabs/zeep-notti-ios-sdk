@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.0] - TBD
+
+### Added
+
+- The device reports `sdk_name: "ios"` next to `sdk_version`, so the backend can apply per-SDK minimum versions (for example to In-App messages with a push-permission button). Synced like the other profile fields: once per change, confirmed by the backend's echo; a backend that does not know the field yet ignores it, and the SDK re-sends it on later registrations. New on-device key `notti_last_synced_sdk_name`.
+- For wrapper SDKs only (`react-native-notti`): `Notti.initialize(appId:clientKey:options:sdkName:sdkVersion:)`, visible with `@_spi(Wrapper) import NottiSDK` and outside the semantic-versioning promise. Apps should keep using `Notti.initialize(appId:clientKey:options:)`.
+
 ### Upgrade notes
 
 - **Objective-C hosts:** the facade class is now `NottiSDKFacade` (was `NottiSDK` in 0.1.0). Replace `[NottiSDK ...]` with `[NottiSDKFacade ...]` and `NottiSDK.logLevel` / `NottiSDK.deviceId` with `NottiSDKFacade.logLevel` / `NottiSDKFacade.deviceId`. Selectors and the other classes (`NottiUser`, `NottiNotifications`, `NottiInAppMessages`, `NottiSubscription`) are unchanged. Swift hosts are not affected.

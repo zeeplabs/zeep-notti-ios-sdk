@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
   s.name         = 'NottiSDKExtension'
   # Must equal NottiSDKVersion.current and NottiSDK.podspec (scripts/check-version.sh enforces it in CI).
-  s.version      = '0.1.0'
+  s.version      = '0.2.0'
   s.summary      = 'Notification Service Extension rich media for Zeep Notti.'
   s.description  = <<-DESC
     Downloads and attaches the image, video or audio of a Zeep Notti push from a

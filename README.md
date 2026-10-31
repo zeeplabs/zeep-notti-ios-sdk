@@ -2,7 +2,7 @@
 
 Native iOS SDK for [Zeep Notti](https://github.com/zeeplabs) push notifications: device registration, user identity, tags, engagement events (`received` / `opened` / `clicked`), rich media in a Notification Service Extension, and In-App Messages.
 
-> **Status: `0.1.0`, first release.** It ports `react-native-notti` 0.8.0 to iOS, In-App Messages included. The [device checklist](docs/DEVICE_CHECKLIST.md) passed on the maintainer's devices and App Store validation passed; a beta in a production host app follows. See [Known limitations](#known-limitations) and the [CHANGELOG](CHANGELOG.md).
+> **Status: `0.2.0`.** It ports `react-native-notti` 0.8.0 to iOS, In-App Messages included; 0.2.0 adds the `sdk_name` device field and renames the Objective-C facade class. The [device checklist](docs/DEVICE_CHECKLIST.md) passed on the maintainer's devices and App Store validation passed; a beta in a production host app follows. See [Known limitations](#known-limitations) and the [CHANGELOG](CHANGELOG.md).
 
 ## Requirements
 
@@ -21,7 +21,7 @@ In Xcode: **File → Add Package Dependencies…** and enter:
 https://github.com/zeeplabs/zeep-notti-ios-sdk.git
 ```
 
-Choose the dependency rule **Up to Next Major Version** from `0.1.0`.
+Choose the dependency rule **Up to Next Major Version** from `0.2.0`.
 
 - Add the **`NottiSDK`** product to your app target.
 - Add the **`NottiSDKExtension`** product to your Notification Service Extension target (optional, for rich media).
@@ -30,7 +30,7 @@ In a `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/zeeplabs/zeep-notti-ios-sdk.git", from: "0.1.0"),
+    .package(url: "https://github.com/zeeplabs/zeep-notti-ios-sdk.git", from: "0.2.0"),
 ],
 targets: [
     .target(name: "YourApp", dependencies: [.product(name: "NottiSDK", package: "zeep-notti-ios-sdk")]),
@@ -46,11 +46,11 @@ Swift Package Manager is the recommended way for native apps.
 platform :ios, '15.0'
 
 target 'YourApp' do
-  pod 'NottiSDK', '~> 0.1'
+  pod 'NottiSDK', '~> 0.2'
 end
 
 target 'YourNotificationServiceExtension' do
-  pod 'NottiSDKExtension', '~> 0.1'
+  pod 'NottiSDKExtension', '~> 0.2'
 end
 ```
 
@@ -347,7 +347,7 @@ This README describes what the SDK does. It is not legal advice and does not sta
 - **In-App Messages on a device.** The In-App device checks passed on the maintainer's devices without a per-item record. The window level against the keyboard, Control Center and Picture in Picture, legacy apps without scenes, and the launch ordering of `initialize`, `trackEvent` and the first session are not separately proven and are confirmed in a beta in a production host app.
 - **`push_permission` messages are not delivered yet.** The backend has a single SDK minimum version for them, empty today, so no device receives them until `zeep-notti` adds a per-SDK minimum.
 - **In-App `403` does not re-register.** On a `403` from the In-App routes the SDK logs one warning per session and route, stops fetching messages for the rest of the session (the next foreground session fetches again) and keeps the queued events, which are sent again at the next flush. It does not re-register as the server contract suggests.
-- **No consent API in 0.1.0.** There is no call to hold collection until the user consents. Gate `Notti.initialize` and `Notti.login` yourself, and call `login` after `initialize`: before it, `login` is dropped (one warning).
+- **No consent API yet.** There is no call to hold collection until the user consents. Gate `Notti.initialize` and `Notti.login` yourself, and call `login` after `initialize`: before it, `login` is dropped (one warning).
 - **Personal data in `UserDefaults`.** Email, phone, external user id and tags are stored unencrypted in the `notti_prefs` suite.
 - **No `Retry-After`.** A request is tried up to 5 times, with 2, 4, 8 and 16 second waits between attempts. Only network errors, 5xx, 408, 429 and (at registration) a 2xx without a valid device body are retried; other 4xx are final. Events that use up their attempts stay queued and are tried again at a later flush. A `Retry-After` header is ignored.
 - **Device proof.** The [device checklist](docs/DEVICE_CHECKLIST.md) (APNs registration, permission states, location sharing, profile fields, cold-start click, silent and background `received`, the launch hook with CocoaPods) passed on the maintainer's devices without a per-item record of device and iOS version. App Store Connect validation passed with static and dynamic frameworks.

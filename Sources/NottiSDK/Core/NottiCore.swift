@@ -138,10 +138,7 @@ class NottiCore {
     /// read (unlike `deviceOsProvider` etc.): `sdk_version` is core state set by
     /// `initialize`, so this reads the stored value at call time (design.md P1).
     private var sdkVersionProvider: () -> String? { { self.sdkVersion } }
-    /// The SDK identity sent as `sdk_name` (AD-024): `ios` from the runtime, or a
-    /// wrapper's own value; nil when not provided or empty. Same lifecycle as
-    /// `sdkVersion`.
-    private var sdkName: String?
+    private var sdkName: String? // `sdk_name` (AD-024): `ios` or a wrapper's value; nil when empty, like `sdkVersion`
     private var sdkNameProvider: () -> String? { { self.sdkName } }
 
     /// Mutations issued before device registration finished, replayed in order
@@ -361,8 +358,7 @@ class NottiCore {
 
     func initialize(appId: String, clientKey: String, baseUrl: String, sdkVersion: String = "", sdkName: String = "") {
         workQueue.async { [weak self] in
-            self?.initializeOnQueue(
-                appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkVersion: sdkVersion, sdkName: sdkName)
+            self?.initializeOnQueue(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkVersion: sdkVersion, sdkName: sdkName)
         }
     }
 
