@@ -97,23 +97,23 @@ dependencies.
 
 ---
 
-### P2: `NottiCore` drain flake fixed
+### P2: `NottiCore` drain flake (narrowed by evidence, 2026-10-31)
 
-**User Story**: As a maintainer, I want the core test suite to be deterministic, so that a red CI means a
-real bug.
+**User Story**: As a maintainer, I want to know whether the RN core-test flake affects this SDK, so that a
+red CI here means a real bug.
+
+**Finding** (design section 3): six consecutive full runs here, 0 failures, slowest `NottiCoreTests` case
+9.3 s; the RN suite on the same machine had cases at 19-24.5 s and a failure. The flake is RN-only
+[Provável: RN's process-wide statics, which `core-port` replaced with an isolated `NottiRuntime`].
 
 **Acceptance Criteria**:
 
-1. WHEN the root cause is investigated THEN it SHALL be recorded with evidence (which request outlives
-   which test, and why) in `STATE.md` Lessons, before any fix.
-2. WHEN the fix lands THEN `NottiCoreTests` SHALL pass 10 consecutive full-suite runs of the
-   `NottiSDK-Package` scheme locally with zero drain timeouts.
-3. WHEN a test leaves work running THEN the harness SHALL fail that test, not a later one (the leak is
-   attributed to its source).
-4. WHEN the fix is test-only THEN production code SHALL NOT change; if the root cause is in production
-   code, the change SHALL follow AD-002-era rules for ported code (record as a todo/AD first).
-5. WHEN the fix is known THEN the RN repo SHALL get a note (its tests are deleted by RN `ios-native-sdk`
-   T6; a port there is optional until then).
+1. WHEN the investigation ends THEN the evidence SHALL be recorded as a lesson in `STATE.md` (WRAP-10).
+2. WHEN 0.2.0 is released THEN the full suite SHALL have passed 10 consecutive runs locally with zero drain
+   timeouts (six done on `3d1cad6`; the remaining four on the release commit) (WRAP-11).
+3. WRAP-12 (leak fails its own test): not applicable, no leak observed here. Reopen if one appears.
+4. WHEN the finding is recorded THEN the RN repo SHALL note that its flake is RN-only and ends with its
+   `ios-native-sdk` T6 (WRAP-13).
 
 ---
 
@@ -186,8 +186,8 @@ renaming.
 | WRAP-08 | P1 release: trunk push before the cutoff | Specify | Pending |
 | WRAP-09 | P1 release: `pod lib lint` both pods, both modes | Specify | Pending |
 | WRAP-10 | P2 flake: root cause recorded | Specify | Pending |
-| WRAP-11 | P2 flake: 10 consecutive green full runs | Specify | Pending |
-| WRAP-12 | P2 flake: leak fails its own test | Specify | Pending |
+| WRAP-11 | P2 flake: 10 consecutive green full runs (6 done) | Specify | Pending |
+| WRAP-12 | P2 flake: leak fails its own test | - | Not applicable (no leak here) |
 | WRAP-13 | P2 flake: RN repo notified | Specify | Pending |
 | WRAP-14 | P3 qualification: `NottiSDK.Notti` compiles after renaming the Obj-C class to `NottiSDKFacade` (G-A) | Specify | Pending |
 | WRAP-15 | P3 qualification: Obj-C upgrade note if renamed | Specify | Pending |
