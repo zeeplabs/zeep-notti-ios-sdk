@@ -3,7 +3,7 @@
 **Spec**: `.specs/features/wrapper-support/spec.md`
 **Design**: `.specs/features/wrapper-support/design.md` (approved by Julio, 2026-10-31)
 **Testing**: `.specs/codebase/TESTING.md`
-**Status**: Draft
+**Status**: Execute 2026-10-31: T1-T8 done on `feat/wrapper-support` (one commit each; evidence in `validation.md`). T7 edits are in the RN repo, not committed there yet (needs Julio's OK). T9 (release) is Julio's. Deviation T1: `validate_state.py` exits 1 on two pre-existing errors (`example-and-release` FAIL verdict, `prerelease-fixes` without `validation.md`), not from this feature.
 
 ---
 
@@ -77,8 +77,8 @@ Sequential order for Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 → T
 
 **Done when**:
 
-- [ ] `validate_state.py` and `validate_tasks.py` exit 0
-- [ ] AD-023, AD-024 and the lesson in `STATE.md`; AGENTS rule added
+- [x] `validate_state.py` and `validate_tasks.py` exit 0
+- [x] AD-023, AD-024 and the lesson in `STATE.md`; AGENTS rule added
 
 **Tests**: none
 **Gate**: build
@@ -95,9 +95,9 @@ Sequential order for Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 → T
 
 **Done when**:
 
-- [ ] Unmodified tree passes; `PUBLIC_SURFACE.txt` unchanged
-- [ ] Mutation proofs recorded in `validation.md`: added plain `public` fails; added same-line `@_spi(Wrapper) public` fails until `--update`, then only `SPI_SURFACE.txt` changes; `@_spi` on the line above `public` is read as plain public and fails
-- [ ] Gate passes: script
+- [x] Unmodified tree passes; `PUBLIC_SURFACE.txt` unchanged
+- [x] Mutation proofs recorded in `validation.md`: added plain `public` fails; added same-line `@_spi(Wrapper) public` fails until `--update`, then only `SPI_SURFACE.txt` changes; `@_spi` on the line above `public` is read as plain public and fails
+- [x] Gate passes: script
 
 **Tests**: script mutation
 **Gate**: build
@@ -114,14 +114,14 @@ Sequential order for Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 → T
 
 **Done when**:
 
-- [ ] `sdk_name` passed to the core reaches its own PATCH and is acked on echo (test)
-- [ ] Unechoed `sdk_name` stays unacked and is re-sent on the next registration (test)
-- [ ] A 422 on `sdk_name` does not stop the other profile fields (test)
-- [ ] Empty `sdkName` omits the field (test)
-- [ ] `clearProfileFieldAcks` clears the new key (test)
-- [ ] Every RN 0.8.0 key unchanged (keys test green with the SDK-only list)
-- [ ] Test count: SDK +5
-- [ ] Gate passes: quick (`NottiCoreTests`, `NottiDeviceStoreKeysTests`, `NottiDeviceStoreTests`)
+- [x] `sdk_name` passed to the core reaches its own PATCH and is acked on echo (test)
+- [x] Unechoed `sdk_name` stays unacked and is re-sent on the next registration (test)
+- [x] A 422 on `sdk_name` does not stop the other profile fields (test)
+- [x] Empty `sdkName` omits the field (test)
+- [x] `clearProfileFieldAcks` clears the new key (test)
+- [x] Every RN 0.8.0 key unchanged (keys test green with the SDK-only list)
+- [x] Test count: SDK +5
+- [x] Gate passes: quick (`NottiCoreTests`, `NottiDeviceStoreKeysTests`, `NottiDeviceStoreTests`)
 
 **Tests**: unit
 **Gate**: quick
@@ -138,13 +138,13 @@ Sequential order for Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 → T
 
 **Done when**:
 
-- [ ] Wrapper values reach the profile PATCHes as `sdk_version` and `sdk_name` (test)
-- [ ] Public path sends `sdk_name: "ios"` (runtime test)
-- [ ] Empty wrapper value omits `sdk_version` (test)
-- [ ] No wrapper value sends `NottiSDKVersion.current` (test)
-- [ ] Same config with a different wrapper `sdkVersion` or `sdkName` restarts the core; same values are a no-op (test)
-- [ ] Test count: SDK +5
-- [ ] Gate passes: quick
+- [x] Wrapper values reach the profile PATCHes as `sdk_version` and `sdk_name` (test)
+- [x] Public path sends `sdk_name: "ios"` (runtime test)
+- [x] Empty wrapper value omits `sdk_version` (test)
+- [x] No wrapper value sends `NottiSDKVersion.current` (test)
+- [x] Same config with a different wrapper `sdkVersion` or `sdkName` restarts the core; same values are a no-op (test)
+- [x] Test count: SDK +5
+- [x] Gate passes: quick
 
 **Tests**: unit
 **Gate**: quick
@@ -161,11 +161,11 @@ Sequential order for Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 → T
 
 **Done when**:
 
-- [ ] Shell routes appId, clientKey, options, sdkName and sdkVersion to the facade (test through `setSharedForTesting`)
-- [ ] `scripts/check-public-surface.sh` green; diff only in `SPI_SURFACE.txt`
-- [ ] Scratch-consumer result for WRAP-04 in `validation.md`
-- [ ] Test count: SDK +1
-- [ ] Gate passes: quick
+- [x] Shell routes appId, clientKey, options, sdkName and sdkVersion to the facade (test through `setSharedForTesting`)
+- [x] `scripts/check-public-surface.sh` green; diff only in `SPI_SURFACE.txt`
+- [x] Scratch-consumer result for WRAP-04 in `validation.md`
+- [x] Test count: SDK +1
+- [x] Gate passes: quick
 
 **Tests**: unit
 **Gate**: quick
@@ -182,11 +182,11 @@ Sequential order for Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 → T
 
 **Done when**:
 
-- [ ] Runtime-name test updated and passing
-- [ ] `NottiObjCTests.m` calls `[NottiSDKFacade ...]` and passes
-- [ ] `grep -rn '\[NottiSDK ' README.md Tests Sources` empty
-- [ ] Test count: unchanged or +1 (existing assertion edited)
-- [ ] Gate passes: quick
+- [x] Runtime-name test updated and passing
+- [x] `NottiObjCTests.m` calls `[NottiSDKFacade ...]` and passes
+- [x] `grep -rn '\[NottiSDK ' README.md Tests Sources` empty
+- [x] Test count: unchanged or +1 (existing assertion edited)
+- [x] Gate passes: quick
 
 **Tests**: unit + ObjC compile check
 **Gate**: quick
@@ -203,7 +203,7 @@ Sequential order for Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 → T
 
 **Done when**:
 
-- [ ] Note present in the RN repo (committed there with Julio's OK)
+- [ ] Note present in the RN repo (committed there with Julio's OK) — edits done, commit pending
 
 **Tests**: none
 **Gate**: build
@@ -220,11 +220,11 @@ Sequential order for Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 → T
 
 **Done when**:
 
-- [ ] `scripts/check-version.sh` green
-- [ ] Four full-suite runs green, zero drain timeouts (ten total with the six on `3d1cad6`), counts recorded
-- [ ] SwiftLint 0, seven guard scripts, `check-hook-linked.sh spm` and `pod`
-- [ ] `pod lib lint` both podspecs, frameworks and `--use-libraries`
-- [ ] Gate passes: full
+- [x] `scripts/check-version.sh` green
+- [x] Four full-suite runs green, zero drain timeouts (ten total with the six on `3d1cad6`), counts recorded
+- [x] SwiftLint 0, seven guard scripts, `check-hook-linked.sh spm` and `pod`
+- [x] `pod lib lint` both podspecs, frameworks and `--use-libraries`
+- [x] Gate passes: full
 
 **Tests**: all
 **Gate**: full

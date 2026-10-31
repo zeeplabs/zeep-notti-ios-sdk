@@ -234,28 +234,28 @@ renaming.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| WRAP-01 | P1 wrapper: SPI entry point sends wrapper `sdk_version` | Specify | Pending |
-| WRAP-02 | P1 wrapper: empty value omitted | Specify | Pending |
-| WRAP-03 | P1 wrapper: public initialize unchanged | Specify | Pending |
-| WRAP-04 | P1 wrapper: invisible without `@_spi(Wrapper)` | Specify | Pending |
-| WRAP-05 | P1 wrapper: surface script ignores SPI, still guards public | Specify | Pending |
-| WRAP-06 | P1 wrapper: re-initialize with a different `sdkVersion` | Specify | Pending |
-| WRAP-07 | P1 release: version 0.2.0 everywhere | Specify | Pending |
-| WRAP-08 | P1 release: trunk push before the cutoff | Specify | Pending |
-| WRAP-09 | P1 release: `pod lib lint` both pods, both modes | Specify | Pending |
-| WRAP-10 | P2 flake: root cause recorded | Specify | Pending |
-| WRAP-11 | P2 flake: 10 consecutive green full runs (6 done) | Specify | Pending |
+| WRAP-01 | P1 wrapper: SPI entry point sends wrapper `sdk_version` | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-02 | P1 wrapper: empty value omitted | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-03 | P1 wrapper: public initialize unchanged | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-04 | P1 wrapper: invisible without `@_spi(Wrapper)` | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-05 | P1 wrapper: surface script ignores SPI, still guards public | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-06 | P1 wrapper: re-initialize with a different `sdkVersion` | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-07 | P1 release: version 0.2.0 everywhere | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-08 | P1 release: trunk push before the cutoff | Execute | Pending (T9, Julio) |
+| WRAP-09 | P1 release: `pod lib lint` both pods, both modes | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-10 | P2 flake: root cause recorded | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-11 | P2 flake: 10 consecutive green full runs (6 done) | Execute | Done (T1-T8, 2026-10-31) |
 | WRAP-12 | P2 flake: leak fails its own test | - | Not applicable (no leak here) |
-| WRAP-13 | P2 flake: RN repo notified | Specify | Pending |
-| WRAP-14 | P3 qualification: `NottiSDK.Notti` compiles after renaming the Obj-C class to `NottiSDKFacade` (G-A) | Specify | Pending |
-| WRAP-15 | P3 qualification: Obj-C upgrade note if renamed | Specify | Pending |
-| WRAP-16 | P1 identity: public initialize sends `sdk_name: "ios"`, echo-acked | Specify | Pending |
-| WRAP-17 | P1 identity: SPI entry point sends the wrapper's `sdkName` | Specify | Pending |
-| WRAP-18 | P1 identity: empty `sdkName` omitted | Specify | Pending |
-| WRAP-19 | P1 identity: unechoed stays unacked and re-sent; rejected fails only its own PATCH | Specify | Pending |
-| WRAP-20 | P1 identity: new device id clears the `sdk_name` ack | Specify | Pending |
+| WRAP-13 | P2 flake: RN repo notified | Execute | Done (edits in RN repo, uncommitted) |
+| WRAP-14 | P3 qualification: `NottiSDK.Notti` compiles after renaming the Obj-C class to `NottiSDKFacade` (G-A) | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-15 | P3 qualification: Obj-C upgrade note if renamed | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-16 | P1 identity: public initialize sends `sdk_name: "ios"`, echo-acked | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-17 | P1 identity: SPI entry point sends the wrapper's `sdkName` | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-18 | P1 identity: empty `sdkName` omitted | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-19 | P1 identity: unechoed stays unacked and re-sent; rejected fails only its own PATCH | Execute | Done (T1-T8, 2026-10-31) |
+| WRAP-20 | P1 identity: new device id clears the `sdk_name` ack | Execute | Done (T1-T8, 2026-10-31) |
 
-**Coverage:** 20 total, 0 mapped to tasks.
+**Coverage:** 20 total, 19 mapped to tasks (WRAP-12 not applicable).
 
 ---
 
