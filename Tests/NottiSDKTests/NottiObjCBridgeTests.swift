@@ -156,18 +156,21 @@ final class NottiObjCBridgeTests: XCTestCase {
         XCTAssertTrue(patchBodies().contains { $0["external_user_id"] as? String == "user-fixture" })
     }
 
-    /// PRF-01, AD-021: the facade's ObjC runtime name is `NottiSDK`, and no SDK class takes a runtime name that
-    /// react-native-notti 0.8.0 declares in Objective-C (`ios/Notti.h`, `NottiImpl`, `NottiBridge`, `NottiPushDelegate`).
+    /// PRF-01, AD-021, AD-023 (WRAP-14): the facade's ObjC runtime name is `NottiSDKFacade`, no SDK class takes the
+    /// module's name (`NottiSDK`, which would shadow the module for CocoaPods Swift consumers), and none takes a
+    /// runtime name that react-native-notti 0.8.0 declares in Objective-C (`ios/Notti.h`, `NottiImpl`,
+    /// `NottiBridge`, `NottiPushDelegate`).
     func test_objcRuntimeNamesDoNotCollideWithReactNativeNottiClasses() {
-        XCTAssertEqual(NSStringFromClass(NottiObjC.self), "NottiSDK")
-        XCTAssertTrue(NSClassFromString("NottiSDK") === NottiObjC.self)
+        XCTAssertEqual(NSStringFromClass(NottiObjC.self), "NottiSDKFacade")
+        XCTAssertTrue(NSClassFromString("NottiSDKFacade") === NottiObjC.self)
+        XCTAssertNil(NSClassFromString("NottiSDK"), "a class named like the module shadows it (AD-023)")
         for reactNativeName in ["Notti", "NottiImpl", "NottiBridge", "NottiPushDelegate"] {
             XCTAssertNil(NSClassFromString(reactNativeName), reactNativeName)
         }
         let sdkNames = [
             NottiObjC.self, NottiUserObjC.self, NottiNotificationsObjC.self, NottiInAppMessagesObjC.self, NottiSubscription.self
         ].map { NSStringFromClass($0) }
-        XCTAssertEqual(sdkNames, ["NottiSDK", "NottiUser", "NottiNotifications", "NottiInAppMessages", "NottiSubscription"])
+        XCTAssertEqual(sdkNames, ["NottiSDKFacade", "NottiUser", "NottiNotifications", "NottiInAppMessages", "NottiSubscription"])
     }
 
     func test_listenersReceiveTheNSDictionaryShapeAndTakeInitialClickReturnsIt() {

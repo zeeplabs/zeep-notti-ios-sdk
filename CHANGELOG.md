@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Upgrade notes
+
+- **Objective-C hosts:** the facade class is now `NottiSDKFacade` (was `NottiSDK` in 0.1.0). Replace `[NottiSDK ...]` with `[NottiSDKFacade ...]` and `NottiSDK.logLevel` / `NottiSDK.deviceId` with `NottiSDKFacade.logLevel` / `NottiSDKFacade.deviceId`. Selectors and the other classes (`NottiUser`, `NottiNotifications`, `NottiInAppMessages`, `NottiSubscription`) are unchanged. Swift hosts are not affected.
+
+### Fixed
+
+- `NottiSDK.Notti` (the facade qualified with the module name) now compiles for Swift apps that install the SDK with CocoaPods, in static libraries and in both `use_frameworks!` linkages. In 0.1.0 the Objective-C class `NottiSDK` shadowed the module name (`type 'NottiSDK' has no member 'Notti'`). Swift Package Manager was not affected.
+
 ## [0.1.0] - 2026-10-26
 
 First release. It is a native port of `react-native-notti` 0.8.0 for iOS, In-App Messages included, with the same backend contract and the same on-device storage.

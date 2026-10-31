@@ -265,21 +265,21 @@ final class ForwardingAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
 
 ## Objective-C
 
-The SDK is usable from Objective-C through the same module. The names below come from `@objc(...)` declarations in `Sources/NottiSDK/Public/ObjC/NottiObjC.swift`. The entry class is `NottiSDK`, not `Notti`, so it can live in the same app as `react-native-notti`, whose module class is `Notti`. This block is **not** compiled by CI (the example app has no Objective-C target); the Swift snippets above are.
+The SDK is usable from Objective-C through the same module. The names below come from `@objc(...)` declarations in `Sources/NottiSDK/Public/ObjC/NottiObjC.swift`. The entry class is `NottiSDKFacade`: not `Notti`, so it can live in the same app as `react-native-notti`, whose module class is `Notti`, and not `NottiSDK`, so Swift code can still write `NottiSDK.Notti` (0.1.0 used `NottiSDK`; see the CHANGELOG). This block is **not** compiled by CI (the example app has no Objective-C target); the Swift snippets above are.
 
 ```objc
 @import NottiSDK;
 
-[NottiSDK initializeWithAppId:@"YOUR_APP_ID" clientKey:@"YOUR_CLIENT_KEY" baseUrl:nil];
+[NottiSDKFacade initializeWithAppId:@"YOUR_APP_ID" clientKey:@"YOUR_CLIENT_KEY" baseUrl:nil];
 // Or, to open In-App web links in your own code instead of the SDK:
-// [NottiSDK initializeWithAppId:@"YOUR_APP_ID" clientKey:@"YOUR_CLIENT_KEY" baseUrl:nil opensInAppURLs:NO];
+// [NottiSDKFacade initializeWithAppId:@"YOUR_APP_ID" clientKey:@"YOUR_CLIENT_KEY" baseUrl:nil opensInAppURLs:NO];
 [NottiNotifications requestPermission:^(BOOL granted) { /* ... */ }];
-[NottiSDK login:@"user-123"];
+[NottiSDKFacade login:@"user-123"];
 [NottiUser addTag:@"plan" value:@"premium"];
 NottiSubscription *sub = [NottiNotifications addClickedListener:^(NSDictionary *payload) { /* ... */ }];
 [sub remove];
 
-[NottiSDK trackEvent:@"checkout_completed"];
+[NottiSDKFacade trackEvent:@"checkout_completed"];
 // payload: messageId, buttonId, action (@{@"type": @"url" or @"deeplink", @"value": ...} or NSNull)
 NottiSubscription *clicks = [NottiInAppMessages addClickListener:^(NSDictionary *payload) { /* ... */ }];
 ```
