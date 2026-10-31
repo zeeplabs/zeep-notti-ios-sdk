@@ -50,6 +50,7 @@ final class NottiObjCBridgeTests: XCTestCase {
                 NottiApiClient(session: session, baseUrl: baseUrl, appId: appId, clientKey: clientKey, sleeper: { _ in })
             },
             sdkVersion: "",
+            sdkName: "",
             startObservers: false
         )
         facade = NottiFacade(
@@ -354,6 +355,7 @@ final class NottiObjCBridgeTests: XCTestCase {
                 NottiApiClient(session: session, baseUrl: baseUrl, appId: appId, clientKey: clientKey, sleeper: { _ in })
             },
             sdkVersion: "",
+            sdkName: "",
             startObservers: false,
             inAppEngine: engine
         )
@@ -398,6 +400,7 @@ final class NottiObjCBridgeTests: XCTestCase {
                 NottiApiClient(session: session, baseUrl: baseUrl, appId: appId, clientKey: clientKey, sleeper: { _ in })
             },
             sdkVersion: "",
+            sdkName: "",
             startObservers: false,
             inAppEngine: engine
         )

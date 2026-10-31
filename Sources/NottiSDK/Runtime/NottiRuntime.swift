@@ -47,6 +47,8 @@ final class NottiRuntime {
     private let providers: NottiPlatformProviders
     private let apiClientFactory: (_ appId: String, _ clientKey: String, _ baseUrl: String) -> NottiApiClient
     private let sdkVersion: String
+    /// `sdk_name` for the public path (AD-024); a wrapper overrides it per `start`.
+    private let sdkName: String
 
     /// Guards `_core` and `_onDeviceIdChanged`.
     private let lock = NSLock()
@@ -85,6 +87,7 @@ final class NottiRuntime {
             NottiApiClient(baseUrl: $2, appId: $0, clientKey: $1)
         },
         sdkVersion: String = NottiSDKVersion.current,
+        sdkName: String = NottiSDKVersion.name,
         startObservers: Bool = true,
         inAppEngine: NottiInAppEngine? = nil,
         inAppClicks: NottiInAppClickRelay = NottiInAppClickRelay(),
@@ -106,6 +109,7 @@ final class NottiRuntime {
         self.providers = providers
         self.apiClientFactory = apiClientFactory
         self.sdkVersion = sdkVersion
+        self.sdkName = sdkName
         self.eventStore = NottiEventStore(defaults: defaults)
         let observer = NottiNetworkObserver(monitor: pathMonitor) { [weak self] in
             self?.onNetworkAvailable()
@@ -170,8 +174,9 @@ final class NottiRuntime {
 
     /// Builds a core and initializes it. A previous core is invalidated first;
     /// the new one adopts the open session through `sessionGate` (RN JS-reload
-    /// parity, SEGTEL-08).
-    func start(appId: String, clientKey: String, baseUrl: String) {
+    /// parity, SEGTEL-08). A wrapper's `sdkName` / `sdkVersion` (AD-024) replace
+    /// the runtime's own for this core; nil keeps them.
+    func start(appId: String, clientKey: String, baseUrl: String, sdkName: String? = nil, sdkVersion: String? = nil) {
         lifecycleLock.lock()
         defer { lifecycleLock.unlock() }
         invalidateCurrentCore()
@@ -185,7 +190,9 @@ final class NottiRuntime {
         wirePushPermissionPort()
         let core = makeCore(inAppConfig: inAppConfig)
         lock.withLock { _core = core }
-        core.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkVersion: sdkVersion)
+        core.initialize(
+            appId: appId, clientKey: clientKey, baseUrl: baseUrl,
+            sdkVersion: sdkVersion ?? self.sdkVersion, sdkName: sdkName ?? self.sdkName)
     }
 
     /// Returns the live core, or builds an uninitialized one and stores it as the
