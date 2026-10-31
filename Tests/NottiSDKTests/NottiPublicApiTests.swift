@@ -1,7 +1,7 @@
 import UIKit
 import UserNotifications
 import XCTest
-@testable import NottiSDK
+@_spi(Wrapper) @testable import NottiSDK
 @testable import NottiShared
 
 /// API-01, API-03, API-15: every public `Notti` entry point reaches the facade,
@@ -122,6 +122,22 @@ final class NottiPublicApiTests: XCTestCase {
         XCTAssertEqual(posts.count, 1)
         XCTAssertEqual(posts.first?.url?.host, "notti.example.invalid")
         XCTAssertEqual(facade.activeConfig?.appId, appId)
+    }
+
+    // wrapper-support WRAP-01, WRAP-17 (AD-024): the SPI shell routes everything to the facade.
+    func test_wrapperInitializeReachesTheFacadeWithTheWrapperNameAndVersion() {
+        StubURLProtocol.enqueue(.echoDevice())
+        Notti.initialize(
+            appId: appId, clientKey: clientKey, options: Notti.Options(baseUrl: baseUrl),
+            sdkName: "react-native", sdkVersion: "0.9.0")
+        drain()
+
+        let posts = StubURLProtocol.recordedRequests().filter { $0.httpMethod == "POST" }
+        XCTAssertEqual(posts.first?.url?.host, "notti.example.invalid")
+        XCTAssertEqual(facade.activeConfig?.appId, appId)
+        XCTAssertEqual(facade.activeConfig?.clientKey, clientKey)
+        XCTAssertEqual(facade.activeConfig?.sdkName, "react-native")
+        XCTAssertEqual(facade.activeConfig?.sdkVersion, "0.9.0")
     }
 
     func test_initializeWithoutOptionsUsesTheDefaultHost() {

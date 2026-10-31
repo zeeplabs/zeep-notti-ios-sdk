@@ -1,0 +1,1 @@
+Sources/NottiSDK/Public/Notti+Wrapper.swift: @_spi(Wrapper) public static func initialize( appId: String, clientKey: String, options: Options = Options(), sdkName: String, sdkVersion: String ) {
