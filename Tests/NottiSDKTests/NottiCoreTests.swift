@@ -1602,6 +1602,40 @@ final class NottiCoreTests: XCTestCase {
         XCTAssertNil(store.getLastSyncedSdkName())
     }
 
+    func test_aNewDeviceIdResendsTheAckedSdkName() {
+        let sameRow = #"{"id":"device-1","tags":{}}"#
+        StubURLProtocol.enqueue(.status(200, body: sameRow)) // registration 1
+        StubURLProtocol.enqueue(.echoDevice()) // sdk_name
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-2","tags":{}}"#)) // registration 2, new row
+        StubURLProtocol.enqueue(.echoDevice()) // sdk_name again
+        let core = newCore()
+        core.initialize(appId: "app-1", clientKey: "key", baseUrl: baseUrl, sdkName: "react-native")
+        drain(core)
+        XCTAssertEqual(store.getLastSyncedSdkName(), "react-native")
+
+        core.onTokenRefreshed("apns-2")
+        drain(core)
+
+        let names = patchBodies(StubURLProtocol.recordedRequests()).compactMap { $0["sdk_name"] as? String }
+        XCTAssertEqual(names, ["react-native", "react-native"], "a new row gets sdk_name again")
+        XCTAssertEqual(store.getLastSyncedSdkName(), "react-native")
+    }
+
+    func test_anInvalidatedCoreSendsNoProfileField() {
+        // A replaced core (a restart with another sdkName) must not send its stale
+        // value after the new core's ack: the new core re-diffs every field.
+        StubURLProtocol.enqueue(.echoDevice()) // registration
+        let core = newCore(timezoneProvider: { "UTC" })
+        core.invalidate()
+
+        core.initialize(appId: "app-1", clientKey: "key", baseUrl: baseUrl, sdkName: "ios")
+        drain(core)
+
+        XCTAssertEqual(patchBodies(StubURLProtocol.recordedRequests()).count, 0)
+        XCTAssertNil(store.getLastSyncedSdkName())
+        XCTAssertNil(store.getLastSyncedTimezoneId())
+    }
+
     func test_rejectedSdkNameDoesNotBlockTheOtherProfileFields() {
         StubURLProtocol.enqueue(.echoDevice()) // registration
         StubURLProtocol.enqueue(.status(422, body: #"{"error":"invalid_device_patch"}"#)) // sdk_name

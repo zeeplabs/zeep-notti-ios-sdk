@@ -234,13 +234,14 @@ Sequential order for Execute: T1 → T2 → T3 → T4 → T5 → T6 → T7 → T
 
 ### T9: Release (Julio)
 
-**What**: Push, PR, merge; tag `0.2.0`, GitHub Release, `pod trunk push` for `NottiSDK` then `NottiSDKExtension`, before the trunk turns read-only (AD-022). Check `pod trunk info` before retrying a failed push. Then the `zeep-notti` docs page `sdks/ios` (en + pt-BR) gets the Obj-C rename if it shows the snippet.
+**What**: Push, PR, merge; date the CHANGELOG (`## [0.2.0] - TBD` -> release day, own commit on `main`: a tag build fails on `TBD` (`scripts/check-version.sh`) and the tag cannot move once on the trunk); tag `0.2.0`, GitHub Release, `pod trunk push` for `NottiSDK` then `NottiSDKExtension`, before the trunk turns read-only (AD-022). Check `pod trunk info` before retrying a failed push. Then the `zeep-notti` docs page `sdks/ios` (en + pt-BR) gets the Obj-C rename if it shows the snippet.
 **Where**: GitHub, CocoaPods trunk
 **Depends on**: T8
 **Requirement**: WRAP-08
 
 **Done when**:
 
+- [ ] CHANGELOG `[0.2.0]` dated before the tag; the tag's CI run is green
 - [ ] `pod trunk info NottiSDK` and `NottiSDKExtension` list `0.2.0`
 - [ ] A clean `pod install` of the RN example resolves `~> 0.2.0` from the trunk
 

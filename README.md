@@ -8,7 +8,7 @@ Native iOS SDK for [Zeep Notti](https://github.com/zeeplabs) push notifications:
 
 - iOS 15.0+
 - Xcode 15.3 or later. The extension target uses `nonisolated(unsafe)`, which needs Swift 5.10. Only Xcode 26.6 and 27.1 are tested.
-- A Notti backend (`zeep-notti`) that accepts what the SDK sends: v0.10.0 or later for the device-profile fields, v0.11.0 or later for the `opened` event, v0.23.0 or later for In-App Messages and v0.24.0 or later for the `logout` unlink (see [Known limitations](#known-limitations)). An older backend rejects those fields or events and the SDK drops them.
+- A Notti backend (`zeep-notti`) that accepts what the SDK sends: v0.10.0 or later for the device-profile fields, v0.11.0 or later for the `opened` event, v0.23.0 or later for In-App Messages, v0.24.0 or later for the `logout` unlink and a release after v0.26.0 for `sdk_name` (see [Known limitations](#known-limitations)). An older backend rejects those fields or events and the SDK drops them.
 - An Apple Developer account with push notifications and an APNs key configured in your Notti app
 
 ## Installation
@@ -21,7 +21,7 @@ In Xcode: **File → Add Package Dependencies…** and enter:
 https://github.com/zeeplabs/zeep-notti-ios-sdk.git
 ```
 
-Choose the dependency rule **Up to Next Major Version** from `0.2.0`.
+Choose the dependency rule **Up to Next Minor Version** from `0.2.0`. Before 1.0 a minor release can break the API (0.2.0 renamed the Objective-C class), so the rule stops before `0.3.0`.
 
 - Add the **`NottiSDK`** product to your app target.
 - Add the **`NottiSDKExtension`** product to your Notification Service Extension target (optional, for rich media).
@@ -30,7 +30,7 @@ In a `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/zeeplabs/zeep-notti-ios-sdk.git", from: "0.2.0"),
+    .package(url: "https://github.com/zeeplabs/zeep-notti-ios-sdk.git", .upToNextMinor(from: "0.2.0")),
 ],
 targets: [
     .target(name: "YourApp", dependencies: [.product(name: "NottiSDK", package: "zeep-notti-ios-sdk")]),
@@ -46,11 +46,11 @@ Swift Package Manager is the recommended way for native apps.
 platform :ios, '15.0'
 
 target 'YourApp' do
-  pod 'NottiSDK', '~> 0.2'
+  pod 'NottiSDK', '~> 0.2.0'
 end
 
 target 'YourNotificationServiceExtension' do
-  pod 'NottiSDKExtension', '~> 0.2'
+  pod 'NottiSDKExtension', '~> 0.2.0'
 end
 ```
 
@@ -316,7 +316,7 @@ Country is resolved on the device by reverse-geocoding a location fix that your 
 
 `notti_device_id`, `notti_last_token`, `notti_external_user_id`, `notti_subscribed`, `notti_tags`, `notti_app_version`, `notti_first_session_at_ms`, `notti_last_session_at_ms`, `notti_session_count`, `notti_session_time_ms`, `notti_session_started_at_ms`, `notti_session_last_seen_at_ms`, `notti_location_sharing_enabled`, `notti_pending_country_clear`, `notti_pending_external_user_id_clear`, `notti_last_synced_country`, `notti_last_synced_device_os`, `notti_last_synced_device_model`, `notti_last_synced_sdk_version`, `notti_last_synced_sdk_name`, `notti_last_synced_timezone_id`, `notti_last_synced_language`, `notti_last_synced_permission_status`, `notti_last_unsubscribed_at_ms`, `notti_pending_unsubscribe_at_ms`, `notti_pending_permission_unsubscribe_at_ms`, `notti_email`, `notti_phone`, `notti_last_synced_email`, `notti_last_synced_phone`, `notti_profile_field_ack_migrated`, `notti_pending_events`, `notti_pending_inapp_events`.
 
-The keys are the same as in `react-native-notti` 0.8.0 (AD-017 and AD-018 in `.specs/project/STATE.md`), plus `notti_last_synced_sdk_name` (0.2.0, AD-024: the last `sdk_name` the backend acknowledged, `ios` or a wrapper's name; absent after an upgrade from React Native, so it is sent once). `notti_pending_external_user_id_clear` is a flag with no personal data: a `logout` unlink the backend has not acknowledged yet. `notti_pending_inapp_events` is the In-App event queue (message id, event type, button id or dismiss reason, time and app id; no token, device id, message text or event name), in the same format as `react-native-notti`, so pending events carry over when an app moves from the React Native module to this SDK.
+The keys are the same as in `react-native-notti` 0.8.0 (AD-017 and AD-018 in `.specs/project/STATE.md`), plus `notti_last_synced_sdk_name` (0.2.0, AD-024: the last `sdk_name` the backend acknowledged, `ios` or a wrapper's name; absent after an upgrade from React Native, so it is sent at the first registration; a backend that does not echo it gets it again at every registration). `notti_pending_external_user_id_clear` is a flag with no personal data: a `logout` unlink the backend has not acknowledged yet. `notti_pending_inapp_events` is the In-App event queue (message id, event type, button id or dismiss reason, time and app id; no token, device id, message text or event name), in the same format as `react-native-notti`, so pending events carry over when an app moves from the React Native module to this SDK.
 
 Logs go through one logger, default level `error`. They never contain email, phone, push token, device id, external user id or tag values, nor In-App message ids, titles, bodies, button labels, links, image URLs or `trackEvent` names, and errors are logged as `domain#code`.
 
@@ -337,6 +337,7 @@ This README describes what the SDK does. It is not legal advice and does not sta
 ## Known limitations
 
 - **Rich media on a device only.** The Notification Service Extension is not exercised in the Simulator by this repo; media rendering and the expiry fallback were checked on the maintainer's devices ([device checklist](docs/DEVICE_CHECKLIST.md)). Test rich media on a physical device.
+- **`sdk_name` needs a `zeep-notti` release after v0.26.0.** v0.26.0 and older answer 2xx to the `sdk_name` PATCH but ignore it, so the SDK never marks it acknowledged and sends it again at every registration (one extra request per launch, no error). The backend uses `sdk_name` to pick the SDK minimum version for `push_permission` messages.
 - **`logout` and re-registration need `zeep-notti` v0.24.0 or later.** From that release, `PATCH` with `external_user_id: null` unlinks the device, and a registration that omits `external_user_id` and `tags` keeps them. Against an older backend, the unlink answers 2xx but the backend keeps the stored value, so the device stays linked to the previous user until the next launch (pushes for that user can keep arriving on a shared device); the SDK counts the 2xx as delivered and does not retry. An older backend also resets `external_user_id` and tags at every launch registration, so call `login` and `addTags` again at each launch. `react-native-notti` 0.8.0 has the same limits on an older backend.
 - **Tags survive `logout`.** `logout` does not clear tags on the backend; clear them yourself (`removeTags`) if they describe the user.
 - **Backups can carry the device identity to another device.** The `notti_prefs` suite is part of an iOS device backup. Restoring it on a different phone can aim updates at the original device's record before the SDK re-registers. If that matters for your app, exclude it from backup.
@@ -345,7 +346,7 @@ This README describes what the SDK does. It is not legal advice and does not sta
 - **Double observation.** If your own delegate overrides a push callback and calls `super`, the SDK can observe the same callback twice.
 - **No `received` for visible pushes without `notification_id`.** A push from another sender, or one without that field, is not reported as `received`.
 - **In-App Messages on a device.** The In-App device checks passed on the maintainer's devices without a per-item record. The window level against the keyboard, Control Center and Picture in Picture, legacy apps without scenes, and the launch ordering of `initialize`, `trackEvent` and the first session are not separately proven and are confirmed in a beta in a production host app.
-- **`push_permission` messages are not delivered yet.** The backend has a single SDK minimum version for them, empty today, so no device receives them until `zeep-notti` adds a per-SDK minimum.
+- **`push_permission` messages need a `zeep-notti` release after v0.26.0.** v0.26.0 and older have a single SDK minimum version for them, empty, so no device receives them. The next release judges each device by its `sdk_name`, which this SDK sends from 0.2.0.
 - **In-App `403` does not re-register.** On a `403` from the In-App routes the SDK logs one warning per session and route, stops fetching messages for the rest of the session (the next foreground session fetches again) and keeps the queued events, which are sent again at the next flush. It does not re-register as the server contract suggests.
 - **No consent API yet.** There is no call to hold collection until the user consents. Gate `Notti.initialize` and `Notti.login` yourself, and call `login` after `initialize`: before it, `login` is dropped (one warning).
 - **Personal data in `UserDefaults`.** Email, phone, external user id and tags are stored unencrypted in the `notti_prefs` suite.

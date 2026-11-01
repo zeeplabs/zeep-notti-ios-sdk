@@ -10,16 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- The device reports `sdk_name: "ios"` next to `sdk_version`, so the backend can apply per-SDK minimum versions (for example to In-App messages with a push-permission button). Synced like the other profile fields: once per change, confirmed by the backend's echo; a backend that does not know the field yet ignores it, and the SDK re-sends it on later registrations. New on-device key `notti_last_synced_sdk_name`.
+- The device reports `sdk_name: "ios"` next to `sdk_version`, so the backend can apply per-SDK minimum versions (for example to In-App messages with a push-permission button). Synced like the other profile fields: once per change, confirmed by the backend's echo; a backend that does not know the field yet (`zeep-notti` v0.26.0 and older) ignores it, and the SDK re-sends it on later registrations. New on-device key `notti_last_synced_sdk_name`.
 - For wrapper SDKs only (`react-native-notti`): `Notti.initialize(appId:clientKey:options:sdkName:sdkVersion:)`, visible with `@_spi(Wrapper) import NottiSDK` and outside the semantic-versioning promise. Apps should keep using `Notti.initialize(appId:clientKey:options:)`.
 
 ### Upgrade notes
 
 - **Objective-C hosts:** the facade class is now `NottiSDKFacade` (was `NottiSDK` in 0.1.0). Replace `[NottiSDK ...]` with `[NottiSDKFacade ...]` and `NottiSDK.logLevel` / `NottiSDK.deviceId` with `NottiSDKFacade.logLevel` / `NottiSDKFacade.deviceId`. Selectors and the other classes (`NottiUser`, `NottiNotifications`, `NottiInAppMessages`, `NottiSubscription`) are unchanged. Swift hosts are not affected.
+- Pin to the minor version: CocoaPods `'~> 0.2.0'`, Swift Package Manager `.upToNextMinor(from: "0.2.0")`. Before 1.0 a minor release can break the API, as this one does for Objective-C.
 
 ### Fixed
 
 - `NottiSDK.Notti` (the facade qualified with the module name) now compiles for Swift apps that install the SDK with CocoaPods, in static libraries and in both `use_frameworks!` linkages. In 0.1.0 the Objective-C class `NottiSDK` shadowed the module name (`type 'NottiSDK' has no member 'Notti'`). Swift Package Manager was not affected.
+- A core replaced by `initialize` with another configuration no longer sends or acknowledges profile fields. Before, its stale `sdk_name` could reach the backend after the new core's value was acknowledged, and stay there.
 
 ## [0.1.0] - 2026-10-26
 
