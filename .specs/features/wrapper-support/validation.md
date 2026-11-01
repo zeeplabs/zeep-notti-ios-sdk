@@ -45,3 +45,19 @@ Run 2026-10-31, branch `feat/wrapper-support`, iPhone 17 simulator (iOS 27.0), X
 
 Test count vs baseline (SDK 907): T3 +5 (core 4, store 1), T4 +6 (facade 4, runtime 2), T5 +1 = 919.
 Note: `NottiCore.swift` is now at the 1500-line `file_length` limit; the next addition there needs a split.
+
+## Pre-release review fixes (2026-11-01, branch `fix/pre-release-0.2.0`)
+
+An Opus review of `0.1.0..main` found no blocker and six items; all fixed here.
+
+| Finding | Fix | Proof |
+| --- | --- | --- |
+| `@_spi(Wrapper) import NottiSDK` proven only through SPM (T5) | none needed | RN example (`react-native-notti` `origin/main` 354d5c1) with `core.dependency "NottiSDK", "0.2.0"`, `pod 'NottiSDK', :path =>` this repo at 4134587 and a Swift file in the `Notti` pod calling `NottiSDK.Notti.initialize(appId:clientKey:options:sdkName:sdkVersion:)`: `xcodebuild build` green with static libraries, `use_frameworks!` static and dynamic. Negative control (plain `import NottiSDK`, dynamic): `error: extra arguments at positions #4, #5 in call`, BUILD FAILED |
+| T9 did not date the CHANGELOG (`TBD` fails a tag build) | T9 step and Done-when item | `tasks.md` T9 |
+| `spi_pattern` missed `@available(iOS 15, *) @_spi(Wrapper) public ...` | attributes with parenthesized, spaced arguments accepted | mutant M1: old script `--update` writes it to `PUBLIC_SURFACE.txt`; new: check exit 1 (`@_spi surface differs`), `--update` keeps `PUBLIC_SURFACE.txt` byte-identical and adds the line to `SPI_SURFACE.txt` |
+| `@_spi` on its own line or on an `extension` was filed as plain public | new guard: every non-comment `@_spi(` must share the line with a `public` / `open` declaration; fails check and `--update` | M2 (own line) and M3 (`@_spi(Wrapper) extension`): exit 1, `--update` exit 1, files untouched; M4 (`// @_spi` comment): exit 0; unmodified repo: `public surface ok (87 declarations, 1 @_spi)` |
+| A replaced core could PATCH its stale `sdk_name` after the new core's ack | `NottiCore.invalidate()` sets a flag; profile-field PATCHes check it before sending and before acking | `test_anInvalidatedCoreSendsNoProfileField`; mutant (send guard removed): fails, `("10") is not equal to ("0")`. Residual: a PATCH already on the wire at `invalidate()` can still land last (no ack is written for it) |
+| No CI compile of `NottiSDK.Notti` in a CocoaPods consumer | `Example/App/LiveSDKClient.swift` calls `NottiSDK.Notti.initialize`; the Example CI legs `pods-static`, `pods-libs`, `pods-dynamic` build it | local `pods-libs` and `pods-dynamic` device builds green (gate below) |
+| No core test that a new device id re-sends `sdk_name`; README said "sent once"; README pins allowed 0.3.x | `test_aNewDeviceIdResendsTheAckedSdkName`; README text, `~> 0.2.0` / `.upToNextMinor(from: "0.2.0")`, backend note (`sdk_name` needs a `zeep-notti` release after v0.26.0) | test green |
+
+Gate (Xcode 27.2, iPhone 17 simulator, CocoaPods 1.17.0): full `NottiSDK-Package` green, Shared 14, SDK 921 (+2), ObjC 8, Extension 110, ExtensionObjC 3, 0 `did not drain`; strict device build green; SwiftLint 0.65.1 `--strict` 0 violations (`NottiCore.swift` 1499 lines); ten guard scripts green; `scripts/check-hook-linked.sh spm` / `pod` green; `pod lib lint` `NottiSDK` and `NottiSDKExtension`, frameworks and `--use-libraries`, 4/4 passed; Example `pods-libs` and `pods-dynamic` device builds (warnings as errors) green with `NottiSDK.Notti.initialize`.
