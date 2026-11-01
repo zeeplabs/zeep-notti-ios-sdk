@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - `NottiSDK.Notti` (the facade qualified with the module name) now compiles for Swift apps that install the SDK with CocoaPods, in static libraries and in both `use_frameworks!` linkages. In 0.1.0 the Objective-C class `NottiSDK` shadowed the module name (`type 'NottiSDK' has no member 'Notti'`). Swift Package Manager was not affected.
+- A core replaced by `initialize` with another configuration no longer sends or acknowledges profile fields. Before, its stale `sdk_name` could reach the backend after the new core's value was acknowledged, and stay there.
 
 ## [0.1.0] - 2026-10-26
 

@@ -213,6 +213,8 @@ class NottiCore {
     private var appIsForeground = false
     private var foregroundObserver: NSObjectProtocol?
     private var backgroundObserver: NSObjectProtocol?
+    private var invalidated = false // guarded by `foregroundLock`; set once by `invalidate()`
+    private var isInvalidated: Bool { foregroundLock.lock(); defer { foregroundLock.unlock() }; return invalidated }
 
     /// Session-transition state (workQueue-only, T8). iOS fires
     /// `didBecomeActive` repeatedly without an intervening `didEnterBackground`
@@ -311,18 +313,17 @@ class NottiCore {
         }
     }
 
-    /// Called by `NottiImpl.invalidate()` when the RN bridge tears the module
-    /// down (JS reload). The old core can outlive that for a while (in-flight
-    /// blocks, delayed dealloc); without this it kept observing lifecycle, so
-    /// on the next background both it and the reloaded core ended the same
-    /// session from two different work queues (double `session_count`). Stops
-    /// the observers and the heartbeat; leaves the persisted open session and
-    /// the process `sessionGate` alone for the new core to adopt.
+    /// Called by `NottiRuntime` when a new core replaces this one. The old core can outlive that
+    /// (in-flight blocks, delayed dealloc): it stops observing lifecycle (else both cores end the same
+    /// session, double `session_count`) and stops sending or acking profile fields (else its stale
+    /// `sdk_name` can land after the new core's ack; the new core re-diffs every field). Leaves the
+    /// persisted open session and the process `sessionGate` for the new core to adopt.
     func invalidate() {
         foregroundLock.lock()
         let observers = [foregroundObserver, backgroundObserver]
         foregroundObserver = nil
         backgroundObserver = nil
+        invalidated = true
         foregroundLock.unlock()
         for case let observer? in observers {
             NotificationCenter.default.removeObserver(observer)
@@ -773,12 +774,9 @@ class NottiCore {
 
     // MARK: - Foreground retry (spec P1-AC5)
 
-    /// workQueue-only. Diff-and-enqueue (SEGTEL-03) generalized to every
-    /// read-once profile field (device-profile-fields DPF-01..09): for each of
-    /// `app_version`, `device_os`, `device_model`, `sdk_version`,
-    /// `timezone_id`, `language`, reads the injected provider and only when it
-    /// differs from the field's last-synced store value enqueues a coalesced
-    /// PATCH, persisting on Success. A nil provider skips only that field
+    /// workQueue-only. Diff-and-enqueue (SEGTEL-03) for every read-once profile field (DPF-01..09,
+    /// `sdk_name` AD-024): reads the provider and, only when it differs from the last acked value,
+    /// enqueues a coalesced PATCH, acked on the backend's echo. A nil provider skips only that field
     /// (DPF-04/09) - no crash, no registration block. Opaque strings, no parsing.
     private func syncProfileFieldsIfNeeded(_ client: NottiApiClient) {
         deviceStore.migrateProfileFieldAckIfNeeded()
@@ -793,6 +791,7 @@ class NottiCore {
             guard current != synced() else { return }
             performOrQueue(client, description: name, coalesceKey: coalesceKey) {
                 [weak self] client, deviceId, token in
+                guard self?.isInvalidated == false else { return }
                 let result = client.patchDevice(deviceId: deviceId, token: token, fields: [name: current])
                 switch result {
                 // The echoed device is the ack: a backend that predates the field
@@ -801,7 +800,7 @@ class NottiCore {
                 // different -> left unsynced and re-sent on the next registration.
                 case .success(let device):
                     if device.profileFields[name] == current {
-                        setSynced(current)
+                        if self?.isInvalidated == false { setSynced(current) }
                     } else {
                         self?.logger(.warn, "Notti.\(name): PATCH accepted but value not echoed by the backend - re-sent on next registration")
                     }
