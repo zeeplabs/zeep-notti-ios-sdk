@@ -1556,6 +1556,69 @@ final class NottiCoreTests: XCTestCase {
         XCTAssertEqual(store.getLastSyncedSdkVersion(), "0.5.0")
     }
 
+    // MARK: - sdk_name (wrapper-support WRAP-16..19, AD-024)
+
+    func test_sdkNamePassedThroughInitializeReachesThePayloadAndIsAckedOnEcho() {
+        StubURLProtocol.enqueue(.echoDevice()) // registration
+        StubURLProtocol.enqueue(.echoDevice()) // sdk_name
+        let core = newCore()
+
+        core.initialize(appId: "app-1", clientKey: "key", baseUrl: baseUrl, sdkName: "react-native")
+        drain(core)
+
+        let bodies = patchBodies(StubURLProtocol.recordedRequests())
+        XCTAssertEqual(bodies.count, 1)
+        XCTAssertEqual(
+            Set(bodies[0].keys).subtracting(["token"]), ["sdk_name"], "sdk_name goes in its own PATCH (plus the token proof)")
+        XCTAssertEqual(bodies[0]["sdk_name"] as? String, "react-native")
+        XCTAssertEqual(store.getLastSyncedSdkName(), "react-native")
+    }
+
+    func test_emptySdkNameOmitsTheField() {
+        StubURLProtocol.enqueue(.echoDevice()) // registration
+        let core = newCore()
+
+        core.initialize(appId: "app-1", clientKey: "key", baseUrl: baseUrl, sdkName: "")
+        drain(core)
+
+        XCTAssertTrue(patchBodies(StubURLProtocol.recordedRequests()).allSatisfy { $0["sdk_name"] == nil })
+        XCTAssertNil(store.getLastSyncedSdkName())
+    }
+
+    func test_unechoedSdkNameStaysUnackedAndIsResentOnTheNextRegistration() {
+        // A backend before AD-044 answers 2xx and ignores sdk_name (no strict
+        // decoding on the device PATCH), so the echo never carries it.
+        for _ in 0..<4 { StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-1","tags":{}}"#)) }
+        let core = newCore()
+        core.initialize(appId: "app-1", clientKey: "key", baseUrl: baseUrl, sdkName: "ios")
+        drain(core)
+        XCTAssertNil(store.getLastSyncedSdkName())
+
+        core.onTokenRefreshed("new-apns-token")
+        drain(core)
+
+        let bodies = patchBodies(StubURLProtocol.recordedRequests())
+        XCTAssertEqual(bodies.compactMap { $0["sdk_name"] as? String }, ["ios", "ios"])
+        XCTAssertNil(store.getLastSyncedSdkName())
+    }
+
+    func test_rejectedSdkNameDoesNotBlockTheOtherProfileFields() {
+        StubURLProtocol.enqueue(.echoDevice()) // registration
+        StubURLProtocol.enqueue(.status(422, body: #"{"error":"invalid_device_patch"}"#)) // sdk_name
+        StubURLProtocol.enqueue(.echoDevice()) // timezone_id
+        let logs = LogSink()
+        let core = newCore(timezoneProvider: { "UTC" }, logs: logs)
+
+        core.initialize(appId: "app-1", clientKey: "key", baseUrl: baseUrl, sdkName: "not-an-sdk")
+        drain(core)
+
+        let bodies = patchBodies(StubURLProtocol.recordedRequests())
+        XCTAssertEqual(bodies.count, 2)
+        XCTAssertNil(store.getLastSyncedSdkName())
+        XCTAssertEqual(store.getLastSyncedTimezoneId(), "UTC")
+        XCTAssertTrue(logs.messages.contains { $0.contains("Notti.sdk_name") && $0.contains("PATCH failed") })
+    }
+
     // MARK: - Permission status + last_unsubscribed_at (T8, DPF-10..16)
 
     func test_registrationSuccessSyncsPermissionStatus() {

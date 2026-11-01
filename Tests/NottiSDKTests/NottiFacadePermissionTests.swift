@@ -83,6 +83,7 @@ final class NottiFacadePermissionTests: XCTestCase {
                 NottiApiClient(session: session, baseUrl: baseUrl, appId: appId, clientKey: clientKey, sleeper: { _ in })
             },
             sdkVersion: "",
+            sdkName: "",
             startObservers: false
         )
         let recording = dispatcher!

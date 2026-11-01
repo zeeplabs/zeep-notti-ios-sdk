@@ -138,6 +138,8 @@ class NottiCore {
     /// read (unlike `deviceOsProvider` etc.): `sdk_version` is core state set by
     /// `initialize`, so this reads the stored value at call time (design.md P1).
     private var sdkVersionProvider: () -> String? { { self.sdkVersion } }
+    private var sdkName: String? // `sdk_name` (AD-024): `ios` or a wrapper's value; nil when empty, like `sdkVersion`
+    private var sdkNameProvider: () -> String? { { self.sdkName } }
 
     /// Mutations issued before device registration finished, replayed in order
     /// once it does. Bounded so a never-registering device cannot grow it
@@ -162,6 +164,7 @@ class NottiCore {
         static let deviceOs = "telemetry.deviceOs"
         static let deviceModel = "telemetry.deviceModel"
         static let sdkVersion = "telemetry.sdkVersion"
+        static let sdkName = "telemetry.sdkName"
         static let timezoneId = "telemetry.timezoneId"
         static let language = "telemetry.language"
         static let permissionStatus = "telemetry.permissionStatus"
@@ -353,9 +356,9 @@ class NottiCore {
         }
     }
 
-    func initialize(appId: String, clientKey: String, baseUrl: String, sdkVersion: String = "") {
+    func initialize(appId: String, clientKey: String, baseUrl: String, sdkVersion: String = "", sdkName: String = "") {
         workQueue.async { [weak self] in
-            self?.initializeOnQueue(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkVersion: sdkVersion)
+            self?.initializeOnQueue(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkVersion: sdkVersion, sdkName: sdkName)
         }
     }
 
@@ -682,7 +685,7 @@ class NottiCore {
 
     // MARK: - workQueue-only internals
 
-    private func initializeOnQueue(appId: String, clientKey: String, baseUrl: String, sdkVersion: String) {
+    private func initializeOnQueue(appId: String, clientKey: String, baseUrl: String, sdkVersion: String, sdkName: String) {
         if appId.isEmpty || clientKey.isEmpty || baseUrl.isEmpty {
             logger(.error, "Notti.initialize: appId, clientKey, or baseUrl is missing/empty - skipping registration")
             return
@@ -690,6 +693,7 @@ class NottiCore {
         // Empty sdkVersion (JS resolution failure) is stored as nil so the
         // `sdk_version` field is omitted, never sent as an empty string.
         self.sdkVersion = sdkVersion.isEmpty ? nil : sdkVersion
+        self.sdkName = sdkName.isEmpty ? nil : sdkName
 
         // A malformed-but-non-empty baseUrl (e.g. "my host.example.com", or a
         // scheme-less host) must leave the SDK disabled, not crash the host app
@@ -814,6 +818,8 @@ class NottiCore {
             synced: { self.deviceStore.getLastSyncedDeviceModel() }, setSynced: { self.deviceStore.setLastSyncedDeviceModel($0) })
         sync("sdk_version", coalesceKey: TelemetryKey.sdkVersion, provider: sdkVersionProvider,
             synced: { self.deviceStore.getLastSyncedSdkVersion() }, setSynced: { self.deviceStore.setLastSyncedSdkVersion($0) })
+        sync("sdk_name", coalesceKey: TelemetryKey.sdkName, provider: sdkNameProvider,
+            synced: { self.deviceStore.getLastSyncedSdkName() }, setSynced: { self.deviceStore.setLastSyncedSdkName($0) })
         sync("timezone_id", coalesceKey: TelemetryKey.timezoneId, provider: timezoneProvider,
             synced: { self.deviceStore.getLastSyncedTimezoneId() }, setSynced: { self.deviceStore.setLastSyncedTimezoneId($0) })
         sync("language", coalesceKey: TelemetryKey.language, provider: languageProvider,

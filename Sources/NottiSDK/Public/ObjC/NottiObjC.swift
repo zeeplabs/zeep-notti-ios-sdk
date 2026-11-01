@@ -4,15 +4,17 @@ import UserNotifications
 
 // Objective-C interop layer (API-13). Swift namespaces (`Notti.User`, ...) are
 // invisible to Objective-C, so these `NSObject` classes expose the same
-// capabilities under the ObjC names `NottiSDK`, `NottiUser`, `NottiNotifications`
+// capabilities under the ObjC names `NottiSDKFacade`, `NottiUser`, `NottiNotifications`
 // and `NottiInAppMessages`.
 // The Swift names carry an `ObjC` suffix because `Notti` is the Swift namespace
 // enum. Swift hosts should use `Notti`; these classes exist for Objective-C hosts
 // and the React Native bridge.
 //
-// The facade class is `NottiSDK` in Objective-C, not `Notti` (AD-021):
+// The facade class is `NottiSDKFacade` in Objective-C, not `Notti` (AD-021):
 // react-native-notti's TurboModule class is `@interface Notti`, and two classes
-// with one runtime name cannot link into the same app.
+// with one runtime name cannot link into the same app. Not `NottiSDK` either
+// (AD-023): with CocoaPods, a class named like the module shadows it in Swift,
+// and `NottiSDK.Notti` stops compiling.
 //
 // The layer bridges types only (`String?`, `NSDictionary`, blocks, `NSArray`) and
 // forwards to `NottiFacade.shared`: no behavior of its own, except dropping
@@ -23,8 +25,8 @@ import UserNotifications
 // In-App clicks reach it as an `NSDictionary` with exactly `messageId`,
 // `buttonId` and `action` (`@{type, value}`, or `NSNull`, never absent).
 
-/// Objective-C name: `NottiSDK` (AD-021). Initialize, identity, location sharing and log level.
-@objc(NottiSDK)
+/// Objective-C name: `NottiSDKFacade` (AD-021, AD-023). Initialize, identity, location sharing and log level.
+@objc(NottiSDKFacade)
 @available(iOSApplicationExtension, unavailable)
 public final class NottiObjC: NSObject {
 

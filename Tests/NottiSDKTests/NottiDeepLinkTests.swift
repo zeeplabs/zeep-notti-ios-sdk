@@ -52,6 +52,7 @@ final class NottiDeepLinkTests: XCTestCase {
                 NottiApiClient(session: session, baseUrl: baseUrl, appId: appId, clientKey: clientKey, sleeper: { _ in })
             },
             sdkVersion: "",
+            sdkName: "",
             startObservers: false
         )
         adapter = NottiPushAdapter(runtime: runtime)

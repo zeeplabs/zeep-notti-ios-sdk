@@ -14,13 +14,18 @@
 # extension-safe allowlist below. The surface file alone cannot catch a removed
 # attribute because it records only the declaration line.
 #
+# Declarations whose same-line attributes include `@_spi(` (AD-024, wrapper SDKs)
+# are outside semver: they go to .specs/codebase/SPI_SURFACE.txt instead, drift-
+# checked the same way, so an SPI change is still reviewed. `@_spi` on a line of its
+# own is not seen, and the declaration below it counts as plain public (fails).
+#
 # Textual check on purpose: grep/sed/sort/diff only, so it runs on the Linux
 # `checks` job with no Swift toolchain. A declaration whose `public` is on a line
 # of its own is not caught; the code style keeps modifiers on the declaration line.
 #
 # Usage:
 #   scripts/check-public-surface.sh [repo-root]            check
-#   scripts/check-public-surface.sh --update [repo-root]   rewrite the surface file
+#   scripts/check-public-surface.sh --update [repo-root]   rewrite both surface files
 set -euo pipefail
 
 update=0
@@ -30,6 +35,7 @@ if [[ "${1:-}" == "--update" ]]; then
 fi
 root="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
 surface_file=".specs/codebase/PUBLIC_SURFACE.txt"
+spi_file=".specs/codebase/SPI_SURFACE.txt"
 api_dirs=("Sources/NottiSDK" "Sources/NottiSDKExtension")
 shared_dir="Sources/NottiShared"
 ext_attr="@available(iOSApplicationExtension, unavailable)"
@@ -150,25 +156,41 @@ if [[ "$bootstrap_decls" != "interface NottiBootstrap" ]]; then
   exit 1
 fi
 
-# 4. The API surface equals the committed file.
-current="$(scan "${api_dirs[@]}" | LC_ALL=C sort)"
+# 4. The API surface equals the committed files: plain public in one, `@_spi` in
+# the other. `lines` prints nothing for an empty list, so an empty file matches.
+all_decls="$(scan "${api_dirs[@]}" | LC_ALL=C sort)"
+spi_pattern='^[^:]*: (@[^[:space:]]+[[:space:]]+)*@_spi\('
+current="$(printf '%s\n' "$all_decls" | grep -Ev "$spi_pattern" | grep . || true)"
+spi="$(printf '%s\n' "$all_decls" | grep -E "$spi_pattern" || true)"
+lines() { [[ -n "$1" ]] && printf '%s\n' "$1"; return 0; }
+count() { lines "$1" | grep -c . || true; }
 
 if [[ $update -eq 1 ]]; then
-  printf '%s\n' "$current" > "$surface_file"
-  echo "wrote $surface_file ($(printf '%s\n' "$current" | grep -c . || true) declarations)"
+  lines "$current" > "$surface_file"
+  lines "$spi" > "$spi_file"
+  echo "wrote $surface_file ($(count "$current") declarations) and $spi_file ($(count "$spi") declarations)"
   exit 0
 fi
 
-if [[ ! -f "$surface_file" ]]; then
-  echo "error: surface file not found: $surface_file (run scripts/check-public-surface.sh --update)" >&2
-  exit 1
-fi
+for f in "$surface_file" "$spi_file"; do
+  if [[ ! -f "$f" ]]; then
+    echo "error: surface file not found: $f (run scripts/check-public-surface.sh --update)" >&2
+    exit 1
+  fi
+done
 
-if ! diff_output="$(diff -u "$surface_file" <(printf '%s\n' "$current"))"; then
+if ! diff_output="$(diff -u "$surface_file" <(lines "$current"))"; then
   echo "error: public API surface differs from $surface_file ('-' = listed but gone, '+' = new):" >&2
   echo "$diff_output" >&2
   echo "If the change is intended, run scripts/check-public-surface.sh --update and commit the file." >&2
   exit 1
 fi
 
-echo "public surface ok ($(printf '%s\n' "$current" | grep -c . || true) declarations)"
+if ! diff_output="$(diff -u "$spi_file" <(lines "$spi"))"; then
+  echo "error: @_spi surface differs from $spi_file ('-' = listed but gone, '+' = new):" >&2
+  echo "$diff_output" >&2
+  echo "If the change is intended, run scripts/check-public-surface.sh --update and commit the file." >&2
+  exit 1
+fi
+
+echo "public surface ok ($(count "$current") declarations, $(count "$spi") @_spi)"

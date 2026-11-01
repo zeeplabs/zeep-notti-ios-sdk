@@ -195,6 +195,7 @@ final class NottiInAppURLOpenerWiringTests: XCTestCase {
             providers: NottiPlatformProviders(tokenProvider: { _ in }, permissionRequester: { $0(true) }),
             pathMonitor: FakePathMonitor(),
             sdkVersion: "",
+            sdkName: "",
             startObservers: false,
             inAppEngine: engine,
             notificationCenter: NotificationCenter(),
@@ -300,6 +301,7 @@ final class NottiInAppOpenURLPublicApiTests: XCTestCase {
                 NottiApiClient(session: session, baseUrl: baseUrl, appId: appId, clientKey: clientKey, sleeper: { _ in })
             },
             sdkVersion: "",
+            sdkName: "",
             startObservers: false,
             inAppEngine: engine,
             inAppClicks: relay,

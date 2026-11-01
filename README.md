@@ -2,7 +2,7 @@
 
 Native iOS SDK for [Zeep Notti](https://github.com/zeeplabs) push notifications: device registration, user identity, tags, engagement events (`received` / `opened` / `clicked`), rich media in a Notification Service Extension, and In-App Messages.
 
-> **Status: `0.1.0`, first release.** It ports `react-native-notti` 0.8.0 to iOS, In-App Messages included. The [device checklist](docs/DEVICE_CHECKLIST.md) passed on the maintainer's devices and App Store validation passed; a beta in a production host app follows. See [Known limitations](#known-limitations) and the [CHANGELOG](CHANGELOG.md).
+> **Status: `0.2.0`.** It ports `react-native-notti` 0.8.0 to iOS, In-App Messages included; 0.2.0 adds the `sdk_name` device field and renames the Objective-C facade class. The [device checklist](docs/DEVICE_CHECKLIST.md) passed on the maintainer's devices and App Store validation passed; a beta in a production host app follows. See [Known limitations](#known-limitations) and the [CHANGELOG](CHANGELOG.md).
 
 ## Requirements
 
@@ -21,7 +21,7 @@ In Xcode: **File → Add Package Dependencies…** and enter:
 https://github.com/zeeplabs/zeep-notti-ios-sdk.git
 ```
 
-Choose the dependency rule **Up to Next Major Version** from `0.1.0`.
+Choose the dependency rule **Up to Next Major Version** from `0.2.0`.
 
 - Add the **`NottiSDK`** product to your app target.
 - Add the **`NottiSDKExtension`** product to your Notification Service Extension target (optional, for rich media).
@@ -30,7 +30,7 @@ In a `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/zeeplabs/zeep-notti-ios-sdk.git", from: "0.1.0"),
+    .package(url: "https://github.com/zeeplabs/zeep-notti-ios-sdk.git", from: "0.2.0"),
 ],
 targets: [
     .target(name: "YourApp", dependencies: [.product(name: "NottiSDK", package: "zeep-notti-ios-sdk")]),
@@ -46,11 +46,11 @@ Swift Package Manager is the recommended way for native apps.
 platform :ios, '15.0'
 
 target 'YourApp' do
-  pod 'NottiSDK', '~> 0.1'
+  pod 'NottiSDK', '~> 0.2'
 end
 
 target 'YourNotificationServiceExtension' do
-  pod 'NottiSDKExtension', '~> 0.1'
+  pod 'NottiSDKExtension', '~> 0.2'
 end
 ```
 
@@ -265,21 +265,21 @@ final class ForwardingAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
 
 ## Objective-C
 
-The SDK is usable from Objective-C through the same module. The names below come from `@objc(...)` declarations in `Sources/NottiSDK/Public/ObjC/NottiObjC.swift`. The entry class is `NottiSDK`, not `Notti`, so it can live in the same app as `react-native-notti`, whose module class is `Notti`. This block is **not** compiled by CI (the example app has no Objective-C target); the Swift snippets above are.
+The SDK is usable from Objective-C through the same module. The names below come from `@objc(...)` declarations in `Sources/NottiSDK/Public/ObjC/NottiObjC.swift`. The entry class is `NottiSDKFacade`: not `Notti`, so it can live in the same app as `react-native-notti`, whose module class is `Notti`, and not `NottiSDK`, so Swift code can still write `NottiSDK.Notti` (0.1.0 used `NottiSDK`; see the CHANGELOG). This block is **not** compiled by CI (the example app has no Objective-C target); the Swift snippets above are.
 
 ```objc
 @import NottiSDK;
 
-[NottiSDK initializeWithAppId:@"YOUR_APP_ID" clientKey:@"YOUR_CLIENT_KEY" baseUrl:nil];
+[NottiSDKFacade initializeWithAppId:@"YOUR_APP_ID" clientKey:@"YOUR_CLIENT_KEY" baseUrl:nil];
 // Or, to open In-App web links in your own code instead of the SDK:
-// [NottiSDK initializeWithAppId:@"YOUR_APP_ID" clientKey:@"YOUR_CLIENT_KEY" baseUrl:nil opensInAppURLs:NO];
+// [NottiSDKFacade initializeWithAppId:@"YOUR_APP_ID" clientKey:@"YOUR_CLIENT_KEY" baseUrl:nil opensInAppURLs:NO];
 [NottiNotifications requestPermission:^(BOOL granted) { /* ... */ }];
-[NottiSDK login:@"user-123"];
+[NottiSDKFacade login:@"user-123"];
 [NottiUser addTag:@"plan" value:@"premium"];
 NottiSubscription *sub = [NottiNotifications addClickedListener:^(NSDictionary *payload) { /* ... */ }];
 [sub remove];
 
-[NottiSDK trackEvent:@"checkout_completed"];
+[NottiSDKFacade trackEvent:@"checkout_completed"];
 // payload: messageId, buttonId, action (@{@"type": @"url" or @"deeplink", @"value": ...} or NSNull)
 NottiSubscription *clicks = [NottiInAppMessages addClickListener:^(NSDictionary *payload) { /* ... */ }];
 ```
@@ -314,9 +314,9 @@ Country is resolved on the device by reverse-geocoding a location fix that your 
 
 `UserDefaults` suite `notti_prefs`, unencrypted. The keys are:
 
-`notti_device_id`, `notti_last_token`, `notti_external_user_id`, `notti_subscribed`, `notti_tags`, `notti_app_version`, `notti_first_session_at_ms`, `notti_last_session_at_ms`, `notti_session_count`, `notti_session_time_ms`, `notti_session_started_at_ms`, `notti_session_last_seen_at_ms`, `notti_location_sharing_enabled`, `notti_pending_country_clear`, `notti_pending_external_user_id_clear`, `notti_last_synced_country`, `notti_last_synced_device_os`, `notti_last_synced_device_model`, `notti_last_synced_sdk_version`, `notti_last_synced_timezone_id`, `notti_last_synced_language`, `notti_last_synced_permission_status`, `notti_last_unsubscribed_at_ms`, `notti_pending_unsubscribe_at_ms`, `notti_pending_permission_unsubscribe_at_ms`, `notti_email`, `notti_phone`, `notti_last_synced_email`, `notti_last_synced_phone`, `notti_profile_field_ack_migrated`, `notti_pending_events`, `notti_pending_inapp_events`.
+`notti_device_id`, `notti_last_token`, `notti_external_user_id`, `notti_subscribed`, `notti_tags`, `notti_app_version`, `notti_first_session_at_ms`, `notti_last_session_at_ms`, `notti_session_count`, `notti_session_time_ms`, `notti_session_started_at_ms`, `notti_session_last_seen_at_ms`, `notti_location_sharing_enabled`, `notti_pending_country_clear`, `notti_pending_external_user_id_clear`, `notti_last_synced_country`, `notti_last_synced_device_os`, `notti_last_synced_device_model`, `notti_last_synced_sdk_version`, `notti_last_synced_sdk_name`, `notti_last_synced_timezone_id`, `notti_last_synced_language`, `notti_last_synced_permission_status`, `notti_last_unsubscribed_at_ms`, `notti_pending_unsubscribe_at_ms`, `notti_pending_permission_unsubscribe_at_ms`, `notti_email`, `notti_phone`, `notti_last_synced_email`, `notti_last_synced_phone`, `notti_profile_field_ack_migrated`, `notti_pending_events`, `notti_pending_inapp_events`.
 
-The keys are the same as in `react-native-notti` 0.8.0 (AD-017 and AD-018 in `.specs/project/STATE.md`). `notti_pending_external_user_id_clear` is a flag with no personal data: a `logout` unlink the backend has not acknowledged yet. `notti_pending_inapp_events` is the In-App event queue (message id, event type, button id or dismiss reason, time and app id; no token, device id, message text or event name), in the same format as `react-native-notti`, so pending events carry over when an app moves from the React Native module to this SDK.
+The keys are the same as in `react-native-notti` 0.8.0 (AD-017 and AD-018 in `.specs/project/STATE.md`), plus `notti_last_synced_sdk_name` (0.2.0, AD-024: the last `sdk_name` the backend acknowledged, `ios` or a wrapper's name; absent after an upgrade from React Native, so it is sent once). `notti_pending_external_user_id_clear` is a flag with no personal data: a `logout` unlink the backend has not acknowledged yet. `notti_pending_inapp_events` is the In-App event queue (message id, event type, button id or dismiss reason, time and app id; no token, device id, message text or event name), in the same format as `react-native-notti`, so pending events carry over when an app moves from the React Native module to this SDK.
 
 Logs go through one logger, default level `error`. They never contain email, phone, push token, device id, external user id or tag values, nor In-App message ids, titles, bodies, button labels, links, image URLs or `trackEvent` names, and errors are logged as `domain#code`.
 
@@ -347,7 +347,7 @@ This README describes what the SDK does. It is not legal advice and does not sta
 - **In-App Messages on a device.** The In-App device checks passed on the maintainer's devices without a per-item record. The window level against the keyboard, Control Center and Picture in Picture, legacy apps without scenes, and the launch ordering of `initialize`, `trackEvent` and the first session are not separately proven and are confirmed in a beta in a production host app.
 - **`push_permission` messages are not delivered yet.** The backend has a single SDK minimum version for them, empty today, so no device receives them until `zeep-notti` adds a per-SDK minimum.
 - **In-App `403` does not re-register.** On a `403` from the In-App routes the SDK logs one warning per session and route, stops fetching messages for the rest of the session (the next foreground session fetches again) and keeps the queued events, which are sent again at the next flush. It does not re-register as the server contract suggests.
-- **No consent API in 0.1.0.** There is no call to hold collection until the user consents. Gate `Notti.initialize` and `Notti.login` yourself, and call `login` after `initialize`: before it, `login` is dropped (one warning).
+- **No consent API yet.** There is no call to hold collection until the user consents. Gate `Notti.initialize` and `Notti.login` yourself, and call `login` after `initialize`: before it, `login` is dropped (one warning).
 - **Personal data in `UserDefaults`.** Email, phone, external user id and tags are stored unencrypted in the `notti_prefs` suite.
 - **No `Retry-After`.** A request is tried up to 5 times, with 2, 4, 8 and 16 second waits between attempts. Only network errors, 5xx, 408, 429 and (at registration) a 2xx without a valid device body are retried; other 4xx are final. Events that use up their attempts stay queued and are tried again at a later flush. A `Retry-After` header is ignored.
 - **Device proof.** The [device checklist](docs/DEVICE_CHECKLIST.md) (APNs registration, permission states, location sharing, profile fields, cold-start click, silent and background `received`, the launch hook with CocoaPods) passed on the maintainer's devices without a per-item record of device and iOS version. App Store Connect validation passed with static and dynamic frameworks.

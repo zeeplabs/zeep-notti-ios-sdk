@@ -17,11 +17,15 @@ final class NottiFacade {
     static let defaultBaseUrl = "https://app.zeepnotti.app"
 
     /// The configuration of the running core. `baseUrl` is the normalized form,
-    /// so `https://x/` and `https://x` count as the same.
+    /// so `https://x/` and `https://x` count as the same. `sdkName` / `sdkVersion`
+    /// are a wrapper's own values (AD-024), nil on the public path; a different
+    /// value restarts the core like a different app id.
     struct Config: Equatable {
         let appId: String
         let clientKey: String
         let baseUrl: String
+        var sdkName: String?
+        var sdkVersion: String?
     }
 
     let runtime: NottiRuntime
@@ -105,7 +109,14 @@ final class NottiFacade {
     ///
     /// `opensInAppURLs` (AD-020) is applied on every valid call, before that check, and is not part of
     /// `Config`: changing only it never restarts the core.
-    func initialize(appId: String, clientKey: String, baseUrl: String?, opensInAppURLs: Bool = true) {
+    func initialize(
+        appId: String,
+        clientKey: String,
+        baseUrl: String?,
+        opensInAppURLs: Bool = true,
+        sdkName: String? = nil,
+        sdkVersion: String? = nil
+    ) {
         installDelegates()
         guard
             !appId.isEmpty,
@@ -115,13 +126,16 @@ final class NottiFacade {
             NottiLogger.log(.error, "Notti.initialize ignored: invalid appId, clientKey or baseUrl")
             return
         }
-        let config = Config(appId: appId, clientKey: clientKey, baseUrl: normalizedBaseUrl)
+        let config = Config(
+            appId: appId, clientKey: clientKey, baseUrl: normalizedBaseUrl, sdkName: sdkName, sdkVersion: sdkVersion)
         lock.lock()
         defer { lock.unlock() }
         runtime.setOpensInAppURLs(opensInAppURLs)
         guard _activeConfig != config else { return }
         _activeConfig = config
-        runtime.start(appId: config.appId, clientKey: config.clientKey, baseUrl: config.baseUrl)
+        runtime.start(
+            appId: config.appId, clientKey: config.clientKey, baseUrl: config.baseUrl,
+            sdkName: config.sdkName, sdkVersion: config.sdkVersion)
     }
 
     // MARK: - Identity and profile (API-04 ... API-08)

@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
   s.name         = 'NottiSDK'
   # Must equal NottiSDKVersion.current and NottiSDKExtension.podspec (scripts/check-version.sh enforces it in CI).
-  s.version      = '0.1.0'
+  s.version      = '0.2.0'
   s.summary      = 'Native iOS SDK for Zeep Notti push notifications.'
   s.description  = <<-DESC
     Device registration, user identity, tags and engagement events (received, opened,

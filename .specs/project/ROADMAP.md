@@ -63,7 +63,9 @@
 
 ### Features
 
-**rn-consumes-native-sdk** - PLANNED (work happens mostly in `zeep-notti-react-native`)
+**wrapper-support** - SPECIFY (2026-10-31, `.specs/features/wrapper-support/`): 0.2.0 with an `@_spi(Wrapper)` `sdk_version` entry point for wrappers, the `NottiSDK.Notti` shadowing on CocoaPods, the `NottiCore` drain test flake; trunk push before the read-only cutoff (AD-022)
+
+**rn-consumes-native-sdk** - IN PROGRESS on the RN side (2026-10-31: spec, design and tasks in `zeep-notti-react-native/.specs/features/ios-native-sdk/`, RN AD-005; blocked by `wrapper-support`)
 
 - RN podspec depends on this pod; the Turbo Module bridge maps JS calls and events onto the public `@objc` API
 - RN's `ios/*.swift` core and its tests are deleted

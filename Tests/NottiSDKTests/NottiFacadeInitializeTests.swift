@@ -45,7 +45,9 @@ final class NottiFacadeInitializeTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeRuntime() -> NottiRuntime {
+    /// Empty defaults keep the profile PATCHes of the other tests out of the way;
+    /// the wrapper tests pass native-like values.
+    private func makeRuntime(sdkVersion: String = "", sdkName: String = "") -> NottiRuntime {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [StubURLProtocol.self]
         let session = URLSession(configuration: config)
@@ -60,9 +62,22 @@ final class NottiFacadeInitializeTests: XCTestCase {
             apiClientFactory: { appId, clientKey, baseUrl in
                 NottiApiClient(session: session, baseUrl: baseUrl, appId: appId, clientKey: clientKey, sleeper: { _ in })
             },
-            sdkVersion: "",
+            sdkVersion: sdkVersion,
+            sdkName: sdkName,
             startObservers: false
         )
+    }
+
+    /// Replaces the setUp runtime (never started) with one carrying native values.
+    private func useNativeRuntime() {
+        runtime = makeRuntime(sdkVersion: "0.2.0-native-fixture", sdkName: "ios")
+        facade = NottiFacade(runtime: runtime, dispatcher: { $0() })
+    }
+
+    private var patches: [[String: Any]] {
+        StubURLProtocol.recordedRequests().filter { $0.httpMethod == "PATCH" }.map { request in
+            (try? JSONSerialization.jsonObject(with: request.httpBody ?? Data()) as? [String: Any]) ?? [:]
+        }
     }
 
     private func enqueueRegistrations(_ count: Int) {
@@ -123,6 +138,63 @@ final class NottiFacadeInitializeTests: XCTestCase {
         facade.initialize(appId: "other-app-fixture", clientKey: clientKey, baseUrl: baseUrl)
         drain()
         XCTAssertEqual(registrations.count, 2, "a different appId rebuilds the core")
+    }
+
+    // MARK: - Wrapper sdk_name / sdk_version (wrapper-support WRAP-01..03, 06, 16..18; AD-024)
+
+    func test_wrapperSdkNameAndVersionReachTheProfileInsteadOfTheNativeOnes() {
+        useNativeRuntime()
+        enqueueRegistrations(3)
+
+        facade.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkName: "react-native", sdkVersion: "0.9.0")
+        drain()
+
+        XCTAssertEqual(patches.compactMap { $0["sdk_version"] as? String }, ["0.9.0"])
+        XCTAssertEqual(patches.compactMap { $0["sdk_name"] as? String }, ["react-native"])
+    }
+
+    func test_emptyWrapperValuesOmitTheFields() {
+        useNativeRuntime()
+        enqueueRegistrations(1)
+
+        facade.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkName: "", sdkVersion: "")
+        drain()
+
+        XCTAssertEqual(registrations.count, 1)
+        XCTAssertTrue(patches.allSatisfy { $0["sdk_version"] == nil && $0["sdk_name"] == nil })
+    }
+
+    func test_publicInitializeSendsTheNativeNameAndVersion() {
+        useNativeRuntime()
+        enqueueRegistrations(3)
+
+        facade.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        drain()
+
+        XCTAssertEqual(patches.compactMap { $0["sdk_version"] as? String }, ["0.2.0-native-fixture"])
+        XCTAssertEqual(patches.compactMap { $0["sdk_name"] as? String }, ["ios"])
+    }
+
+    func test_aDifferentWrapperSdkVersionOrNameRestartsTheCore_theSameValuesDoNot() {
+        // Three registrations plus the profile PATCHes each core sends (both
+        // fields first, then only the one that changed): 7 echoes.
+        enqueueRegistrations(7)
+
+        facade.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkName: "react-native", sdkVersion: "0.9.0")
+        drain()
+        facade.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkName: "react-native", sdkVersion: "0.9.0")
+        drain()
+        XCTAssertEqual(registrations.count, 1, "same wrapper values are a no-op")
+
+        facade.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkName: "react-native", sdkVersion: "0.9.1")
+        drain()
+        XCTAssertEqual(registrations.count, 2, "a different sdkVersion restarts the core")
+        XCTAssertEqual(facade.activeConfig?.sdkVersion, "0.9.1")
+
+        facade.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkName: "flutter", sdkVersion: "0.9.1")
+        drain()
+        XCTAssertEqual(registrations.count, 3, "a different sdkName restarts the core")
+        XCTAssertEqual(facade.activeConfig?.sdkName, "flutter")
     }
 
     func test_aDifferentClientKeyOrBaseUrlAlsoRebuildsTheCore() {

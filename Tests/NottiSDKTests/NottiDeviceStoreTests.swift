@@ -199,6 +199,16 @@ final class NottiDeviceStoreTests: XCTestCase {
         XCTAssertNil(store.getLastSyncedPermissionStatus())
     }
 
+    // wrapper-support WRAP-20: a new device id re-sends sdk_name too.
+    func test_clearProfileFieldAcksForgetsTheSdkNameAck() {
+        store.setLastSyncedSdkName("ios")
+        XCTAssertEqual(store.getLastSyncedSdkName(), "ios")
+
+        store.clearProfileFieldAcks()
+
+        XCTAssertNil(store.getLastSyncedSdkName())
+    }
+
     func test_deviceProfileFieldsRoundTripThroughUserDefaults() {
         store.setLastSyncedDeviceOs("15.0")
         store.setLastSyncedDeviceModel("iPhone15,2")

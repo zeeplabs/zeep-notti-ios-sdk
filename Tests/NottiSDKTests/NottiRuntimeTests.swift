@@ -54,6 +54,7 @@ final class NottiRuntimeTests: XCTestCase {
         ),
         pathMonitor: NottiPathMonitoring = FakePathMonitor(),
         sdkVersion: String = NottiSDKVersion.current,
+        sdkName: String = "",
         startObservers: Bool = false
     ) -> NottiRuntime {
         let config = URLSessionConfiguration.ephemeral
@@ -68,6 +69,7 @@ final class NottiRuntimeTests: XCTestCase {
                 NottiApiClient(session: session, baseUrl: baseUrl, appId: appId, clientKey: clientKey, sleeper: { _ in })
             },
             sdkVersion: sdkVersion,
+            sdkName: sdkName,
             startObservers: startObservers
         )
         runtimes.append(runtime)
@@ -118,6 +120,49 @@ final class NottiRuntimeTests: XCTestCase {
         XCTAssertEqual(bodies("POST").count, 1, "registration ran")
         XCTAssertTrue(bodies("PATCH").allSatisfy { $0["sdk_version"] == nil })
         XCTAssertNil(NottiDeviceStore(defaults: defaults).getLastSyncedSdkVersion())
+    }
+
+    // MARK: - sdk_name (wrapper-support WRAP-16, WRAP-17, AD-024)
+
+    func test_theProductionDefaultSdkNameIsIos() {
+        XCTAssertEqual(NottiSDKVersion.name, "ios", "backend AD-044 enum value for native iOS")
+        StubURLProtocol.enqueue(.echoDevice()) // registration
+        StubURLProtocol.enqueue(.echoDevice()) // sdk_name PATCH
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StubURLProtocol.self]
+        let session = URLSession(configuration: config)
+        sessions.append(session)
+        // No `sdkName:` argument: the production default is under test.
+        let runtime = NottiRuntime(
+            defaults: defaults,
+            providers: NottiPlatformProviders(tokenProvider: { $0("apns-token-fixture") }, permissionRequester: { $0(true) }),
+            pathMonitor: FakePathMonitor(),
+            apiClientFactory: { appId, clientKey, baseUrl in
+                NottiApiClient(session: session, baseUrl: baseUrl, appId: appId, clientKey: clientKey, sleeper: { _ in })
+            },
+            sdkVersion: "",
+            startObservers: false
+        )
+        runtimes.append(runtime)
+
+        runtime.start(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        drain(runtime.core)
+
+        XCTAssertEqual(bodies("PATCH").compactMap { $0["sdk_name"] as? String }, ["ios"])
+    }
+
+    func test_startWithWrapperValuesSendsThemInsteadOfTheRuntimeOnes() {
+        StubURLProtocol.enqueue(.echoDevice()) // registration
+        StubURLProtocol.enqueue(.echoDevice()) // sdk_version PATCH
+        StubURLProtocol.enqueue(.echoDevice()) // sdk_name PATCH
+        let runtime = makeRuntime(sdkName: "ios")
+
+        runtime.start(appId: appId, clientKey: clientKey, baseUrl: baseUrl, sdkName: "react-native", sdkVersion: "0.9.0")
+        drain(runtime.core)
+
+        let patches = bodies("PATCH")
+        XCTAssertEqual(patches.compactMap { $0["sdk_version"] as? String }, ["0.9.0"])
+        XCTAssertEqual(patches.compactMap { $0["sdk_name"] as? String }, ["react-native"])
     }
 
     // MARK: - start twice (RN JS-reload parity, SEGTEL-08 notes)
