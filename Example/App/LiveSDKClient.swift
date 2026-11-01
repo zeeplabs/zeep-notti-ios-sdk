@@ -6,7 +6,8 @@ import NottiSDK
 struct LiveSDKClient: ExampleSDKClient {
     func initialize(appId: String, clientKey: String, baseUrl: String?) {
         // `opensInAppURLs: true` is the default, spelled out: the SDK opens In-App http(s) url actions (AD-020).
-        Notti.initialize(
+        // Module-qualified on purpose: the CocoaPods legs prove `NottiSDK.Notti` resolves (AD-023).
+        NottiSDK.Notti.initialize(
             appId: appId,
             clientKey: clientKey,
             options: Notti.Options(baseUrl: baseUrl, opensInAppURLs: true)
