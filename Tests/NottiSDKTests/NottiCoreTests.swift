@@ -1602,6 +1602,25 @@ final class NottiCoreTests: XCTestCase {
         XCTAssertNil(store.getLastSyncedSdkName())
     }
 
+    func test_aNewDeviceIdResendsTheAckedSdkName() {
+        let sameRow = #"{"id":"device-1","tags":{}}"#
+        StubURLProtocol.enqueue(.status(200, body: sameRow)) // registration 1
+        StubURLProtocol.enqueue(.echoDevice()) // sdk_name
+        StubURLProtocol.enqueue(.status(200, body: #"{"id":"device-2","tags":{}}"#)) // registration 2, new row
+        StubURLProtocol.enqueue(.echoDevice()) // sdk_name again
+        let core = newCore()
+        core.initialize(appId: "app-1", clientKey: "key", baseUrl: baseUrl, sdkName: "react-native")
+        drain(core)
+        XCTAssertEqual(store.getLastSyncedSdkName(), "react-native")
+
+        core.onTokenRefreshed("apns-2")
+        drain(core)
+
+        let names = patchBodies(StubURLProtocol.recordedRequests()).compactMap { $0["sdk_name"] as? String }
+        XCTAssertEqual(names, ["react-native", "react-native"], "a new row gets sdk_name again")
+        XCTAssertEqual(store.getLastSyncedSdkName(), "react-native")
+    }
+
     func test_rejectedSdkNameDoesNotBlockTheOtherProfileFields() {
         StubURLProtocol.enqueue(.echoDevice()) // registration
         StubURLProtocol.enqueue(.status(422, body: #"{"error":"invalid_device_patch"}"#)) // sdk_name
