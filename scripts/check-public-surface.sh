@@ -16,8 +16,9 @@
 #
 # Declarations whose same-line attributes include `@_spi(` (AD-024, wrapper SDKs)
 # are outside semver: they go to .specs/codebase/SPI_SURFACE.txt instead, drift-
-# checked the same way, so an SPI change is still reviewed. `@_spi` on a line of its
-# own is not seen, and the declaration below it counts as plain public (fails).
+# checked the same way, so an SPI change is still reviewed. `@_spi` anywhere else (a
+# line of its own, an `extension` line) fails the check and `--update`: the text scan
+# would file the declarations it covers as plain public.
 #
 # Textual check on purpose: grep/sed/sort/diff only, so it runs on the Linux
 # `checks` job with no Swift toolchain. A declaration whose `public` is on a line
@@ -159,7 +160,17 @@ fi
 # 4. The API surface equals the committed files: plain public in one, `@_spi` in
 # the other. `lines` prints nothing for an empty list, so an empty file matches.
 all_decls="$(scan "${api_dirs[@]}" | LC_ALL=C sort)"
-spi_pattern='^[^:]*: (@[^[:space:]]+[[:space:]]+)*@_spi\('
+# Same-line attributes before `@_spi(` may carry spaced arguments: `@available(iOS 15, *)`.
+spi_pattern='^[^:]*: (@[^[:space:](]+(\([^)]*\))?[[:space:]]+)*@_spi\('
+# Every non-comment `@_spi(` must sit on a `public` / `open` declaration line.
+loose_spi="$(grep -rnE '@_spi\(' --include='*.swift' "${api_dirs[@]}" \
+  | grep -Ev '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)' \
+  | grep -Ev '@_spi\([^)]*\)[[:space:]]+(@[^[:space:](]+(\([^)]*\))?[[:space:]]+)*((final|static|class|override|convenience|nonisolated)[[:space:]]+)*(public|open)[[:space:]]' || true)"
+if [[ -n "$loose_spi" ]]; then
+  echo "error: @_spi must share the line with a public/open declaration (AD-024):" >&2
+  echo "$loose_spi" >&2
+  exit 1
+fi
 current="$(printf '%s\n' "$all_decls" | grep -Ev "$spi_pattern" | grep . || true)"
 spi="$(printf '%s\n' "$all_decls" | grep -E "$spi_pattern" || true)"
 lines() { [[ -n "$1" ]] && printf '%s\n' "$1"; return 0; }
