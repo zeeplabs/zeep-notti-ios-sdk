@@ -134,7 +134,10 @@ struct NottiPlatformProviders {
                     // SPEC_DEVIATION: explicit `.ephemeral` case, not in RN.
                     // Reason: RN reached it through `@unknown default` (nil); the compiler warns
                     // "switch must be exhaustive" and `pod lib lint` fails on warnings. Same value (nil).
-                    case .ephemeral: status = nil
+                    // `.ephemeral` is unavailable on macOS (AD-025), where `@unknown default` covers the rest.
+                    #if !os(macOS)
+                        case .ephemeral: status = nil
+                    #endif
                     @unknown default: status = nil
                     }
                     callback(status)

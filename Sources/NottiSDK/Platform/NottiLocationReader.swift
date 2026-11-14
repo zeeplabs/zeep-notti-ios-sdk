@@ -52,7 +52,12 @@ final class NottiLocationReader: NSObject, CLLocationManagerDelegate {
     }
 
     private func updatePermission(_ status: CLAuthorizationStatus) {
-        let granted = status == .authorizedWhenInUse || status == .authorizedAlways
+        // `authorizedWhenInUse` does not exist on macOS (AD-025); `authorizedAlways` is its only granted state.
+        #if os(macOS)
+            let granted = status == .authorizedAlways
+        #else
+            let granted = status == .authorizedWhenInUse || status == .authorizedAlways
+        #endif
         lock.lock()
         cachedPermission = granted
         lock.unlock()

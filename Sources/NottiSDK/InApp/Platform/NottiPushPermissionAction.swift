@@ -36,7 +36,10 @@ final class NottiPushPermissionAction {
             switch status {
             case .notDetermined: self = .notDetermined
             case .denied: self = .denied
-            case .authorized, .provisional, .ephemeral: self = .granted
+            case .authorized, .provisional: self = .granted
+            #if !os(macOS)
+                case .ephemeral: self = .granted
+            #endif
             @unknown default: self = .unknown
             }
         }
