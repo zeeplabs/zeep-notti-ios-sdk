@@ -110,18 +110,8 @@ struct NottiPlatformProviders {
             countryProvider: { callback in locationReader.readCountry(callback) },
             // Device profile fields P1 (T7, DPF-01): OS version / model / timezone /
             // language reads. Each fails to nil - never a crash (DPF-04/09).
-            deviceOsProvider: {
-                UIDevice.current.systemVersion
-            },
-            deviceModelProvider: {
-                var systemInfo = utsname()
-                uname(&systemInfo)
-                let mirror = Mirror(reflecting: systemInfo.machine)
-                let bytes = mirror.children.map { $0.value as? Int8 ?? 0 }
-                let model = String(bytes: bytes.map { UInt8(bitPattern: $0) }, encoding: .ascii)?
-                    .trimmingCharacters(in: .controlCharacters)
-                return model?.isEmpty == false ? model : nil
-            },
+            deviceOsProvider: { NottiPlatformInfo.deviceOS() },
+            deviceModelProvider: { NottiPlatformInfo.deviceModel() },
             timezoneProvider: {
                 TimeZone.current.identifier
             },
