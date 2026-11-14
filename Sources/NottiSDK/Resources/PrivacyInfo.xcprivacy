@@ -34,6 +34,10 @@
 	  and event requests. App Functionality only.
 	  Other Diagnostic Data: app_version, sdk_version, device_os, device_model,
 	  timezone_id, language and the OS push-permission status (DPF-01..13).
+	  macOS (AD-025) collects the same fields and no new category: device_model
+	  is the hardware identifier read with sysctl hw.model (for example Mac14,9,
+	  never a serial number, hardware UUID or host name) and device_os is the
+	  ProcessInfo operating system version. Neither is a required-reason API.
 	  Other Data Types: tags set by the host app (free-form key/values).
 	  The last two categories are a best-fit choice for fields Apple's list does
 	  not name; confirm with privacy/legal before 0.1.0. Declared 2026-10-21.
