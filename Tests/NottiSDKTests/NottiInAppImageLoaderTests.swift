@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import ImageIO
 import UIKit
 import XCTest
@@ -297,3 +298,4 @@ final class NottiInAppImageLoaderTests: XCTestCase {
         wait(for: [fired, cancelled], timeout: 0.5)
     }
 }
+#endif

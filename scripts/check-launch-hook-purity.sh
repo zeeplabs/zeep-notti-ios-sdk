@@ -6,8 +6,13 @@
 # looks up a class by name, sends one message and lets the installer swizzle two setters.
 #
 #   NottiBootstrap.m            NSLog | os_log | NSUserDefaults | NSFileManager | NSURLSession |
-#                               dataWithContentsOfFile | NottiRuntime
-#   NottiDelegateInstaller.swift  UserDefaults | FileManager | URLSession | NottiRuntime
+#                               dataWithContentsOfFile | NottiRuntime | AppKit | NSApplication | NSApp
+#   NottiDelegateInstaller.swift  UserDefaults | FileManager | URLSession | NottiRuntime |
+#                               NSApplication.shared | NSApp   (AD-025, macOS: DEL-14 holds there too)
+#
+# The installer may name the class `NSApplication.self` (a class reference, no instance) and look the
+# application up by selector once it runs outside `+load`; an instance (`NSApplication.shared`, `NSApp`) is
+# banned, as `UIApplication.shared` is not touched on iOS.
 #
 # Comments are stripped first (line numbers are kept), so prose may name these types. String literals
 # are not stripped: a banned name inside a string is still reported. Logging through `NottiLogger` is
@@ -20,8 +25,8 @@ set -euo pipefail
 root="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
 bootstrap="$root/Sources/NottiSDKBootstrap/NottiBootstrap.m"
 installer="$root/Sources/NottiSDK/Delegates/NottiDelegateInstaller.swift"
-bootstrap_pattern='NSLog|os_log|NSUserDefaults|NSFileManager|NSURLSession|dataWithContentsOfFile|NottiRuntime'
-installer_pattern='UserDefaults|FileManager|URLSession|NottiRuntime'
+bootstrap_pattern='NSLog|os_log|NSUserDefaults|NSFileManager|NSURLSession|dataWithContentsOfFile|NottiRuntime|AppKit|NSApplication|NSApp\b'
+installer_pattern='UserDefaults|FileManager|URLSession|NottiRuntime|NSApplication\.shared|NSApp\b'
 
 for file in "$bootstrap" "$installer"; do
   if [[ ! -f "$file" ]]; then

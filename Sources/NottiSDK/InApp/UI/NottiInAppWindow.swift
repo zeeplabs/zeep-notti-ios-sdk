@@ -1,7 +1,9 @@
+#if canImport(UIKit)
 import UIKit
 
 /// Where a display window goes (IAM-36): the active `UIWindowScene`, or the screen for a scene-less app.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 enum NottiInAppWindowTarget {
     case scene(UIWindowScene)
     case screen(CGRect)
@@ -9,6 +11,7 @@ enum NottiInAppWindowTarget {
 
 /// Resolves the window target. Production reads `UIApplication`; tests inject a fake (RN `InAppSceneProviding`).
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 protocol NottiInAppSceneProviding: AnyObject {
     /// The first `.foregroundActive` scene, the screen for a scene-less app that is active, or nil while nothing
     /// is active (the display then waits for `didBecomeActive` or `UIScene.didActivateNotification`).
@@ -19,6 +22,7 @@ protocol NottiInAppSceneProviding: AnyObject {
 
 /// Production scene provider, a port of RN `NottiInAppSceneProvider` (`NottiInAppPresenter.swift:29-45`).
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiInAppSceneProvider: NottiInAppSceneProviding {
 
     var isAppActive: Bool { UIApplication.shared.applicationState == .active }
@@ -52,6 +56,7 @@ final class NottiInAppSceneProvider: NottiInAppSceneProviding {
 /// responder (IAM-36). A touch that lands on the window or on the root view (outside a bar) falls through to the
 /// app; `center` and `full` cover the window with their overlay, so they block it.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiInAppWindow: UIWindow {
 
     override var canBecomeKey: Bool { false }
@@ -66,6 +71,7 @@ final class NottiInAppWindow: UIWindow {
 /// What a window shows: the overlay (`NottiInAppBarLayout` or `NottiInAppCardLayout`), a callback after each
 /// layout pass, and the escape-gesture handler.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 struct NottiInAppWindowContent {
     let overlay: UIView
     let onLayout: () -> Void
@@ -75,6 +81,7 @@ struct NottiInAppWindowContent {
 
 /// One shown display window. Tests inject a fake (no real window in presenter tests).
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 protocol NottiInAppWindowHosting: AnyObject {
     func show(_ content: NottiInAppWindowContent)
     func hide()
@@ -84,6 +91,7 @@ protocol NottiInAppWindowHosting: AnyObject {
 
 /// Production window host (RN `NottiInAppWindowHost`, `NottiInAppPresenter.swift:111-147`).
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiInAppWindowHost: NottiInAppWindowHosting {
 
     private let target: NottiInAppWindowTarget
@@ -143,3 +151,4 @@ final class NottiInAppWindowHost: NottiInAppWindowHosting {
         }
     }
 }
+#endif

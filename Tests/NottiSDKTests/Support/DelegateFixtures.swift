@@ -1,5 +1,7 @@
 import ObjectiveC
+#if canImport(UIKit)
 import UIKit
+#endif
 import UserNotifications
 import XCTest
 
@@ -10,10 +12,14 @@ enum DelegateFixtures {
 
     typealias PresentCompletion = @convention(block) (UNNotificationPresentationOptions) -> Void
     typealias ResponseCompletion = @convention(block) () -> Void
-    typealias FetchCompletion = @convention(block) (UIBackgroundFetchResult) -> Void
+    #if canImport(UIKit)
+        typealias FetchCompletion = @convention(block) (UIBackgroundFetchResult) -> Void
+    #endif
     private typealias PresentCall = @convention(c) (AnyObject, Selector, AnyObject, UNNotification, PresentCompletion) -> Void
     private typealias ResponseCall = @convention(c) (AnyObject, Selector, AnyObject, UNNotificationResponse, ResponseCompletion) -> Void
-    private typealias FetchCall = @convention(c) (AnyObject, Selector, AnyObject, NSDictionary, FetchCompletion) -> Void
+    #if canImport(UIKit)
+        private typealias FetchCall = @convention(c) (AnyObject, Selector, AnyObject, NSDictionary, FetchCompletion) -> Void
+    #endif
     private typealias TokenCall = @convention(c) (AnyObject, Selector, AnyObject, NSData) -> Void
     private typealias FailureCall = @convention(c) (AnyObject, Selector, AnyObject, NSError) -> Void
 
@@ -36,11 +42,13 @@ enum DelegateFixtures {
             return false
         }
 
-        @objc(open:options:completionHandler:)
-        func open(_ url: URL, options: [UIApplication.OpenExternalURLOptionsKey: Any], completionHandler: ((Bool) -> Void)?) {
-            lock.withLock { recorded.append("open:options:completionHandler:") }
-            completionHandler?(false)
-        }
+        #if canImport(UIKit)
+            @objc(open:options:completionHandler:)
+            func open(_ url: URL, options: [UIApplication.OpenExternalURLOptionsKey: Any], completionHandler: ((Bool) -> Void)?) {
+                lock.withLock { recorded.append("open:options:completionHandler:") }
+                completionHandler?(false)
+            }
+        #endif
     }
 
     /// An empty registered class that conforms to `UNUserNotificationCenterDelegate`. The SDK adds what is missing.
@@ -109,18 +117,30 @@ enum DelegateFixtures {
         return completions
     }
 
-    @discardableResult
-    static func sendFetch(
-        _ delegate: AnyObject,
-        _ userInfo: [AnyHashable: Any],
-        application: AnyObject = NSObject()
-    ) -> [UIBackgroundFetchResult] {
-        var results: [UIBackgroundFetchResult] = []
-        let completion: FetchCompletion = { results.append($0) }
-        let send = unsafeBitCast(delegate.method(for: fetchSel), to: FetchCall.self)
-        send(delegate, fetchSel, application, userInfo as NSDictionary, completion)
-        return results
-    }
+    #if canImport(UIKit)
+        @discardableResult
+        static func sendFetch(
+            _ delegate: AnyObject,
+            _ userInfo: [AnyHashable: Any],
+            application: AnyObject = NSObject()
+        ) -> [UIBackgroundFetchResult] {
+            var results: [UIBackgroundFetchResult] = []
+            let completion: FetchCompletion = { results.append($0) }
+            let send = unsafeBitCast(delegate.method(for: fetchSel), to: FetchCall.self)
+            send(delegate, fetchSel, application, userInfo as NSDictionary, completion)
+            return results
+        }
+    #else
+        private typealias RemoteCall = @convention(c) (AnyObject, Selector, AnyObject, NSDictionary) -> Void
+
+        /// macOS: `application(_:didReceiveRemoteNotification:)` has no completion handler (AD-025).
+        static func sendFetch(_ delegate: AnyObject, _ userInfo: [AnyHashable: Any], application: AnyObject = NSObject()) {
+            let selector = NSSelectorFromString("application:didReceiveRemoteNotification:")
+            unsafeBitCast(delegate.method(for: selector), to: RemoteCall.self)(
+                delegate, selector, application, userInfo as NSDictionary
+            )
+        }
+    #endif
 
     static func sendToken(_ delegate: AnyObject, _ token: Data, application: AnyObject = NSObject()) {
         unsafeBitCast(delegate.method(for: tokenSel), to: TokenCall.self)(delegate, tokenSel, application, token as NSData)

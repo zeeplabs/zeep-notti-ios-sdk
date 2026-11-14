@@ -24,6 +24,7 @@ import NottiShared
 /// Known limit: a subclass that overrides the method and calls `super` is a second implementing
 /// class. If both are swizzled, the SDK observes the callback on both layers.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiMethodSwizzler {
 
     private struct Key: Hashable {

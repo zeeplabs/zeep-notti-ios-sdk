@@ -2,8 +2,8 @@
 # Fails when SDK sources call a URL-opening API (DEL-18). The SDK hands a tapped push's `data`, and an In-App
 # message's link action, to the host byte for byte; outside the two files below it never opens a link.
 #
-# Banned under Sources/NottiSDK and Sources/NottiSDKBootstrap: `UIApplication.shared.open`, `.open(_:options`
-# and `openURL`. Textual (grep only), so it runs on the Linux `checks` job with no Swift toolchain.
+# Banned under Sources/NottiSDK and Sources/NottiSDKBootstrap: `UIApplication.shared.open`, any `NSWorkspace`
+# (macOS, AD-025: no allowlist entry, no URL-open code is compiled on macOS), `.open(_:options` and `openURL`. Textual (grep only), so it runs on the Linux `checks` job with no Swift toolchain.
 #
 # Two exceptions, `allowed_files` below, exactly those paths, each allowed only `UIApplication.shared.open(` lines:
 # - AD-019: NottiPushPermissionAction.swift opens only the system notification-settings constant for the In-App
@@ -18,7 +18,7 @@ set -euo pipefail
 
 root="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
 dirs=("$root/Sources/NottiSDK" "$root/Sources/NottiSDKBootstrap")
-pattern='UIApplication\.shared\.open|\.open\(_:options|openURL'
+pattern='UIApplication\.shared\.open|NSWorkspace|\.open\(_:options|openURL'
 allowed_files=(
   "Sources/NottiSDK/InApp/Platform/NottiPushPermissionAction.swift"
   "Sources/NottiSDK/InApp/Platform/NottiInAppURLOpener.swift"

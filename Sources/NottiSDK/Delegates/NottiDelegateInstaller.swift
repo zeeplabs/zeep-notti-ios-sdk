@@ -1,6 +1,10 @@
 import Foundation
 import ObjectiveC
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import UserNotifications
 #if canImport(NottiShared)
 import NottiShared
@@ -11,6 +15,7 @@ import NottiShared
 /// the XCTest agent, even though `bundleIdentifier` is set there). The installer is built at process launch,
 /// so the center must not be touched until the end of launch or a later `initialize`.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiCurrentNotificationCenter: NottiNotificationCenterHost {
 
     var delegate: UNUserNotificationCenterDelegate? {
@@ -25,8 +30,9 @@ final class NottiCurrentNotificationCenter: NottiNotificationCenterHost {
 }
 
 /// Installs the delegate integration (DEL-01, DEL-02, DEL-06, DEL-07): reads `NottiDisableSwizzling` and,
-/// when swizzling is on, swizzles `UIApplication.setDelegate:` and `UNUserNotificationCenter.setDelegate:`,
-/// arms the fallback delegate for the end of launch and flips `NottiSwizzlingState.isActive`.
+/// when swizzling is on, swizzles `UIApplication.setDelegate:` (`NSApplication.setDelegate:` on macOS, AD-025)
+/// and `UNUserNotificationCenter.setDelegate:`, arms the fallback delegate for the end of launch and flips
+/// `NottiSwizzlingState.isActive`.
 ///
 /// Entry points:
 /// - `install()` is what `NottiBootstrap` sends from `+load`. It touches no UIKit object, no network, no file
@@ -38,6 +44,7 @@ final class NottiCurrentNotificationCenter: NottiNotificationCenterHost {
 /// method swizzler (its registry), both delegate swizzlers and the fallback assigner for the life of the
 /// process.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 @objc(NottiDelegateInstaller)
 final class NottiDelegateInstaller: NSObject {
 
@@ -65,7 +72,7 @@ final class NottiDelegateInstaller: NSObject {
             let state = NottiSwizzlingState.shared
             return Environment(
                 configuration: { NottiSwizzlingConfiguration() },
-                applicationClass: UIApplication.self,
+                applicationClass: NottiDelegateInstaller.applicationClass,
                 centerClass: UNUserNotificationCenter.self,
                 existingApplicationDelegate: NottiDelegateInstaller.currentApplicationDelegate,
                 center: NottiCurrentNotificationCenter(),
@@ -183,7 +190,7 @@ final class NottiDelegateInstaller: NSObject {
         let centerInstalled = center.swizzleSetDelegate(on: environment.centerClass)
 
         launchObserver = environment.notificationCenter.addObserver(
-            forName: UIApplication.didFinishLaunchingNotification,
+            forName: NottiLifecycle.didFinishLaunching,
             object: nil,
             queue: nil
         ) { [weak self] _ in
@@ -207,6 +214,16 @@ final class NottiDelegateInstaller: NSObject {
 
     // MARK: - Production probes
 
+    /// The application class whose `setDelegate:` is swizzled. A class reference only, never an instance, so
+    /// the launch hook (DEL-14) touches no AppKit or UIKit object.
+    static var applicationClass: AnyClass {
+        #if canImport(UIKit)
+            return UIApplication.self
+        #else
+            return NSApplication.self
+        #endif
+    }
+
     /// `Environment.runOnMain` in production.
     static func runOnMainThread(_ task: @escaping () -> Void) {
         if Thread.isMainThread {
@@ -225,13 +242,26 @@ final class NottiDelegateInstaller: NSObject {
 
     /// An app in the `active` state finished launching. [Provável] heuristic for an install after launch
     /// when the launch notification was missed; only trusted on the main thread, where UIKit allows the read.
+    /// macOS (design S7, [Provável]): `NSApplication.isRunning`, true once `run()` started, which is after the
+    /// launch notification was posted.
     private static func applicationIsActive() -> Bool {
         guard Thread.isMainThread, let application = sharedApplication() else { return false }
-        let state = (application.value(forKey: "applicationState") as? NSNumber)?.intValue
-        return state == UIApplication.State.active.rawValue
+        #if canImport(UIKit)
+            let state = (application.value(forKey: "applicationState") as? NSNumber)?.intValue
+            return state == UIApplication.State.active.rawValue
+        #else
+            return (application.value(forKey: "running") as? NSNumber)?.boolValue == true
+        #endif
     }
 
     private static func sharedApplication() -> AnyObject? {
-        UIApplication.perform(NSSelectorFromString("sharedApplication"))?.takeUnretainedValue()
+        #if canImport(UIKit)
+            return UIApplication.perform(NSSelectorFromString("sharedApplication"))?.takeUnretainedValue()
+        #else
+            // Only in an `.app` process, like `NottiCurrentNotificationCenter`: `sharedApplication` creates the
+            // application object when none exists, which a library call must not do in a non-app process.
+            guard Bundle.main.bundleURL.pathExtension == "app" else { return nil }
+            return NSApplication.perform(NSSelectorFromString("sharedApplication"))?.takeUnretainedValue()
+        #endif
     }
 }

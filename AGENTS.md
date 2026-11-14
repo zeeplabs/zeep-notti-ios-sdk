@@ -1,6 +1,6 @@
 # NottiSDK (zeep-notti-ios-sdk): agent and contributor rules
 
-Native iOS SDK for Zeep Notti push notifications. Swift 5.9 tools, **Swift 5 language mode**, iOS 15+. Distributed through SPM (products `NottiSDK`, `NottiSDKExtension`) and CocoaPods (two root pods with no subspecs: `NottiSDK` for the app, `NottiSDKExtension` for the Notification Service Extension, AD-012).
+Native Apple SDK for Zeep Notti push notifications (iOS and macOS, AD-025). Swift 5.9 tools, **Swift 5 language mode**, iOS 15+ and macOS 12+. Distributed through SPM (products `NottiSDK`, `NottiSDKExtension`) and CocoaPods (two root pods with no subspecs: `NottiSDK` for the app, `NottiSDKExtension` for the Notification Service Extension, AD-012).
 
 These rules apply to every contributor and every coding agent (Claude Code, Codex, Cursor, Copilot, etc.) working in this repo. This file is the single source of truth; agent-specific files such as `CLAUDE.md` only point here.
 
@@ -41,13 +41,24 @@ scripts/check-hook-linked.sh pod   # pod lib lint --no-clean, then nm for NottiB
 pod lib lint NottiSDK.podspec --platforms=ios && pod lib lint NottiSDKExtension.podspec --platforms=ios   # add --use-libraries for static libraries
 ```
 
-`swift test` on macOS does not work (UIKit / UserNotifications). Do not run two `xcodebuild` processes on the same checkout at once; use a separate git worktree.
+macOS (AD-025): pin the destination, `platform=macOS` alone matches both `Any Mac` and `Mac Catalyst`.
+
+```sh
+# all tests on macOS (from the macos-support T19 on)
+xcodebuild test -scheme NottiSDK-Package -destination 'platform=macOS,arch=arm64' CODE_SIGNING_ALLOWED=NO
+# strict builds (app and extension)
+xcodebuild build -scheme NottiSDK -destination 'generic/platform=macOS' CODE_SIGNING_ALLOWED=NO SWIFT_TREAT_WARNINGS_AS_ERRORS=YES GCC_TREAT_WARNINGS_AS_ERRORS=YES -quiet
+xcodebuild build -scheme NottiSDKExtension -destination 'generic/platform=macOS' CODE_SIGNING_ALLOWED=NO SWIFT_TREAT_WARNINGS_AS_ERRORS=YES GCC_TREAT_WARNINGS_AS_ERRORS=YES APPLICATION_EXTENSION_API_ONLY=YES -quiet
+pod lib lint NottiSDK.podspec --platforms=ios,osx && pod lib lint NottiSDKExtension.podspec --platforms=ios,osx
+```
+
+`swift test` (the SwiftPM command line runner) does not work: UIKit paths and UserNotifications need an app bundle, use `xcodebuild test`. Do not run two `xcodebuild` processes on the same checkout at once; use a separate git worktree.
 
 ## Rules
 
-### M1 is a port, not a rewrite (AD-002)
+### M1 is a port, not a rewrite (AD-002), expired
 
-Until M1 (v0.1.0) ships, code ported from `react-native-notti` 0.8.0 (`../zeep-notti-react-native/ios` at tag `v0.8.0`, `291d5a7`; the baseline was 0.6.0 at `52e4b55` until AD-017) stays behavior-identical:
+This rule was fulfilled by `0.1.0` (shipped 2026-10-26) and no longer forbids edits to ported files. Edits made for macOS (AD-025) keep one constraint: the iOS compiled behavior stays identical and the iOS test suite passes with no edited assertion. History of the rule: until M1 (v0.1.0) shipped, code ported from `react-native-notti` 0.8.0 (`../zeep-notti-react-native/ios` at tag `v0.8.0`, `291d5a7`; the baseline was 0.6.0 at `52e4b55` until AD-017) stays behavior-identical:
 
 - Copy the RN file, then change only what the task lists. Keep the serial `workQueue`, the semaphore-based HTTP client, retry/backoff and every UserDefaults key (`notti_prefs` suite) exactly as in RN.
 - Port RN tests 1:1 with XCTest. Do not migrate them to Swift Testing in M1.
@@ -76,7 +87,7 @@ Do not add `dpearson2699/swift-ios-skills` (PolyForm Perimeter license) to this 
 
 ### Extension safety
 
-`NottiShared` and `NottiSDKExtension` must not use `UIApplication`, `import UIKit`, `beginBackgroundTask`, `registerForRemoteNotifications` or `CLLocationManager`. App-only API in `NottiSDK` is marked `@available(iOSApplicationExtension, unavailable)`. `scripts/check-extension-safety.sh` enforces this in CI, the extension device build uses `APPLICATION_EXTENSION_API_ONLY=YES`, and `scripts/check-package-graph.sh` fails if `NottiSDKExtension` (SPM) or the `Extension` subspec (CocoaPods) ever depends on app code.
+`NottiShared` and `NottiSDKExtension` must not use `UIApplication`, `import UIKit`, `import AppKit`, `NSApplication`, `NSWorkspace`, `beginBackgroundTask`, `registerForRemoteNotifications` or `CLLocationManager`. App-only API in `NottiSDK` is marked `@available(iOSApplicationExtension, unavailable)` and `@available(macOSApplicationExtension, unavailable)` (two attribute lines, one combined attribute does not compile). `scripts/check-extension-safety.sh` enforces this in CI, the extension device build uses `APPLICATION_EXTENSION_API_ONLY=YES`, and `scripts/check-package-graph.sh` fails if `NottiSDKExtension` (SPM) or the `Extension` subspec (CocoaPods) ever depends on app code.
 
 ### Code conventions
 
@@ -87,12 +98,12 @@ Do not add `dpearson2699/swift-ios-skills` (PolyForm Perimeter license) to this 
 
 ### Public API surface
 
-Every `public` / `open` declaration in `Sources/NottiSDK` and `Sources/NottiSDKExtension` is listed in `.specs/codebase/PUBLIC_SURFACE.txt`, and `Sources/NottiShared` must have none (it stays `package`). A new, changed or removed public symbol updates that file in the same commit: run `scripts/check-public-surface.sh --update`, review the diff, commit it. `scripts/check-public-surface.sh` fails CI on drift. It also fails when a top-level public type in `Sources/NottiSDK` lacks `@available(iOSApplicationExtension, unavailable)` (extension-safe types are allowlisted in the script). Keep `public` on the declaration line, and put no `package` type in a public signature. Declarations behind `@_spi(...)` (today only `@_spi(Wrapper)`, for wrapper SDKs, AD-024) are not public API: keep the `@_spi(...)` attribute on the same line as `public` (the script fails on `@_spi` anywhere else, such as its own line or an `extension`), and it lists them in `.specs/codebase/SPI_SURFACE.txt` instead, drift-checked the same way.
+Every `public` / `open` declaration in `Sources/NottiSDK` and `Sources/NottiSDKExtension` is listed in `.specs/codebase/PUBLIC_SURFACE.txt`, and `Sources/NottiShared` must have none (it stays `package`). A new, changed or removed public symbol updates that file in the same commit: run `scripts/check-public-surface.sh --update`, review the diff, commit it. `scripts/check-public-surface.sh` fails CI on drift. It also fails when a top-level public type in `Sources/NottiSDK` lacks `@available(iOSApplicationExtension, unavailable)` or `@available(macOSApplicationExtension, unavailable)` (extension-safe types are allowlisted in the script). Keep `public` on the declaration line, and put no `package` type in a public signature. Declarations behind `@_spi(...)` (today only `@_spi(Wrapper)`, for wrapper SDKs, AD-024) are not public API: keep the `@_spi(...)` attribute on the same line as `public` (the script fails on `@_spi` anywhere else, such as its own line or an `extension`), and it lists them in `.specs/codebase/SPI_SURFACE.txt` instead, drift-checked the same way.
 
 ### Delegate integration and the launch hook
 
 - `Sources/NottiSDKBootstrap` (ObjC) is app-only and a dependency of `NottiSDK` only. Its `+load` does a class lookup and one message send to `NottiDelegateInstaller`: no UIKit, no I/O, no `NottiRuntime` access, and on the enabled, valid path nothing logged above debug (opt-out `.info`, install failure `.error` and non-Boolean `.warn` are the only lines). `scripts/check-launch-hook-purity.sh` bans `NSLog|os_log|NSUserDefaults|NSFileManager|NSURLSession|dataWithContentsOfFile|NottiRuntime` in `NottiBootstrap.m` and `UserDefaults|FileManager|URLSession|NottiRuntime` in `NottiDelegateInstaller.swift` (comments ignored). `scripts/check-package-graph.sh` fails if `NottiShared`, `NottiSDKExtension` or the `Extension` subspec reach it; `scripts/check-hook-linked.sh` proves it runs (SPM) and is in the pod product.
-- A tapped push's `data` reaches the host untouched and the SDK never opens it; an In-App `deeplink` action is never opened either (listener only). `scripts/check-no-url-open.sh` bans `UIApplication.shared.open`, `.open(_:options` and `openURL` under `Sources/NottiSDK` and `Sources/NottiSDKBootstrap`, with exactly two files allowlisted by exact path, each only for `UIApplication.shared.open(` lines:
+- A tapped push's `data` reaches the host untouched and the SDK never opens it; an In-App `deeplink` action is never opened either (listener only). `scripts/check-no-url-open.sh` bans `UIApplication.shared.open`, `NSWorkspace` opens, `.open(_:options` and `openURL` under `Sources/NottiSDK` and `Sources/NottiSDKBootstrap`, with exactly two files allowlisted by exact path, each only for `UIApplication.shared.open(` lines:
   - `Sources/NottiSDK/InApp/Platform/NottiPushPermissionAction.swift` (AD-019) shows the iOS notification settings for the In-App `push_permission` button when permission is denied. That URL is only the system constant (`UIApplication.openNotificationSettingsURLString` on iOS 16+, else `openSettingsURLString`), never message data; a unit test pins the file to those two constants.
   - `Sources/NottiSDK/InApp/Platform/NottiInAppURLOpener.swift` (AD-020) opens an In-App `url` action in the external browser, after the click listeners ran, only when `Notti.Options.opensInAppURLs` is true (default) and `NottiInAppURLOpener.openableURL(from:)` accepts the value (`http`/`https`, non-empty host, no whitespace). A unit test pins the file to one open call that takes the validated URL. The URL is never logged.
 
@@ -107,4 +118,5 @@ Every `public` / `open` declaration in `Sources/NottiSDK` and `Sources/NottiSDKE
 
 - Conventional commits (`feat(scope):`, `fix:`, `test:`, `docs(specs):`, `ci:`, `chore:`), one task per commit.
 - Do not add AI co-authorship or attribution lines to commits or PRs.
+- Platform split (AD-025): one source tree. UIKit-only code sits under `#if canImport(UIKit)`, AppKit-only code under `#if os(macOS)` (new macOS files are wrapped whole-file). Lifecycle notification names go through `NottiLifecycle`. The In-App Messages UI is iOS only; on macOS the In-App API compiles and is inert.
 - CI (`.github/workflows/ci.yml`) runs on pull requests and on pushes to `main`: SwiftLint, version + extension-safety scripts, tests on `macos-26` (Xcode 26.6, iPhone 17), device builds, `pod lib lint`. A branch push without a PR does not run CI.

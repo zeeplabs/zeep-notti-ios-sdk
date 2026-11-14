@@ -1,5 +1,9 @@
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import UserNotifications
 #if canImport(NottiShared)
 import NottiShared
@@ -14,6 +18,7 @@ import NottiShared
 /// The `manual…` entry points are for the host's own forwarding calls. While swizzling is active they
 /// are ignored with one `.warn` (no values) so an event is never processed twice (DEL-09).
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiPushAdapter {
 
     /// Presentation options the SDK passes for a Notti push when the host has no `willPresent` (RN parity).
@@ -78,11 +83,19 @@ final class NottiPushAdapter {
         handler.handleResponse(actionIdentifier: actionIdentifier, userInfo: userInfo, identifier: identifier)
     }
 
-    /// Silent-push path. The fetch result is `.noData`: the SDK downloads nothing.
-    func didReceiveRemoteNotification(userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
-        handler.handleSilentPush(userInfo: userInfo)
-        return .noData
-    }
+    #if canImport(UIKit)
+        /// Silent-push path. The fetch result is `.noData`: the SDK downloads nothing.
+        func didReceiveRemoteNotification(userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
+            handler.handleSilentPush(userInfo: userInfo)
+            return .noData
+        }
+    #else
+        /// Silent-push path on macOS (AD-025, decision D4, UNCONFIRMED): `NSApplicationDelegate` has no fetch
+        /// completion, so there is no result to return.
+        func didReceiveRemoteNotification(userInfo: [AnyHashable: Any]) {
+            handler.handleSilentPush(userInfo: userInfo)
+        }
+    #endif
 
     // MARK: - Manual path (ignored while swizzling is active)
 
@@ -110,10 +123,17 @@ final class NottiPushAdapter {
         didReceive(actionIdentifier: actionIdentifier, userInfo: userInfo, identifier: identifier)
     }
 
-    func manualDidReceiveRemoteNotification(userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
-        guard !ignoreManualCall("didReceiveRemoteNotification") else { return .noData }
-        return didReceiveRemoteNotification(userInfo: userInfo)
-    }
+    #if canImport(UIKit)
+        func manualDidReceiveRemoteNotification(userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
+            guard !ignoreManualCall("didReceiveRemoteNotification") else { return .noData }
+            return didReceiveRemoteNotification(userInfo: userInfo)
+        }
+    #else
+        func manualDidReceiveRemoteNotification(userInfo: [AnyHashable: Any]) {
+            guard !ignoreManualCall("didReceiveRemoteNotification") else { return }
+            didReceiveRemoteNotification(userInfo: userInfo)
+        }
+    #endif
 
     // MARK: - Helpers
 

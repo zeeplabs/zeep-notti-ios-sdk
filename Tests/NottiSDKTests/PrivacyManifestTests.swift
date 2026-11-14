@@ -48,6 +48,17 @@ final class PrivacyManifestTests: XCTestCase {
         }
     }
 
+    /// AD-025: macOS adds no required-reason API (`hw.model` and the OS version are not in Apple's categories),
+    /// so the one category stays UserDefaults and the manifest keeps one entry on both platforms.
+    func test_requiredReasonApiListIsExactlyUserDefaultsOnEveryPlatform() throws {
+        let manifest = try loadManifest()
+        let apis = try XCTUnwrap(manifest["NSPrivacyAccessedAPITypes"] as? [[String: Any]])
+        XCTAssertEqual(
+            apis.compactMap { $0["NSPrivacyAccessedAPIType"] as? String },
+            ["NSPrivacyAccessedAPICategoryUserDefaults"]
+        )
+    }
+
     func test_deviceIdIsDeclaredForAppFunctionalityOnly() throws {
         let manifest = try loadManifest()
         let collected = try XCTUnwrap(manifest["NSPrivacyCollectedDataTypes"] as? [[String: Any]])

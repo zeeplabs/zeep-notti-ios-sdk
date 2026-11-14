@@ -1,0 +1,68 @@
+# macOS example (AD-025, MAC-25, MAC-26). A separate XcodeGen spec from the iOS `project.yml`: generate it from this
+# folder with `xcodegen generate --spec project-mac.yml`. The generated NottiExampleMac.xcodeproj is git-ignored
+# (Example/*.xcodeproj). It reuses ExampleConfig (the three Info.plist keys) and ExampleLog (the redacting log) from
+# the iOS app. Not part of the EXR-02 coverage or the CI example matrix.
+name: NottiExampleMac
+options:
+  bundleIdPrefix: invalid.example.notti
+  deploymentTarget:
+    macOS: "12.0"
+  createIntermediateGroups: true
+configFiles:
+  Debug: Config/Example.xcconfig
+  Release: Config/Example.xcconfig
+configs:
+  Debug: debug
+  Release: release
+packages:
+  NottiSDK:
+    path: ..
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+schemes:
+  NottiExampleMac:
+    build:
+      targets:
+        NottiExampleMac: all
+    run:
+      config: Debug
+targets:
+  NottiExampleMac:
+    type: application
+    platform: macOS
+    sources:
+      - MacApp
+      - path: App/ExampleConfig.swift
+      - path: App/ExampleLog.swift
+    dependencies:
+      - package: NottiSDK
+        product: NottiSDK
+      - target: NottiNotificationServiceMac
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: invalid.example.notti.mac
+        INFOPLIST_FILE: MacApp/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        # The aps-environment value is a placeholder: a Developer ID or App Store build needs a provisioning profile
+        # that carries it (docs/DEVICE_CHECKLIST.md, macOS items).
+        CODE_SIGN_ENTITLEMENTS: MacApp/MacApp.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+  NottiNotificationServiceMac:
+    type: app-extension
+    platform: macOS
+    sources: [MacNotificationService]
+    dependencies:
+      - package: NottiSDK
+        product: NottiSDKExtension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: invalid.example.notti.mac.NotificationService
+        INFOPLIST_FILE: MacNotificationService/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: MacNotificationService/MacNotificationService.entitlements
+        APPLICATION_EXTENSION_API_ONLY: YES
+        ENABLE_HARDENED_RUNTIME: YES

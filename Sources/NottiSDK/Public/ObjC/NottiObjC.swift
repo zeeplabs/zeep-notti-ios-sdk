@@ -1,5 +1,9 @@
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import UserNotifications
 
 // Objective-C interop layer (API-13). Swift namespaces (`Notti.User`, ...) are
@@ -28,6 +32,7 @@ import UserNotifications
 /// Objective-C name: `NottiSDKFacade` (AD-021, AD-023). Initialize, identity, location sharing and log level.
 @objc(NottiSDKFacade)
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 public final class NottiObjC: NSObject {
 
     /// Starts the SDK. `baseUrl` may be `nil` (default host). Same as passing
@@ -96,6 +101,7 @@ public final class NottiObjC: NSObject {
 /// Objective-C name: `NottiInAppMessages`. Taps on In-App messages.
 @objc(NottiInAppMessages)
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 public final class NottiInAppMessagesObjC: NSObject {
 
     /// `handler` runs on the main thread with `messageId`, `buttonId` and
@@ -113,6 +119,7 @@ public final class NottiInAppMessagesObjC: NSObject {
 /// Objective-C name: `NottiUser`. Tags, email, phone and subscription.
 @objc(NottiUser)
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 public final class NottiUserObjC: NSObject {
 
     @objc(addTag:value:)
@@ -167,6 +174,7 @@ public final class NottiUserObjC: NSObject {
 /// Objective-C name: `NottiNotifications`. Permission, listeners and the launch notification.
 @objc(NottiNotifications)
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 public final class NottiNotificationsObjC: NSObject {
 
     /// `completion` runs once, on the main thread. `NO` before initialize.
@@ -210,12 +218,20 @@ public final class NottiNotificationsObjC: NSObject {
         NottiFacade.shared.pushAdapter.manualDidFail(error: error)
     }
 
-    /// Returns the result to pass to the fetch completion handler (`UIBackgroundFetchResultNoData`).
-    @discardableResult
-    @objc(didReceiveRemoteNotification:)
-    public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
-        NottiFacade.shared.pushAdapter.manualDidReceiveRemoteNotification(userInfo: userInfo)
-    }
+    #if canImport(UIKit)
+        /// Returns the result to pass to the fetch completion handler (`UIBackgroundFetchResultNoData`).
+        @discardableResult
+        @objc(didReceiveRemoteNotification:)
+        public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
+            NottiFacade.shared.pushAdapter.manualDidReceiveRemoteNotification(userInfo: userInfo)
+        }
+    #else
+        /// Forward from `application:didReceiveRemoteNotification:`. `void` on macOS: no fetch completion exists.
+        @objc(didReceiveRemoteNotification:)
+        public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) {
+            NottiFacade.shared.pushAdapter.manualDidReceiveRemoteNotification(userInfo: userInfo)
+        }
+    #endif
 
     /// Banner, list, sound and badge for a Notti push, none for anything else.
     @discardableResult

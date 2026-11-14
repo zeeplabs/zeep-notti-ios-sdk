@@ -3,6 +3,7 @@ import Foundation
 // MARK: - In-App messages (public shell)
 
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 extension Notti {
 
     /// Reports an app event. Shows the oldest waiting In-App message whose trigger names it (exact,

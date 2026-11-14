@@ -1,5 +1,7 @@
 import ObjectiveC
+#if canImport(UIKit)
 import UIKit
+#endif
 import UserNotifications
 import XCTest
 @testable import NottiSDK

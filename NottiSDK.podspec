@@ -2,7 +2,7 @@ Pod::Spec.new do |s|
   s.name         = 'NottiSDK'
   # Must equal NottiSDKVersion.current and NottiSDKExtension.podspec (scripts/check-version.sh enforces it in CI).
   s.version      = '0.2.0'
-  s.summary      = 'Native iOS SDK for Zeep Notti push notifications.'
+  s.summary      = 'Native iOS and macOS SDK for Zeep Notti push notifications.'
   s.description  = <<-DESC
     Device registration, user identity, tags and engagement events (received, opened,
     clicked) for Zeep Notti. Rich media in a Notification Service Extension is the
@@ -14,6 +14,7 @@ Pod::Spec.new do |s|
   s.source       = { :git => 'https://github.com/zeeplabs/zeep-notti-ios-sdk.git', :tag => s.version.to_s }
 
   s.ios.deployment_target = '15.0'
+  s.osx.deployment_target = '12.0'
   s.swift_versions        = ['5']
   # Resource bundle signing fix (CocoaPods #11402).
   s.cocoapods_version     = '>= 1.12'

@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import ObjectiveC
 import UIKit
 import XCTest
@@ -593,3 +594,4 @@ final class NottiAppDelegateSwizzlerTests: XCTestCase {
         XCTAssertEqual(runtime.eventStore.all().map(\.type), ["received"])
     }
 }
+#endif

@@ -3,9 +3,60 @@
 // marked unavailable in app extensions (uses `UIApplication.shared`). Body unchanged.
 
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
+
+#if os(macOS)
+
+    /// macOS (AD-025, design D6): there is no suspension to survive, only sudden and automatic termination, so
+    /// the wrapper is a `ProcessInfo` activity that disables both while the session-end PATCH runs.
+    /// `performExpiringActivity` is unavailable on macOS. There is no expiry handler: the returned closure is
+    /// idempotent and is called when the queued work finishes (`handleAppDidEnterBackground`'s `defer`).
+    @available(iOSApplicationExtension, unavailable)
+    @available(macOSApplicationExtension, unavailable)
+    enum NottiBackgroundTask {
+
+        static func begin() -> () -> Void {
+            begin(processInfo: .processInfo)
+        }
+
+        /// `processInfo` is injectable only so a test can observe begin and end.
+        static func begin(processInfo: ProcessInfo) -> () -> Void {
+            final class ActivityBox {
+                let lock = NSLock()
+                var token: NSObjectProtocol?
+                var ended = false
+                let processInfo: ProcessInfo
+                init(processInfo: ProcessInfo) { self.processInfo = processInfo }
+                func end() {
+                    lock.lock()
+                    defer { lock.unlock() }
+                    guard !ended else { return }
+                    ended = true
+                    if let token {
+                        processInfo.endActivity(token)
+                        self.token = nil
+                    }
+                }
+            }
+            let box = ActivityBox(processInfo: processInfo)
+            box.lock.lock()
+            box.token = processInfo.beginActivity(
+                options: [.suddenTerminationDisabled, .automaticTerminationDisabled],
+                reason: "app.notti.session-end"
+            )
+            box.lock.unlock()
+            return { box.end() }
+        }
+    }
+
+#else
 
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 enum NottiBackgroundTask {
 
     /// Begins a UIKit background task and returns an idempotent closure that
@@ -38,3 +89,5 @@ enum NottiBackgroundTask {
         return { box.end() }
     }
 }
+
+#endif

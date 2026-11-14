@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 @testable import NottiSDK
 
@@ -148,3 +149,4 @@ final class InAppPortraitHostController: UIViewController {
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
     override var prefersStatusBarHidden: Bool { true }
 }
+#endif

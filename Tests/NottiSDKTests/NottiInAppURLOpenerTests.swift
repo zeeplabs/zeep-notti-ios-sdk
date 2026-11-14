@@ -132,6 +132,7 @@ final class NottiInAppURLOpenerTests: XCTestCase {
 
     // MARK: - The allowlisted file (AD-020)
 
+    #if canImport(UIKit)
     func test_theAllowlistedFileOpensOnlyTheValidatedURL() throws {
         let file = InAppViewFixtures.repoRoot
             .appendingPathComponent("Sources/NottiSDK/InApp/Platform/NottiInAppURLOpener.swift")
@@ -153,6 +154,7 @@ final class NottiInAppURLOpenerTests: XCTestCase {
             XCTAssertFalse(text.contains(banned), "the file must not reference \(banned)")
         }
     }
+    #endif
 
     private func occurrences(of needle: String, in text: String) -> Int {
         text.components(separatedBy: needle).count - 1
@@ -238,6 +240,7 @@ final class NottiInAppURLOpenerWiringTests: XCTestCase {
     }
 }
 
+#if canImport(UIKit)
 /// IOU-01, IOU-04, IOU-05: `Notti.initialize` options through the facade to a real tap. The engine and the
 /// facade keep the production main-queue dispatchers, so the order "listener, then open" is the real one.
 final class NottiInAppOpenURLPublicApiTests: XCTestCase {
@@ -434,3 +437,4 @@ final class NottiInAppOpenURLPublicApiTests: XCTestCase {
         XCTAssertTrue(engine.opensURLs)
     }
 }
+#endif

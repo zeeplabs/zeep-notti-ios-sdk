@@ -1,5 +1,7 @@
 import ObjectiveC
+#if canImport(UIKit)
 import UIKit
+#endif
 import UserNotifications
 import XCTest
 @testable import NottiSDK
@@ -18,7 +20,12 @@ final class NottiDelegateInstallerTests: XCTestCase {
 
     private let setDelegateSel = NSSelectorFromString("setDelegate:")
     private let presentSel = NSSelectorFromString("userNotificationCenter:willPresentNotification:withCompletionHandler:")
-    private let fetchSel = NSSelectorFromString("application:didReceiveRemoteNotification:fetchCompletionHandler:")
+    #if canImport(UIKit)
+        private let fetchSel = NSSelectorFromString("application:didReceiveRemoteNotification:fetchCompletionHandler:")
+    #else
+        // macOS (AD-025): the one silent-push callback has no fetch variant.
+        private let fetchSel = NSSelectorFromString("application:didReceiveRemoteNotification:")
+    #endif
 
     private final class FakeCenter: NottiNotificationCenterHost {
         weak var delegate: UNUserNotificationCenterDelegate?

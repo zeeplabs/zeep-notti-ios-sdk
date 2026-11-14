@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 
 /// The full-size overlay of a `top` or `bottom` message (IAM-13, IAM-15, IAM-18, IAM-19, IAM-21), a port of RN
@@ -6,6 +7,7 @@ import UIKit
 /// recomputes the frame on every layout pass (rotation, resize), and lets every touch outside the card reach the
 /// app. The swipe and the body tap are set up by `NottiInAppBarInteraction`, whose handlers tests call directly.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiInAppBarLayout: UIView {
 
     let messageView: NottiInAppMessageView
@@ -62,6 +64,7 @@ final class NottiInAppBarLayout: UIView {
 /// The swipe and the body tap of a bar. Only the first outcome counts (the card's gate): a swipe or tap on a
 /// closing display is ignored.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiInAppBarInteraction: NSObject, UIGestureRecognizerDelegate {
 
     private unowned let messageView: NottiInAppMessageView
@@ -184,3 +187,4 @@ final class NottiInAppBarInteraction: NSObject, UIGestureRecognizerDelegate {
         return true
     }
 }
+#endif

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Fails when the package graph breaks the app/extension split (PKG-01, PKG-02, PKG-06):
-#   SPM:       iOS 15.0 only and swift-tools-version 5.9; exactly two products (NottiSDK, NottiSDKExtension); NottiShared is not a
+#   SPM:       iOS 15.0 and macOS 12.0 (AD-025) and swift-tools-version 5.9; exactly two products (NottiSDK, NottiSDKExtension); NottiShared is not a
 #              product and depends on nothing; NottiSDKExtension depends only on NottiShared; NottiSDKBootstrap (the ObjC launch hook)
 #              depends on nothing, is a dependency of NottiSDK only, and is not reachable from NottiShared or NottiSDKExtension.
 #   CocoaPods: allowlist, two root pods and no subspecs (AD-012). NottiSDK.podspec: metadata keys plus exactly the
@@ -8,6 +8,7 @@
 #              NottiSDKExtension.podspec: metadata keys plus exactly the Shared and Extension source globs and its own
 #              resource bundle, no dependency (never NottiSDK) and no bootstrap (PKG-07, PODS-04). A subspec, test spec,
 #              platform-scoped key or any new key fails on purpose: update this script in the same change.
+#              Both pods declare exactly ios 15.0 and osx 12.0.
 #
 # Needs `swift`, `pod` and `python3` (runs on the macOS CI job).
 # Usage: scripts/check-package-graph.sh [repo-root]
@@ -42,8 +43,10 @@ errors = []
 
 spm = json.loads(os.environ["SPM_JSON"])
 # PKG-01 and edge case "tools version stays 5.9 so Xcode 15+ can resolve it".
-if spm.get("platforms") != [{"platformName": "ios", "version": "15.0", "options": []}]:
-    errors.append(f"SPM platforms must be exactly iOS 15.0, got {spm.get('platforms')!r}")
+# MAC-01 / AD-025: iOS 15.0 and macOS 12.0, nothing else (order independent).
+spm_platforms = sorted((p.get("platformName"), p.get("version"), tuple(p.get("options", []))) for p in spm.get("platforms", []))
+if spm_platforms != [("ios", "15.0", ()), ("macos", "12.0", ())]:
+    errors.append(f"SPM platforms must be exactly iOS 15.0 and macOS 12.0, got {spm.get('platforms')!r}")
 if spm.get("toolsVersion", {}).get("_version") != "5.9.0":
     errors.append(f"SPM swift-tools-version must be 5.9, got {spm.get('toolsVersion')!r}")
 
@@ -127,8 +130,8 @@ for env, name in (("POD_JSON", "NottiSDK"), ("EXT_JSON", "NottiSDKExtension")):
     extra = sorted(set(pod) - meta_allowed - set(want))
     if extra:
         errors.append(f"{name}.podspec has keys outside the allowlist: {extra} (subspecs are not allowed, AD-012)")
-    if pod.get("platforms") != {"ios": "15.0"}:
-        errors.append(f"{name}.podspec platforms must be {{'ios': '15.0'}}, got {pod.get('platforms')!r}")
+    if pod.get("platforms") != {"ios": "15.0", "osx": "12.0"}:
+        errors.append(f"{name}.podspec platforms must be {{'ios': '15.0', 'osx': '12.0'}}, got {pod.get('platforms')!r}")
     if pod.get("pod_target_xcconfig") != swift_flags:
         errors.append(f"{name}.podspec pod_target_xcconfig must be {swift_flags}, got {pod.get('pod_target_xcconfig')!r}")
     for key, value in want.items():

@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 import XCTest
 @testable import NottiSDK
@@ -231,3 +232,4 @@ final class NottiInAppCardLayoutTests: XCTestCase {
         }
     }
 }
+#endif

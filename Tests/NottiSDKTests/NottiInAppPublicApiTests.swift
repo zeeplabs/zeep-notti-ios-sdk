@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import XCTest
 @testable import NottiSDK
 #if canImport(NottiShared)
@@ -321,3 +322,4 @@ private struct InAppReceivedClick {
     let onMain: Bool
     let tag: String
 }
+#endif

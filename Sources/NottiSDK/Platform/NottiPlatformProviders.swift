@@ -5,7 +5,11 @@
 // Closure bodies and their main-thread hops are otherwise unchanged.
 
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import UserNotifications
 
 /// The OS-backed reads and prompts `NottiCore` takes as injected closures, one
@@ -58,6 +62,7 @@ struct NottiPlatformProviders {
     /// `NottiImpl.init` did, so its permission seed is enqueued on main before
     /// a core built from these providers enqueues its `appStateProvider` read.
     @available(iOSApplicationExtension, unavailable)
+    @available(macOSApplicationExtension, unavailable)
     static func live() -> NottiPlatformProviders {
         let locationReader = NottiLocationReader()
         return NottiPlatformProviders(
@@ -71,7 +76,13 @@ struct NottiPlatformProviders {
                 // which performs the actual registration (both the first-time
                 // and any later refresh, uniformly).
                 DispatchQueue.main.async {
-                    UIApplication.shared.registerForRemoteNotifications()
+                    #if canImport(UIKit)
+                        UIApplication.shared.registerForRemoteNotifications()
+                    #else
+                        // AD-025: `NSApp` is nil until an application exists, so a library call in a non-app
+                        // process never instantiates one. Same asynchronous callback contract as iOS.
+                        NSApp?.registerForRemoteNotifications()
+                    #endif
                 }
             },
             permissionRequester: { callback in
@@ -106,18 +117,8 @@ struct NottiPlatformProviders {
             countryProvider: { callback in locationReader.readCountry(callback) },
             // Device profile fields P1 (T7, DPF-01): OS version / model / timezone /
             // language reads. Each fails to nil - never a crash (DPF-04/09).
-            deviceOsProvider: {
-                UIDevice.current.systemVersion
-            },
-            deviceModelProvider: {
-                var systemInfo = utsname()
-                uname(&systemInfo)
-                let mirror = Mirror(reflecting: systemInfo.machine)
-                let bytes = mirror.children.map { $0.value as? Int8 ?? 0 }
-                let model = String(bytes: bytes.map { UInt8(bitPattern: $0) }, encoding: .ascii)?
-                    .trimmingCharacters(in: .controlCharacters)
-                return model?.isEmpty == false ? model : nil
-            },
+            deviceOsProvider: { NottiPlatformInfo.deviceOS() },
+            deviceModelProvider: { NottiPlatformInfo.deviceModel() },
             timezoneProvider: {
                 TimeZone.current.identifier
             },
@@ -140,7 +141,10 @@ struct NottiPlatformProviders {
                     // SPEC_DEVIATION: explicit `.ephemeral` case, not in RN.
                     // Reason: RN reached it through `@unknown default` (nil); the compiler warns
                     // "switch must be exhaustive" and `pod lib lint` fails on warnings. Same value (nil).
-                    case .ephemeral: status = nil
+                    // `.ephemeral` is unavailable on macOS (AD-025), where `@unknown default` covers the rest.
+                    #if !os(macOS)
+                        case .ephemeral: status = nil
+                    #endif
                     @unknown default: status = nil
                     }
                     callback(status)
@@ -152,7 +156,11 @@ struct NottiPlatformProviders {
             // could deadlock a module constructed while main waits on it).
             appStateProvider: { callback in
                 DispatchQueue.main.async {
-                    callback(UIApplication.shared.applicationState == .active)
+                    #if canImport(UIKit)
+                        callback(UIApplication.shared.applicationState == .active)
+                    #else
+                        callback(NSApp?.isActive == true)
+                    #endif
                 }
             },
             // Review item 3: keep the process alive while the session-end

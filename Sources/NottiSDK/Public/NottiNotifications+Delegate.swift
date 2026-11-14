@@ -1,4 +1,8 @@
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import UserNotifications
 
 /// Manual forwarding for hosts that turn delegate swizzling off (`NottiDisableSwizzling` = `YES` in
@@ -8,6 +12,7 @@ import UserNotifications
 /// While swizzling is on, every call here is ignored with one warning in the log, so an event is never
 /// processed twice. Calls made before `Notti.initialize` are buffered like the swizzled path.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 extension Notti.Notifications {
 
     /// Forward from `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)`.
@@ -20,12 +25,20 @@ extension Notti.Notifications {
         NottiFacade.shared.pushAdapter.manualDidFail(error: error)
     }
 
-    /// Forward from `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)` and pass the
-    /// returned result (`.noData`) to its completion handler, or choose your own.
-    @discardableResult
-    public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
-        NottiFacade.shared.pushAdapter.manualDidReceiveRemoteNotification(userInfo: userInfo)
-    }
+    #if canImport(UIKit)
+        /// Forward from `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)` and pass the
+        /// returned result (`.noData`) to its completion handler, or choose your own.
+        @discardableResult
+        public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
+            NottiFacade.shared.pushAdapter.manualDidReceiveRemoteNotification(userInfo: userInfo)
+        }
+    #else
+        /// Forward from `application(_:didReceiveRemoteNotification:)` of your `NSApplicationDelegate`. macOS has
+        /// no fetch completion handler, so nothing is returned.
+        public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) {
+            NottiFacade.shared.pushAdapter.manualDidReceiveRemoteNotification(userInfo: userInfo)
+        }
+    #endif
 
     /// Forward from `userNotificationCenter(_:willPresent:withCompletionHandler:)`. Returns
     /// `[.banner, .list, .sound, .badge]` for a Notti push and `[]` for anything else; the host may use,

@@ -3,7 +3,9 @@
 // Lint rules the RN code breaks are disabled for this file only (AD-007).
 // swiftlint:disable force_try force_cast trailing_comma file_length type_body_length
 
+#if canImport(UIKit)
 import UIKit
+#endif
 import XCTest
 @testable import NottiSDK
 

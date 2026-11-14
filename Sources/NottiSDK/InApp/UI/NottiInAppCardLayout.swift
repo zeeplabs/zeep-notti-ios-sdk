@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 
 /// The full-size overlay of a `center` or `full` message (IAM-13, IAM-15, IAM-17, IAM-18, IAM-21), a port of RN
@@ -8,6 +9,7 @@ import UIKit
 /// dismiss gesture (the close control is the only way out), corner radius 0 with `margin: false`. Both block the
 /// touches to the app (IAM-36). The frame is recomputed on every layout pass.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiInAppCardLayout: UIView, UIGestureRecognizerDelegate {
 
     let messageView: NottiInAppMessageView
@@ -78,3 +80,4 @@ final class NottiInAppCardLayout: UIView, UIGestureRecognizerDelegate {
         return true
     }
 }
+#endif

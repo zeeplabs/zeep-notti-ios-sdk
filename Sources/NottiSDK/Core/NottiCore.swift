@@ -5,9 +5,6 @@
 // swiftlint:disable closure_parameter_position line_length cyclomatic_complexity function_parameter_count
 
 import Foundation
-#if canImport(UIKit)
-import UIKit
-#endif
 #if canImport(NottiShared)
 import NottiShared
 #endif
@@ -213,6 +210,7 @@ class NottiCore {
     private var appIsForeground = false
     private var foregroundObserver: NSObjectProtocol?
     private var backgroundObserver: NSObjectProtocol?
+    var terminateObserver: NSObjectProtocol?  // macOS quit hook (NottiCore+Terminate); nil on iOS
     private var invalidated = false // guarded by `foregroundLock`; set once by `invalidate()`
     private var isInvalidated: Bool { foregroundLock.lock(); defer { foregroundLock.unlock() }; return invalidated }
 
@@ -272,7 +270,7 @@ class NottiCore {
         appStateProvider: @escaping (@escaping (_ isActive: Bool) -> Void) -> Void = { $0(false) },
         beginBackgroundTask: @escaping () -> (() -> Void) = { {} },
         heartbeatInterval: TimeInterval = 60,
-        platform: String = "ios",
+        platform: String = NottiSDKVersion.platform,
         logger: @escaping (NottiLogLevel, String) -> Void = { _, _ in },
         onDeviceIdChanged: @escaping (String) -> Void = { _ in },
         inAppHooks: NottiInAppHooks = NottiInAppHooks(),
@@ -302,6 +300,7 @@ class NottiCore {
         workQueue.setSpecific(key: Self.workQueueKey, value: 1)
         observeAppForeground()
         observeAppBackground()
+        observeAppTerminate()
         // Review item 2: the launch's `didBecomeActive` usually fired before this
         // core existed. If the app is already active, treat it as that missed
         // activation (idempotent with a later real notification: a repeat
@@ -320,9 +319,10 @@ class NottiCore {
     /// persisted open session and the process `sessionGate` for the new core to adopt.
     func invalidate() {
         foregroundLock.lock()
-        let observers = [foregroundObserver, backgroundObserver]
+        let observers = [foregroundObserver, backgroundObserver, terminateObserver]
         foregroundObserver = nil
         backgroundObserver = nil
+        terminateObserver = nil
         invalidated = true
         foregroundLock.unlock()
         for case let observer? in observers {
@@ -335,10 +335,7 @@ class NottiCore {
 
     deinit {
         heartbeatTimer?.cancel()
-        if let observer = foregroundObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        if let observer = backgroundObserver {
+        for case let observer? in [foregroundObserver, backgroundObserver, terminateObserver] {
             NotificationCenter.default.removeObserver(observer)
         }
     }
@@ -641,7 +638,7 @@ class NottiCore {
 
     /// Blocks the calling thread until every mutation already enqueued on
     /// `workQueue` has run, or `timeout` elapses (returns `false` on timeout).
-    /// Test/diagnostic hook only — the SDK itself never calls it, and it is
+    /// Test/diagnostic hook, also used by the macOS terminate flush (AD-025);
     /// not reachable from the JS API surface.
     @discardableResult
     func waitForPendingWork(timeout: TimeInterval = 5) -> Bool {
@@ -990,40 +987,36 @@ class NottiCore {
         }
     }
 
-    /// Subscribes to `UIApplication.didBecomeActiveNotification` directly - a
-    /// plain system notification, so no host-`AppDelegate` forwarding is needed
-    /// (unlike the APNs callbacks). Without this, a registration that exhausted
-    /// its 5 attempts never retried until the app was relaunched.
+    /// Subscribes to the `NottiLifecycle.didBecomeActive` system notification
+    /// (`UIApplication` or `NSApplication`, AD-025) directly - a plain system
+    /// notification, so no host-delegate forwarding is needed (unlike the APNs
+    /// callbacks). Without this, a registration that exhausted its 5 attempts
+    /// never retried until the app was relaunched.
     private func observeAppForeground() {
-        #if canImport(UIKit)
-            foregroundObserver = NotificationCenter.default.addObserver(
-                forName: UIApplication.didBecomeActiveNotification,
-                object: nil,
-                queue: nil
-            ) { [weak self] _ in
-                guard let self = self else { return }
-                // Review item 3: timestamp captured in the callback, not when the
-                // (possibly busy) work queue eventually runs the block.
-                self.handleAppDidBecomeActive(atMs: self.nowMs())
-            }
-        #endif
+        foregroundObserver = NotificationCenter.default.addObserver(
+            forName: NottiLifecycle.didBecomeActive,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            // Review item 3: timestamp captured in the callback, not when the
+            // (possibly busy) work queue eventually runs the block.
+            self.handleAppDidBecomeActive(atMs: self.nowMs())
+        }
     }
 
     /// The T8 session-end hook: mirrors `observeAppForeground` on
-    /// `UIApplication.didEnterBackgroundNotification` (also plain system
-    /// notifications, zero AppDelegate forwarding). Removed in `deinit` like the
-    /// foreground observer.
+    /// `NottiLifecycle.didEnterBackground` (also plain system notifications,
+    /// zero delegate forwarding). Removed in `deinit` like the foreground observer.
     private func observeAppBackground() {
-        #if canImport(UIKit)
-            backgroundObserver = NotificationCenter.default.addObserver(
-                forName: UIApplication.didEnterBackgroundNotification,
-                object: nil,
-                queue: nil
-            ) { [weak self] _ in
-                guard let self = self else { return }
-                self.handleAppDidEnterBackground(atMs: self.nowMs())
-            }
-        #endif
+        backgroundObserver = NotificationCenter.default.addObserver(
+            forName: NottiLifecycle.didEnterBackground,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            self.handleAppDidEnterBackground(atMs: self.nowMs())
+        }
     }
 
     private func handleAppDidBecomeActive(atMs activatedAtMs: Int64) {
@@ -1075,7 +1068,7 @@ class NottiCore {
     /// bookkeeping + PATCH run. Resetting `foregroundRetryQueued` lets the next
     /// activation enqueue its own session start even if an earlier activation
     /// block is still waiting on a busy queue (it would otherwise be dropped).
-    private func handleAppDidEnterBackground(atMs backgroundedAtMs: Int64) {
+    func handleAppDidEnterBackground(atMs backgroundedAtMs: Int64) {
         foregroundLock.lock()
         appIsForeground = false
         foregroundRetryQueued = false
@@ -1352,7 +1345,7 @@ class NottiCore {
         }
     }
 
-    private func nowMs() -> Int64 {
+    func nowMs() -> Int64 {
         Int64(Date().timeIntervalSince1970 * 1000)
     }
 

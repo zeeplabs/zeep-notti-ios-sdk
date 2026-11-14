@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import Foundation
 import ImageIO
 import UIKit
@@ -8,6 +9,7 @@ import UIKit
 /// non-`https` URL (IAM-40, IAM-42). Bounded in time (10 s for the whole call) and size (5 MiB), decoded
 /// downsampled, cached in memory only. Any failure is "no image" (IAM-41). Never logs the URL.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiInAppImageLoader {
 
     /// Starts a one-shot timer of `seconds` and returns its cancel.
@@ -255,3 +257,4 @@ final class NottiInAppImageLoader {
         }
     }
 }
+#endif

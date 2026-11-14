@@ -1,4 +1,7 @@
+#if canImport(UIKit)
+#if canImport(UIKit)
 import UIKit
+#endif
 import XCTest
 @testable import NottiSDK
 #if canImport(NottiShared)
@@ -335,6 +338,7 @@ final class NottiInAppWiringTests: XCTestCase {
         XCTAssertFalse(engine.appForeground)
     }
 
+    #if canImport(UIKit)
     func test_willEnterForegroundBeforeAnySessionOpensNothing() {
         _ = makeRuntime(observers: true)
         engine.configure(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
@@ -382,6 +386,7 @@ final class NottiInAppWiringTests: XCTestCase {
         XCTAssertEqual(eligibleCount, 2)
         XCTAssertTrue(engine.sessionOpen)
     }
+    #endif
 
     func test_onNetworkAvailableFlushesAndResumesATransientGiveUp() {
         StubURLProtocol.enqueue(.status(200, body: Self.registered))
@@ -498,3 +503,4 @@ final class NottiInAppWiringTests: XCTestCase {
         XCTAssertNil(read())
     }
 }
+#endif

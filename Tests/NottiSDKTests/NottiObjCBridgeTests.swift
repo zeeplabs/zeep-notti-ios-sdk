@@ -1,4 +1,6 @@
+#if canImport(UIKit)
 import UIKit
+#endif
 import UserNotifications
 import XCTest
 @testable import NottiSDK
@@ -256,10 +258,16 @@ final class NottiObjCBridgeTests: XCTestCase {
     func test_objcManualForwardingReachesTheAdapter() {
         let options = NottiNotificationsObjC.willPresent(fixtureNotification())
         NottiNotificationsObjC.didReceive(fixtureResponse())
-        let result = NottiNotificationsObjC.didReceiveRemoteNotification(["aps": ["content-available": 1], "delivery_id": "d-s"])
+        #if canImport(UIKit)
+            let result = NottiNotificationsObjC.didReceiveRemoteNotification(["aps": ["content-available": 1], "delivery_id": "d-s"])
+        #else
+            NottiNotificationsObjC.didReceiveRemoteNotification(["aps": ["content-available": 1], "delivery_id": "d-s"])
+        #endif
 
         XCTAssertEqual(options, [.banner, .list, .sound, .badge])
-        XCTAssertEqual(result, .noData)
+        #if canImport(UIKit)
+            XCTAssertEqual(result, .noData)
+        #endif
         XCTAssertEqual(Set(runtime.eventStore.all().map(\.type)), ["received", "opened", "clicked"])
         XCTAssertEqual(NottiNotificationsObjC.takeInitialClick()?["title"] as? String, "Title fixture")
     }
@@ -275,9 +283,12 @@ final class NottiObjCBridgeTests: XCTestCase {
         NottiNotificationsObjC.didRegisterForRemoteNotifications(deviceToken: Data([0x01]))
         NottiNotificationsObjC.didFailToRegisterForRemoteNotifications(error: NSError(domain: "fixture.apns", code: 1))
         NottiNotificationsObjC.didReceive(fixtureResponse())
-        let result = NottiNotificationsObjC.didReceiveRemoteNotification(["aps": ["content-available": 1], "delivery_id": "d-s"])
-
-        XCTAssertEqual(result, .noData)
+        #if canImport(UIKit)
+            let result = NottiNotificationsObjC.didReceiveRemoteNotification(["aps": ["content-available": 1], "delivery_id": "d-s"])
+            XCTAssertEqual(result, .noData)
+        #else
+            NottiNotificationsObjC.didReceiveRemoteNotification(["aps": ["content-available": 1], "delivery_id": "d-s"])
+        #endif
         let captured = lock.withLock { logs }
         XCTAssertEqual(captured.filter { $0.0 == .warn }.count, 4, "one warn per ignored call, didRegister included")
         XCTAssertTrue(captured.filter { $0.0 == .error }.isEmpty, "the failure was not processed")
@@ -339,6 +350,7 @@ final class NottiObjCBridgeTests: XCTestCase {
         XCTAssertEqual(clicks.values.count, 1)
     }
 
+    #if canImport(UIKit)
     func test_objcTrackEventReachesTheEngine() {
         let scheduler = InAppFakeScheduler()
         let session = sessions[0]
@@ -382,6 +394,7 @@ final class NottiObjCBridgeTests: XCTestCase {
 
         XCTAssertEqual(engine.selector.earlyNames, ["fixture_event"], "kept for the first session; blank ignored")
     }
+    #endif
 
     /// IOU-04: the ObjC overload carries `opensInAppURLs` to the engine; the three-argument form keeps the default.
     func test_objcInitializeCarriesOpensInAppURLsToTheEngine() {

@@ -16,6 +16,7 @@ import Foundation
 /// Not available in app extensions: use `NottiSDKExtension` in a Notification
 /// Service Extension.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 public enum Notti {
 
     /// Verbosity of the SDK's own logs. Default `.error`.
@@ -192,6 +193,7 @@ public enum Notti {
 // MARK: - Shared facade and test seam
 
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 extension NottiFacade {
     private static let sharedLock = NSLock()
     private static let production = NottiFacade(

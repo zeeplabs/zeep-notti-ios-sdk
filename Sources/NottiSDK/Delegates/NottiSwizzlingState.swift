@@ -5,6 +5,7 @@ import Foundation
 /// Set by `NottiDelegateInstaller` after a successful install and read by the manual forwarding API, which
 /// is ignored while this is true so an event is never processed twice. Thread-safe.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiSwizzlingState {
 
     /// The process-wide state, used by the production installer and the production facade.

@@ -1,5 +1,9 @@
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 #if canImport(NottiShared)
 import NottiShared
 #endif
@@ -21,17 +25,32 @@ final class NottiRuntime {
 
     /// The process-wide runtime, wired to `defaultsSuiteName` and the OS providers.
     @available(iOSApplicationExtension, unavailable)
+    @available(macOSApplicationExtension, unavailable)
     static let shared: NottiRuntime = {
         let defaults = UserDefaults(suiteName: defaultsSuiteName) ?? .standard
         let clicks = NottiInAppClickRelay()
-        return NottiRuntime(
-            defaults: defaults,
-            providers: .live(),
-            inAppEngine: .live(defaults: defaults, clicks: clicks, presenter: NottiInAppPresenter()),
-            inAppClicks: clicks,
-            pushPermissionPlatform: .system,
-            urlOpenPlatform: .system
-        )
+        #if canImport(UIKit)
+            return NottiRuntime(
+                defaults: defaults,
+                providers: .live(),
+                inAppEngine: .live(defaults: defaults, clicks: clicks, presenter: NottiInAppPresenter()),
+                inAppClicks: clicks,
+                pushPermissionPlatform: .system,
+                urlOpenPlatform: .system
+            )
+        #else
+            // macOS (AD-025, design D8, UNCONFIRMED): the In-App API compiles and is inert. The placeholder
+            // presenter shows nothing, no push-permission or URL-open platform exists, and `start` never
+            // configures the engine, so it never fetches, flushes or writes `notti_pending_inapp_events`.
+            return NottiRuntime(
+                defaults: defaults,
+                providers: .live(),
+                inAppEngine: .live(defaults: defaults, clicks: clicks, presenter: NottiInAppPlaceholderPresenter()),
+                inAppClicks: clicks,
+                pushPermissionPlatform: nil,
+                urlOpenPlatform: nil
+            )
+        #endif
     }()
 
     let eventStore: NottiEventStore
@@ -127,7 +146,7 @@ final class NottiRuntime {
         let gate = sessionGate
         let engine = self.inAppEngine
         backgroundObserver = notificationCenter.addObserver(
-            forName: UIApplication.didEnterBackgroundNotification,
+            forName: NottiLifecycle.didEnterBackground,
             object: nil,
             queue: nil
         ) { _ in
@@ -136,14 +155,17 @@ final class NottiRuntime {
             engine.appBackgrounded()
         }
         // RN `processForegroundObserver`: later In-App sessions open here, without
-        // waiting for the core's work queue (IAM-51).
-        foregroundObserver = notificationCenter.addObserver(
-            forName: UIApplication.willEnterForegroundNotification,
-            object: nil,
-            queue: nil
-        ) { _ in
-            engine.appForegrounded()
-        }
+        // waiting for the core's work queue (IAM-51). Not registered on macOS: the
+        // In-App engine is inert there and `didBecomeActive` starts the session (D3).
+        #if canImport(UIKit)
+            foregroundObserver = notificationCenter.addObserver(
+                forName: NottiLifecycle.willEnterForeground,
+                object: nil,
+                queue: nil
+            ) { _ in
+                engine.appForegrounded()
+            }
+        #endif
         observer.start()
     }
 
@@ -183,7 +205,10 @@ final class NottiRuntime {
         // In-App first, from this thread, so a `trackEvent` right after `start`
         // finds the config (D12). Invalid input is left to the core, which logs it.
         var inAppConfig: NottiInAppConfig?
-        if !appId.isEmpty, !clientKey.isEmpty, let normalized = NottiApiClient.validatedBaseUrl(baseUrl) {
+        // `supportsInApp` is false on macOS (D8): no config, so the engine stays inert and the core forwards no
+        // registration to it.
+        if NottiPlatformInfo.supportsInApp, !appId.isEmpty, !clientKey.isEmpty,
+           let normalized = NottiApiClient.validatedBaseUrl(baseUrl) {
             inAppEngine.configure(appId: appId, clientKey: clientKey, baseUrl: normalized)
             inAppConfig = NottiInAppConfig(appId: appId, clientKey: clientKey, baseUrl: normalized)
         }
@@ -312,6 +337,7 @@ final class NottiRuntime {
             permissionStatusProvider: providers.permissionStatusProvider,
             appStateProvider: providers.appStateProvider,
             beginBackgroundTask: providers.beginBackgroundTask,
+            platform: NottiSDKVersion.platform,
             logger: { level, message in NottiLogger.log(level, message) },
             onDeviceIdChanged: { [weak self] deviceId in self?.onDeviceIdChanged?(deviceId) },
             inAppHooks: .forwarding(to: inAppEngine, config: inAppConfig),

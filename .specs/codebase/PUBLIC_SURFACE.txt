@@ -48,6 +48,7 @@ Sources/NottiSDK/Public/NottiInAppMessages.swift: public struct NottiInAppClick:
 Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func didFailToRegisterForRemoteNotifications(error: Error) {
 Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func didReceive(_ response: UNNotificationResponse) {
 Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
+Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) {
 Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func didRegisterForRemoteNotifications(deviceToken: Data) {
 Sources/NottiSDK/Public/NottiNotifications+Delegate.swift: public static func willPresent(_ notification: UNNotification) -> UNNotificationPresentationOptions {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public final class NottiInAppMessagesObjC: NSObject {
@@ -65,6 +66,7 @@ Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func clearPhone() {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func didFailToRegisterForRemoteNotifications(error: Error) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func didReceive(_ response: UNNotificationResponse) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
+Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func didRegisterForRemoteNotifications(deviceToken: Data) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func initialize(appId: String, clientKey: String, baseUrl: String?) {
 Sources/NottiSDK/Public/ObjC/NottiObjC.swift: public static func initialize(appId: String, clientKey: String, baseUrl: String?, opensInAppURLs: Bool) {
