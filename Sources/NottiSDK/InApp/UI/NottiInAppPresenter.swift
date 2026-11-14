@@ -1,18 +1,6 @@
 #if canImport(UIKit)
 import UIKit
 
-/// What the presenter reports to the engine (design "Display state machine"). `NottiInAppEngine` implements it;
-/// every method hops onto the engine queue and ignores an old display id.
-protocol NottiInAppDisplayEvents: AnyObject {
-    func displayAttached(displayId: String, attached: Bool)
-    func becameVisible(displayId: String)
-    func userTapped(displayId: String, buttonId: String, action: NottiInAppButtonAction?)
-    func userDismissed(displayId: String, reason: String)
-    func displayFailed(displayId: String)
-}
-
-extension NottiInAppEngine: NottiInAppDisplayEvents {}
-
 /// Runs `animations` over `duration`, then `completion` (production: `UIView.animate`; tests run both at once).
 typealias NottiInAppAnimator = (
     _ duration: TimeInterval, _ animations: @escaping () -> Void, _ completion: @escaping () -> Void
@@ -368,4 +356,6 @@ final class NottiInAppPresenter: NottiInAppPresenting {
         card.message.format == .top ? -NottiInAppMotion.barSlide : NottiInAppMotion.barSlide
     }
 }
+
+extension NottiInAppPresenter: NottiInAppEventsReceiving {}
 #endif

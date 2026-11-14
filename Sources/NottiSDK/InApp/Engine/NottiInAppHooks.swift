@@ -49,9 +49,31 @@ final class NottiInAppClickRelay {
     }
 }
 
+// Moved from `InApp/UI/NottiInAppPresenter.swift` (AD-025): the engine is shared, so the protocol it implements
+// must exist where the UIKit layer does not.
+/// What the presenter reports to the engine (design "Display state machine"). `NottiInAppEngine` implements it;
+/// every method hops onto the engine queue and ignores an old display id.
+protocol NottiInAppDisplayEvents: AnyObject {
+    func displayAttached(displayId: String, attached: Bool)
+    func becameVisible(displayId: String)
+    func userTapped(displayId: String, buttonId: String, action: NottiInAppButtonAction?)
+    func userDismissed(displayId: String, reason: String)
+    func displayFailed(displayId: String)
+}
+
+extension NottiInAppEngine: NottiInAppDisplayEvents {}
+
+/// What `NottiInAppEngine.live` needs from a presenter besides showing displays: a back-reference to the engine
+/// for the display events. The UIKit presenter and the placeholder both have it, so the factory takes no UIKit
+/// type and compiles on macOS (AD-025).
+protocol NottiInAppEventsReceiving: AnyObject {
+    var events: NottiInAppDisplayEvents? { get set }
+}
+
 /// Shows nothing, so no display ever becomes visible and no impression is recorded; a pending display is
 /// dropped at session end. Used by runtimes built without an engine (tests); production uses `NottiInAppPresenter`.
-final class NottiInAppPlaceholderPresenter: NottiInAppPresenting {
+final class NottiInAppPlaceholderPresenter: NottiInAppPresenting, NottiInAppEventsReceiving {
+    weak var events: NottiInAppDisplayEvents?
     func present(_ display: NottiInAppDisplay) {}
     func close(displayId: String) {}
     func teardown(_ display: NottiInAppDisplay) {}
@@ -67,7 +89,7 @@ extension NottiInAppEngine {
     static func live(
         defaults: UserDefaults,
         clicks: NottiInAppClickRelay,
-        presenter: NottiInAppPresenter
+        presenter: NottiInAppPresenting & NottiInAppEventsReceiving
     ) -> NottiInAppEngine {
         let engine = NottiInAppEngine(
             store: NottiInAppEventStore(defaults: defaults),
@@ -75,6 +97,7 @@ extension NottiInAppEngine {
             presenter: presenter,
             emitClick: { clicks.emit($0) }
         )
+        var presenter = presenter
         presenter.events = engine
         return engine
     }

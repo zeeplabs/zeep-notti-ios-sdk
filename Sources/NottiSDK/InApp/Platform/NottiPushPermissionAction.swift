@@ -50,11 +50,14 @@ final class NottiPushPermissionAction {
         let readState: (@escaping (State) -> Void) -> Void
         let openNotificationSettings: () -> Void
 
-        @available(iOSApplicationExtension, unavailable)
-        static let system = Platform(
-            readState: NottiPushPermissionAction.systemState,
-            openNotificationSettings: NottiPushPermissionAction.openSystemNotificationSettings
-        )
+        // Only where UIKit exists (AD-025): the In-App push-permission button has no macOS platform.
+        #if canImport(UIKit)
+            @available(iOSApplicationExtension, unavailable)
+            static let system = Platform(
+                readState: NottiPushPermissionAction.systemState,
+                openNotificationSettings: NottiPushPermissionAction.openSystemNotificationSettings
+            )
+        #endif
     }
 
     private let readState: (@escaping (State) -> Void) -> Void
@@ -94,19 +97,21 @@ final class NottiPushPermissionAction {
         }
     }
 
-    /// Opens the app's notification settings where the OS has such a page (iOS 16+), else its settings page.
-    /// The address is always a system constant.
-    @available(iOSApplicationExtension, unavailable)
-    static func openSystemNotificationSettings() {
-        DispatchQueue.main.async {
-            let raw: String
-            if #available(iOS 16.0, *) {
-                raw = UIApplication.openNotificationSettingsURLString
-            } else {
-                raw = UIApplication.openSettingsURLString
+    #if canImport(UIKit)
+        /// Opens the app's notification settings where the OS has such a page (iOS 16+), else its settings page.
+        /// The address is always a system constant.
+        @available(iOSApplicationExtension, unavailable)
+        static func openSystemNotificationSettings() {
+            DispatchQueue.main.async {
+                let raw: String
+                if #available(iOS 16.0, *) {
+                    raw = UIApplication.openNotificationSettingsURLString
+                } else {
+                    raw = UIApplication.openSettingsURLString
+                }
+                guard let url = URL(string: raw) else { return }
+                UIApplication.shared.open(url)
             }
-            guard let url = URL(string: raw) else { return }
-            UIApplication.shared.open(url)
         }
-    }
+    #endif
 }
