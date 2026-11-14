@@ -13,6 +13,7 @@ Pod::Spec.new do |s|
   s.source       = { :git => 'https://github.com/zeeplabs/zeep-notti-ios-sdk.git', :tag => s.version.to_s }
 
   s.ios.deployment_target = '15.0'
+  s.osx.deployment_target = '12.0'
   s.swift_versions        = ['5']
   # Resource bundle signing fix (CocoaPods #11402).
   s.cocoapods_version     = '>= 1.12'
