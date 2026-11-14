@@ -49,6 +49,7 @@
 **Reason:** Keeps the port verifiable against the existing XCTest suite and spec IDs. New features go in M3.
 **Trade-off:** Known RN gaps (no consent API, PII in UserDefaults, no Retry-After) ship in v0.1.0 too.
 **Impact:** Feature specs in M1 reference the RN requirement IDs instead of redefining behavior.
+**Status note (2026-11-14, macos-support Design):** fulfilled by `0.1.0` (shipped 2026-10-26). The scope-parity decision and the "M1 is a port, not a rewrite" rule of `AGENTS.md` ("Until M1 (v0.1.0) ships") no longer constrain edits to ported files: `prerelease-fixes` and `wrapper-support` already changed them. `macos-support` edits ported files under the AD-025 constraint instead: the iOS test suite passes unchanged and the iOS compiled behavior stays identical. `AGENTS.md` wording is updated in `macos-support` T1.
 
 ### AD-003: Distribution via SPM (source) + CocoaPods (2026-10-09)
 

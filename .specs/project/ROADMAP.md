@@ -80,6 +80,7 @@
 ### Features
 
 **privacy-consent** - PLANNED: `setConsentRequired` / `setConsentGiven` gating, local data wipe API
+**macos-support** - DESIGN draft (2026-11-14, `.specs/features/macos-support/`, AD-025, MAC-01..26, tasks T1-T28): native AppKit apps on the same package (`platforms: [.iOS(.v15), .macOS(.v12)]`), wire value `macos`, release `0.3.0` only after `zeep-notti` `macos-platform` is deployed. In-App stays inert on macOS; Mac Catalyst is not covered
 **pii-keychain-storage** - PLANNED: email/phone moved from UserDefaults to Keychain, with migration
 **nse-shared-state** - PLANNED: App Group (configurable), `received` reported from the NSE, badge increment
 **notification-action-buttons** - PLANNED: parity with the RN `SDKACT-` spec, once that spec is done
