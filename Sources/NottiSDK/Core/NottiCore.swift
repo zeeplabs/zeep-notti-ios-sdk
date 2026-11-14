@@ -210,6 +210,7 @@ class NottiCore {
     private var appIsForeground = false
     private var foregroundObserver: NSObjectProtocol?
     private var backgroundObserver: NSObjectProtocol?
+    var terminateObserver: NSObjectProtocol?  // macOS quit hook (NottiCore+Terminate); nil on iOS
     private var invalidated = false // guarded by `foregroundLock`; set once by `invalidate()`
     private var isInvalidated: Bool { foregroundLock.lock(); defer { foregroundLock.unlock() }; return invalidated }
 
@@ -299,6 +300,7 @@ class NottiCore {
         workQueue.setSpecific(key: Self.workQueueKey, value: 1)
         observeAppForeground()
         observeAppBackground()
+        observeAppTerminate()
         // Review item 2: the launch's `didBecomeActive` usually fired before this
         // core existed. If the app is already active, treat it as that missed
         // activation (idempotent with a later real notification: a repeat
@@ -317,9 +319,10 @@ class NottiCore {
     /// persisted open session and the process `sessionGate` for the new core to adopt.
     func invalidate() {
         foregroundLock.lock()
-        let observers = [foregroundObserver, backgroundObserver]
+        let observers = [foregroundObserver, backgroundObserver, terminateObserver]
         foregroundObserver = nil
         backgroundObserver = nil
+        terminateObserver = nil
         invalidated = true
         foregroundLock.unlock()
         for case let observer? in observers {
@@ -332,10 +335,7 @@ class NottiCore {
 
     deinit {
         heartbeatTimer?.cancel()
-        if let observer = foregroundObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        if let observer = backgroundObserver {
+        for case let observer? in [foregroundObserver, backgroundObserver, terminateObserver] {
             NotificationCenter.default.removeObserver(observer)
         }
     }
@@ -638,7 +638,7 @@ class NottiCore {
 
     /// Blocks the calling thread until every mutation already enqueued on
     /// `workQueue` has run, or `timeout` elapses (returns `false` on timeout).
-    /// Test/diagnostic hook only — the SDK itself never calls it, and it is
+    /// Test/diagnostic hook, also used by the macOS terminate flush (AD-025);
     /// not reachable from the JS API surface.
     @discardableResult
     func waitForPendingWork(timeout: TimeInterval = 5) -> Bool {
@@ -1068,7 +1068,7 @@ class NottiCore {
     /// bookkeeping + PATCH run. Resetting `foregroundRetryQueued` lets the next
     /// activation enqueue its own session start even if an earlier activation
     /// block is still waiting on a busy queue (it would otherwise be dropped).
-    private func handleAppDidEnterBackground(atMs backgroundedAtMs: Int64) {
+    func handleAppDidEnterBackground(atMs backgroundedAtMs: Int64) {
         foregroundLock.lock()
         appIsForeground = false
         foregroundRetryQueued = false
@@ -1345,7 +1345,7 @@ class NottiCore {
         }
     }
 
-    private func nowMs() -> Int64 {
+    func nowMs() -> Int64 {
         Int64(Date().timeIntervalSince1970 * 1000)
     }
 
