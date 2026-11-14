@@ -60,3 +60,14 @@ Implemented as designed, each isolated so it is cheap to change. The owner has n
 | T15-T26 | Pending in this run, see the tail of this file as they complete |
 | T27 | BLOCKED: needs a real Mac with a signed app, an Apple Developer team, the backend `macos-platform` deployed and an independent Verifier |
 | T28 | BLOCKED: release, tag, GitHub Release and `pod trunk push` wait for T27 and the backend deploy, and are Julio's |
+
+## Mutants (T20, macOS, `NottiAppDelegateSwizzlerMacTests` and `NottiSDKVersionTests`)
+
+Each mutant was applied to the source, the macOS tests were run, and the source was restored with a checkout.
+
+| Mutant | Edit | Result |
+| --- | --- | --- |
+| M1 swizzler forwards zero times | The macOS block no longer calls the host original | Killed: 7 failures (order, all-three, same-arguments, subclass, double swizzle) |
+| M2 swizzler forwards twice | The original is called twice | Killed: 4 failures |
+| M3 adapter skipped | The macOS block no longer calls `adapter.didReceiveRemoteNotification` | Killed: 6 failures |
+| M4 wrong platform constant | `NottiSDKVersion.platform` is `"ios"` under `os(macOS)` | Killed: the registration body test, the `sdk_name` PATCH test and the `NottiSharedTests` literal test |
