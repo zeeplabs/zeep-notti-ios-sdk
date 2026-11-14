@@ -135,7 +135,7 @@ Open questions: none. Julio confirmed on 2026-11-14: `0.3.0` as the first macOS 
 **Acceptance Criteria**:
 
 1. MAC-21: WHEN `Notti.InApp.trackEvent` or a click listener is used on macOS THEN the call SHALL compile, SHALL do nothing and SHALL NOT grow the event queue or fetch messages.
-2. MAC-22: WHEN `PUBLIC_SURFACE.txt` is regenerated THEN it SHALL show no new public symbol caused by macOS support.
+2. MAC-22: WHEN `PUBLIC_SURFACE.txt` is regenerated THEN it SHALL show no new public symbol caused by macOS support. The only allowed difference is the return type of `didReceiveRemoteNotification` on macOS (`Void`, because `UIBackgroundFetchResult` does not exist there): two macOS lines in `PUBLIC_SURFACE.txt`, same names as iOS (decision D4, approved by the owner on 2026-11-14).
 
 **Independent Test**: A macOS XCTest calls the In-App entry points and asserts no network request and no stored event.
 

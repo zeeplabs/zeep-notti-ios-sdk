@@ -50,7 +50,7 @@ T2: 1 (the `UIKit` module). T4: 17. T5: 18 (two errors masked by the module erro
 
 ## Unconfirmed design decisions
 
-Implemented as designed, each isolated so it is cheap to change. The owner has not confirmed any of them.
+Implemented as designed, each isolated so it is cheap to change. The owner approved D4, C1, D7, D8, D10, S3 and D12 as implemented on 2026-11-14 (before any real-Mac run). T27 can still reverse any of them if a real-device result contradicts the assumption; the "What changes it" column stays valid.
 
 | Decision | Where it lives | What changes it |
 | --- | --- | --- |
