@@ -92,4 +92,14 @@ The same scheme runs on macOS: `xcodebuild test -scheme NottiSDK-Package -destin
 
 UIKit-only test files and members sit under `#if canImport(UIKit)` (the In-App UI, presenter and image loader tests, the In-App wiring and public-API tests that need a configured engine, the iOS fetch-completion delegate tests). `Tests/NottiSDKTests/Support/MacLifecycleShim.swift` gives the existing lifecycle tests the `UIApplication.*Notification` spellings on macOS, mapped to the AppKit names; `NottiLifecycleTests` pins the seam to the real constants. A platform constant is asserted per platform (`ios` or `macos`).
 
-macOS baseline at T19 (Xcode 27.2, macOS 27.0, 2026-11-14): Shared 15, SDK 725, ObjC 8, Extension 110, ExtensionObjC 3 = 861. The iOS count at the same point is Shared 15, SDK 935, ObjC 8, Extension 110, ExtensionObjC 3 = 1071 (baseline on `main` before macos-support: 14, 921, 8, 110, 3). The macOS SDK count is lower because the In-App UI and wiring tests are iOS only; the macOS count must not drop from here.
+macOS-only layers (all under `#if os(macOS)`):
+
+| Layer | File | What it proves |
+| --- | --- | --- |
+| Delegate integration | `NottiAppDelegateSwizzlerMacTests` | fake `NSApplicationDelegate` classes, host originals forwarded once with the same arguments, double-swizzle guard, SwiftUI skip and adaptor, manual API, registration body and `sdk_name` as literals, log sentinel sweep, `NSApp` nil, cold-start click |
+| Lifecycle | `NottiCoreTerminateTests` | AppKit names reach the core observers, terminate ends a session once with a bounded wait, background activity, `hw.model` and OS version reads |
+| In-App inert | `NottiInAppMacInertTests` | no config, no request, no stored event after `start` |
+| NSE link | `NottiExtensionLinkTests` | `otool -L` and `nm -u` over the extension product show no AppKit or UIKit |
+| Shim | `Support/MacLifecycleShim.swift` | the `UIApplication.*Notification` spellings of the existing tests, mapped to AppKit names |
+
+macOS baseline at T19 (Xcode 27.2, macOS 27.0, 2026-11-14): Shared 15, SDK 725, ObjC 8, Extension 110, ExtensionObjC 3 = 861. After T22: Shared 15, SDK 775 (+25 delegate, +19 lifecycle, +6 In-App inert), ObjC 8, Extension 112 (+2 link), ExtensionObjC 3 = 913. The iOS count at the same point is Shared 15, SDK 935, ObjC 8, Extension 110, ExtensionObjC 3 = 1071 (baseline on `main` before macos-support: 14, 921, 8, 110, 3). The macOS SDK count is lower because the In-App UI and wiring tests are iOS only; the macOS count must not drop from here.

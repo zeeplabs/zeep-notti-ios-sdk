@@ -1,4 +1,4 @@
-# Device validation checklist for 0.1.0
+# Device validation checklist for 0.1.0 (iOS) and 0.3.0 (macOS, D22 onward)
 
 CI cannot prove the items below: they need a physical iPhone, a real APNs path or an App Store Connect upload. Run them in one sitting with the example app before the `0.1.0` tag. This is a gate for Julio, not for contributors.
 
@@ -283,6 +283,150 @@ Result: Pass by owner report (Julio, 2026-10-26): run internally; device model, 
 
 ---
 
+## macOS (separate section, items D22 onward)
+
+These items need a real Mac and cover macOS support (AD-025, `.specs/features/macos-support/`). CI proves the build, the unit tests and the launch hook on macOS; it cannot prove a signed app, a real APNs path, Notification Center or the quit path. Nothing below has been run: every item is **Not run** until a person with a Mac does it. The spike ids (S1 to S10) are the open questions of the macOS design; record each result here and in `.specs/features/macos-support/validation.md`.
+
+**Prerequisites (all macOS items).**
+
+- A Mac on macOS 12 or later (also run D22 and D24 on the latest macOS), Apple silicon or Intel.
+- An Apple Developer team that can sign a Mac app for push notifications, and a provisioning profile that carries `com.apple.developer.aps-environment` (a Developer ID or Mac App Store build; an unsigned build cannot receive a push).
+- A Notti app whose APNs key is configured for the macOS app id in the backend, a backend release that accepts `platform: "macos"` (the `macos-platform` change), and a way to send a push (dashboard or API).
+- The credentials in `Example/Config/Example.local.xcconfig` (git-ignored), then `xcodegen generate --spec project-mac.yml` in `Example/`, set your **Team** and a **unique bundle id** on `NottiExampleMac` and `NottiNotificationServiceMac` (the extension id must start with the app id). The generated project is git-ignored; never commit it.
+- The same recording rule as above: no app id, client key, push token, device id, email, phone or tag value in this file or a PR.
+
+## D22. Signed Mac app, APNs registration and token (S5, S8)
+
+**Closes:** MAC-06, MAC-09 (device part). Spike S5 (token format and entitlement) and S8 (registration timing).
+**Prerequisites:** The macOS prerequisites above.
+**Steps:**
+1. Run `NottiExampleMac` signed with the entitlement. Click **Initialize** (the log shows `initialize: ok`), then **Request permission** and allow.
+2. Repeat with `initialize` called from `applicationDidFinishLaunching` (edit the example locally) and from a later button click.
+3. Repeat once with the build signed without `aps-environment`.
+**Expected:**
+- The device appears in the Notti backend as platform `macos`, with a hex token, `sdk_name` `macos`, `device_os` like `14.4` and `device_model` like `Mac14,9` (present, not the architecture name).
+- The token arrives in both timings of step 2.
+- Without the entitlement: no crash, `initialize` is not blocked, and the log at `error` carries `domain#code` only.
+
+- [ ] Pass  - [ ] Fail  - [x] Not run
+Result: Not run (needs a real Mac).
+
+## D23. Permission prompt states on macOS
+
+**Closes:** MAC-06.
+**Prerequisites:** D22 passed.
+**Steps:** First run (prompt shown), allow; reset the permission in System Settings → Notifications, deny; allow again.
+**Expected:** The log shows `permission: granted` and `permission: denied` as chosen; the backend `permission_status` follows (`granted`, `denied`). No crash on any state.
+
+- [ ] Pass  - [ ] Fail  - [x] Not run
+Result: Not run (needs a real Mac).
+
+## D24. Push delivery and `received`, `opened`, `clicked` while the app runs
+
+**Closes:** MAC-13, MAC-15 (visible push). Spike S3 (a): `application(_:didReceiveRemoteNotification:)` for a visible push.
+**Prerequisites:** D22 passed, listeners added (Initialize adds them).
+**Steps:** App running, in the background (another app in front). Send a visible push with `notification_id` and `delivery_id`. Click the banner.
+**Expected:** One `received` row and one `clicked` row (key names only) in the log; the backend has one `received`, one `opened`, one `clicked` for that delivery. A visible push is reported once as `received` even if macOS also calls the silent-push callback.
+
+- [ ] Pass  - [ ] Fail  - [x] Not run
+Result: Not run (needs a real Mac).
+
+## D25. Cold-start click (S1)
+
+**Closes:** MAC-14. Spike S1.
+**Prerequisites:** D24 passed.
+**Steps:** Send a push, quit the app, click the delivered banner in Notification Center. Click **Take initial click** after launch, then again. Repeat with a host whose delegate is set in `applicationDidFinishLaunching` and with one that never sets it.
+**Expected:** One `clicked` row from the first **Take initial click**, none from the second. If the click is lost, record it: plan B of the design (assign the fallback delegate one run-loop turn earlier on macOS) becomes a follow-up before the release.
+
+- [ ] Pass  - [ ] Fail  - [x] Not run
+Result: Not run (needs a real Mac).
+
+## D26. Silent push `received` on macOS (S3)
+
+**Closes:** MAC-15. Spike S3 (a).
+**Prerequisites:** D22 passed. A silent push (`content-available`) carrying `notification_id` and `delivery_id`.
+**Steps:** App running with listeners. Send the silent push. Run it with an AppKit delegate that implements all three callbacks, only some, and none.
+**Expected:** One `received` in the log and one in the backend per push; each host original is called once with the same arguments; adding the missing silent-push callback changes no host behavior (spike S3, the decision to add it is the owner's).
+
+- [ ] Pass  - [ ] Fail  - [x] Not run
+Result: Not run (needs a real Mac).
+
+## D27. Quit while a session is open, and session granularity (S2, S4)
+
+**Closes:** MAC-16. Spikes S2 (terminate) and S4 (resign active).
+**Prerequisites:** D22 passed.
+**Steps:**
+1. With the app active, press Cmd-Q with the network up. Then repeat with the network off (airplane Wi-Fi off). Also log out and shut down once.
+2. Press Cmd-Tab away and back five times in one minute with the app running, then check `session_count`.
+**Expected:**
+- Quit latency under 2 seconds with the network off; with the network up the backend shows `session_count` and `session_time_seconds` updated; nothing hangs.
+- Step 2: record the session count and compare it with what a user would expect (resign active ends a session, design C1). If it is too noisy, the alternative (end on hide or occlusion) is a one-line change in `NottiLifecycle`.
+
+- [ ] Pass  - [ ] Fail  - [x] Not run
+Result: Not run (needs a real Mac).
+
+## D28. SwiftUI app with `@NSApplicationDelegateAdaptor` (S3)
+
+**Closes:** MAC-11. Spike S3 (b) and (c).
+**Prerequisites:** D22 passed. A SwiftUI Mac app with its own `NSApplicationDelegate` class through `@NSApplicationDelegateAdaptor` (another host app, the example is AppKit).
+**Steps:** Initialize, request permission, send a push, send a silent push.
+**Expected:** The token reaches the SDK and the host's original; the host's callbacks are each called once; `NSApp.delegate`'s class name still matches the SwiftUI name check (`_TtC7SwiftUI`) and `forwardingTarget(for:)` reaches the adaptor object like the iOS case. A SwiftUI app without the adaptor logs one warning and needs the manual API.
+
+- [ ] Pass  - [ ] Fail  - [x] Not run
+Result: Not run (needs a real Mac and another host app).
+
+## D29. Launch ordering and a late install (S3, S7)
+
+**Closes:** MAC-09, MAC-14. Spike S3 (d) and S7.
+**Prerequisites:** D22 passed.
+**Steps:** Confirm the `setDelegate:` swizzle is in place before the delegate is assigned (the token callback reaches the SDK on a cold launch). Then call `Notti.initialize` from a button (an install after launch) in an app that never sets the notification-center delegate.
+**Expected:** The token and the click callbacks work in both cases; the fallback delegate is assigned on the late install without waiting for a launch notification that already fired.
+
+- [ ] Pass  - [ ] Fail  - [x] Not run
+Result: Not run (needs a real Mac).
+
+## D30. Manual forwarding with swizzling off on macOS
+
+**Closes:** MAC-10.
+**Prerequisites:** D22 passed. `NottiDisableSwizzling` = `true` in the app's `Info.plist`, and the forwarding delegate from the README macOS section.
+**Steps:** Register, send a visible push and a silent push, click the banner.
+**Expected:** The token, `received`, `opened` and `clicked` arrive; no call is ignored; with swizzling on, each manual call logs one warning (level `warn`).
+
+- [ ] Pass  - [ ] Fail  - [x] Not run
+Result: Not run (needs a real Mac).
+
+## D31. Rich media in the Notification Service Extension on macOS (S6)
+
+**Closes:** MAC-19. Spike S6.
+**Prerequisites:** D22 passed; the extension embedded and signed (sandbox and network client entitlements).
+**Steps:** Send a push with an image URL (and one with a video or audio); also one that exceeds the deadline.
+**Expected:** The image is attached in the banner on macOS 12 and on the latest; video or audio attach or fall back; the deadline path delivers the original content. No log line carries the media URL.
+
+- [ ] Pass  - [ ] Fail  - [x] Not run
+Result: Not run (needs a real Mac).
+
+## D32. Sandbox and hardened runtime (S10)
+
+**Closes:** MAC-06, MAC-23 (runtime part). Spike S10.
+**Prerequisites:** D22 passed.
+**Steps:** Run the example sandboxed and unsandboxed, each with the hardened runtime on.
+**Expected:** Networking and the `notti_prefs` `UserDefaults` suite work in both (the suite lives in the app's own container when sandboxed); no entitlement beyond the network client is needed.
+
+- [ ] Pass  - [ ] Fail  - [x] Not run
+Result: Not run (needs a real Mac).
+
+## D33. Privacy report of a macOS archive (S9)
+
+**Closes:** MAC-23. Spike S9.
+**Prerequisites:** An Archive of the Mac example signed for distribution.
+**Steps:** Archive, **Generate Privacy Report** in Organizer (and **Validate App** if you have an App Store Connect record).
+**Expected:** The report lists the manifest's collected types and shows no missing reason for `sysctl hw.model` or the OS version read; Validate App accepts both manifests. If a reason is required, the privacy-manifest task reopens.
+
+- [ ] Pass  - [ ] Fail  - [x] Not run
+Result: Not run (needs a real Mac).
+
+---
+
 ## In-App Messages (separate checklist)
 
 In-App Messages have their own device checklist, items 1-27 of "Device validation checklist" in `.specs/features/in-app-messages/tasks.md` (in-app T21). It needs an iPhone **and** an iPad, a `zeep-notti` v0.23.0 or later (staging is fine) where you can author one message per layout, and the example app: tap **Initialize** (it adds the In-App click listener, which logs `in-app click: action url`, `deeplink` or `none` on the **Log** tab; after it, the SDK itself opens an `http`/`https` `url` action in Safari, AD-020, and never a `deeplink`) and use **Track event** on the **Push** tab for event-triggered messages (event name `example_event`). Record the results in `.specs/features/in-app-messages/validation.md` (pass, fail or not run per item, with the device, iOS version and server release), under the same rule as here: no app id, client key, token, device id or message id in the file.
@@ -292,5 +436,5 @@ In-App Messages have their own device checklist, items 1-27 of "Device validatio
 ## After the checklist
 
 1. Tick the STATE todos cited above (one edit, with the date and the Pass results).
-2. Move every Fail and every "Not run" (D03, D11) into the `0.1.0` changelog as a known limitation, or run it first.
+2. Move every Fail and every "Not run" (D03, D11) into the `0.1.0` changelog as a known limitation, or run it first. The macOS items (D22 to D33) gate the `0.3.0` release the same way.
 3. Julio decides the remaining pre-tag gates (see the release PR).

@@ -1,15 +1,18 @@
-# NottiSDK for iOS
+# NottiSDK for iOS and macOS
 
-Native iOS SDK for [Zeep Notti](https://github.com/zeeplabs) push notifications: device registration, user identity, tags, engagement events (`received` / `opened` / `clicked`), rich media in a Notification Service Extension, and In-App Messages.
+Native iOS and macOS SDK for [Zeep Notti](https://github.com/zeeplabs) push notifications: device registration, user identity, tags, engagement events (`received` / `opened` / `clicked`), rich media in a Notification Service Extension, and In-App Messages (iOS).
+
+> **macOS (unreleased, planned for `0.3.0`).** The SDK compiles and passes its tests on macOS 12 or later, but it has not been run on a real Mac with a signed app and a real push yet: the macOS items of the [device checklist](docs/DEVICE_CHECKLIST.md) are pending. See [macOS](#macos). The `0.2.0` release below is iOS only.
 
 > **Status: `0.2.0`.** It ports `react-native-notti` 0.8.0 to iOS, In-App Messages included; 0.2.0 adds the `sdk_name` device field and renames the Objective-C facade class. The [device checklist](docs/DEVICE_CHECKLIST.md) passed on the maintainer's devices and App Store validation passed; a beta in a production host app follows. See [Known limitations](#known-limitations) and the [CHANGELOG](CHANGELOG.md).
 
 ## Requirements
 
-- iOS 15.0+
+- iOS 15.0+, or macOS 12.0+ (from `0.3.0`; Mac Catalyst is not supported, see [macOS](#macos))
 - Xcode 15.3 or later. The extension target uses `nonisolated(unsafe)`, which needs Swift 5.10. Only Xcode 26.6 and 27.1 are tested.
 - A Notti backend (`zeep-notti`) that accepts what the SDK sends: v0.10.0 or later for the device-profile fields, v0.11.0 or later for the `opened` event, v0.23.0 or later for In-App Messages, v0.24.0 or later for the `logout` unlink and a release after v0.26.0 for `sdk_name` (see [Known limitations](#known-limitations)). An older backend rejects those fields or events and the SDK drops them.
 - An Apple Developer account with push notifications and an APNs key configured in your Notti app
+- macOS only: a `zeep-notti` release that accepts `platform: "macos"` (the `macos-platform` change). The release number is recorded here when it ships; until then a Mac registration is answered with an error and the SDK retries on its normal schedule
 
 ## Installation
 
@@ -54,7 +57,7 @@ target 'YourNotificationServiceExtension' do
 end
 ```
 
-Then run `pod install` and open the `.xcworkspace`.
+Then run `pod install` and open the `.xcworkspace`. For a Mac app use `platform :osx, '12.0'` with the same pods; both pods declare `osx` 12.0 from `0.3.0`.
 
 Linking `NottiSDKExtension` into the app target builds, but exposes no app API. Use `NottiSDK` there. In the extension, `import NottiSDKExtension`, the same line as with SPM. Both pods work with dynamic frameworks, static frameworks and static libraries.
 
@@ -263,6 +266,64 @@ final class ForwardingAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
 }
 ```
 
+## macOS
+
+Both products build for macOS 12 or later from `0.3.0`, with the same `NottiSDK` and `NottiSDKExtension` names, Swift Package Manager or CocoaPods (see [Installation](#installation)). The code is one source tree: what differs on a Mac is below. Mac Catalyst is **not** supported: a Catalyst app takes the iOS path and reports `platform: "ios"`.
+
+**Capabilities.** In the Mac app target, **Push Notifications** adds the `com.apple.developer.aps-environment` entitlement, and a Developer ID or App Store build needs a provisioning profile that carries it. Without it `registerForRemoteNotifications` never answers or fails; the SDK logs `domain#code` at `error` and does not crash. A sandboxed app also needs the **Outgoing Connections (Client)** entitlement (`com.apple.security.app-sandbox` with `com.apple.security.network.client`). The SDK needs no other entitlement.
+
+**Delegate integration.** The same opt-out as iOS: by default the SDK observes `NSApplicationDelegate`'s `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)`, `application(_:didFailToRegisterForRemoteNotificationsWithError:)` and `application(_:didReceiveRemoteNotification:)` (a silent push; macOS has no fetch completion handler) and `UNUserNotificationCenter`'s delegate. The SDK adds a callback your delegate lacks. With `NottiDisableSwizzling` set to `true` in `Info.plist`, forward them yourself:
+
+```swift
+final class ForwardingAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        UNUserNotificationCenter.current().delegate = self
+    }
+
+    func application(_ application: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        Notti.Notifications.didRegisterForRemoteNotifications(deviceToken: deviceToken)
+    }
+
+    func application(_ application: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        Notti.Notifications.didFailToRegisterForRemoteNotifications(error: error)
+    }
+
+    // The macOS call returns nothing: there is no fetch completion handler to pass a result to.
+    func application(_ application: NSApplication, didReceiveRemoteNotification userInfo: [String: Any]) {
+        Notti.Notifications.didReceiveRemoteNotification(userInfo)
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler(Notti.Notifications.willPresent(notification))
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        Notti.Notifications.didReceive(response)
+        completionHandler()
+    }
+}
+```
+
+This is the one API difference between the platforms: `didReceiveRemoteNotification` returns `UIBackgroundFetchResult` on iOS and nothing on macOS (the Objective-C selector is the same, `void` on macOS). This block is not compiled by CI. A SwiftUI app with `@NSApplicationDelegateAdaptor` is expected to behave like the iOS adaptor case; that is pending a run on a real Mac.
+
+**Sessions.** On macOS a session starts when the app becomes active and ends when it resigns active, so switching apps with Cmd-Tab produces several short sessions where iOS produces one. If the user quits while the app is active, the session ends at quit and the SDK waits up to 1.5 seconds for that report; if it does not finish, the local counters are kept and sent with the next session. A force quit, a crash or a power loss loses that session's telemetry, as on iOS.
+
+**In-App Messages are not shown on macOS.** The API (`trackEvent`, `Notti.InAppMessages.addClickListener`, `Notti.Options(opensInAppURLs:)`) compiles on a Mac and does nothing: no message is fetched, shown, flushed or stored, and no In-App request is made. The SDK opens no URL on a Mac.
+
+**Rich media.** `NottiSDKExtension` is the same Notification Service Extension, extension-safe on macOS; add it to a Notification Service Extension target of the Mac app (the example has one).
+
+**Data.** The same fields and the same `notti_prefs` keys as iOS, with these differences: registration sends `platform: "macos"`, `sdk_name` is `macos` (a wrapper still overrides it), `device_model` is the hardware identifier from `sysctl hw.model` (for example `Mac14,9`, never a serial number or hardware UUID, and left out when it cannot be read) and `device_os` is the macOS version. No new data type is collected.
+
+The Mac example is `Example/project-mac.yml` (see [Example app](#example-app)).
+
 ## Objective-C
 
 The SDK is usable from Objective-C through the same module. The names below come from `@objc(...)` declarations in `Sources/NottiSDK/Public/ObjC/NottiObjC.swift`. The entry class is `NottiSDKFacade`: not `Notti`, so it can live in the same app as `react-native-notti`, whose module class is `Notti`, and not `NottiSDK`, so Swift code can still write `NottiSDK.Notti` (0.1.0 used `NottiSDK`; see the CHANGELOG). This block is **not** compiled by CI (the example app has no Objective-C target); the Swift snippets above are.
@@ -294,7 +355,7 @@ The base URL is the production host named in [Quick start](#quick-start) unless 
 
 | When | Fields |
 |---|---|
-| Registration | `token` (APNs push token), `platform` (`ios`) |
+| Registration | `token` (APNs push token), `platform` (`ios`, or `macos` on a Mac) |
 | `login` | `external_user_id` |
 | `setEmail`, `setPhone` | `email`, `phone` |
 | `addTag`, `addTags`, `removeTag`, `removeTags` | `tags` (your own key/value pairs) |
@@ -336,6 +397,7 @@ This README describes what the SDK does. It is not legal advice and does not sta
 
 ## Known limitations
 
+- **macOS has not been run on a real Mac yet.** The macOS build, the tests and the guards pass on a Mac, but delegate callbacks, the cold-start click, the session end at quit, the SwiftUI adaptor, rich media and the privacy report need a signed app and a real push (the macOS items of the [device checklist](docs/DEVICE_CHECKLIST.md)). Resign active ends a session on macOS, so Cmd-Tab produces many short sessions. In-App Messages are not shown on macOS. Mac Catalyst is not supported.
 - **Rich media on a device only.** The Notification Service Extension is not exercised in the Simulator by this repo; media rendering and the expiry fallback were checked on the maintainer's devices ([device checklist](docs/DEVICE_CHECKLIST.md)). Test rich media on a physical device.
 - **`sdk_name` needs a `zeep-notti` release after v0.26.0.** v0.26.0 and older answer 2xx to the `sdk_name` PATCH but ignore it, so the SDK never marks it acknowledged and sends it again at every registration (one extra request per launch, no error). The backend uses `sdk_name` to pick the SDK minimum version for `push_permission` messages.
 - **`logout` and re-registration need `zeep-notti` v0.24.0 or later.** From that release, `PATCH` with `external_user_id: null` unlinks the device, and a registration that omits `external_user_id` and `tags` keeps them. Against an older backend, the unlink answers 2xx but the backend keeps the stored value, so the device stays linked to the previous user until the next launch (pushes for that user can keep arriving on a shared device); the SDK counts the 2xx as delivered and does not retry. An older backend also resets `external_user_id` and tags at every launch registration, so call `login` and `addTags` again at each launch. `react-native-notti` 0.8.0 has the same limits on an older backend.
@@ -355,7 +417,7 @@ This README describes what the SDK does. It is not legal advice and does not sta
 
 ## Example app
 
-`Example/` is a SwiftUI app and a Notification Service Extension that call every public member. It needs [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`). From `Example/`, run `xcodegen generate --spec project.yml` for SPM, or `xcodegen generate --spec project-pods.yml` and `NOTTI_LINKAGE=static|libs|dynamic pod install` for CocoaPods, and open the project or the `.xcworkspace`. The app starts uninitialized: tap **Initialize** on the Setup tab (it also adds the In-App click listener, which logs only the action type). The Push tab has a **Track event** button that calls `Notti.trackEvent("example_event")`. It needs an `Example.local.xcconfig` with your own app id and key; without it the app reads `fixture` and never calls the SDK. The README snippets are excerpts of files under `Example/`, checked by `scripts/check-readme-snippets.sh`.
+`Example/` is a SwiftUI app and a Notification Service Extension that call every public member. `Example/project-mac.yml` generates a small macOS counterpart (`NottiExampleMac`, an AppKit app and a Notification Service Extension): from `Example/`, run `xcodegen generate --spec project-mac.yml` and open `NottiExampleMac.xcodeproj`; it uses the same `Example.local.xcconfig` and is outside the snippet check. It needs [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`). From `Example/`, run `xcodegen generate --spec project.yml` for SPM, or `xcodegen generate --spec project-pods.yml` and `NOTTI_LINKAGE=static|libs|dynamic pod install` for CocoaPods, and open the project or the `.xcworkspace`. The app starts uninitialized: tap **Initialize** on the Setup tab (it also adds the In-App click listener, which logs only the action type). The Push tab has a **Track event** button that calls `Notti.trackEvent("example_event")`. It needs an `Example.local.xcconfig` with your own app id and key; without it the app reads `fixture` and never calls the SDK. The README snippets are excerpts of files under `Example/`, checked by `scripts/check-readme-snippets.sh`.
 
 ## License
 
