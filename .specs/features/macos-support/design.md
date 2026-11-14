@@ -404,6 +404,13 @@ Counts: the iOS baseline (Shared 14, SDK 907, ObjC 8, Extension 110, ExtensionOb
 | C12 | Hard-coded copy of `AGENTS.md` says "iOS 15+" and "port, not a rewrite" | T1 |
 | C13 | CocoaPods trunk read-only on 2026-12-02 (AD-022) | A `0.3.0` push after that date follows plan B |
 
+### T14 results (2026-11-14, Xcode 27.2)
+
+- [Certo] Final compile survey: zero located errors. `xcodebuild build -scheme NottiSDK` for `generic/platform=macOS` with `SWIFT_TREAT_WARNINGS_AS_ERRORS=YES GCC_TREAT_WARNINGS_AS_ERRORS=YES` exits 0, the same for `NottiSDKExtension` with `APPLICATION_EXTENSION_API_ONLY=YES`, and both strict iOS builds (`generic/platform=iOS`) still exit 0. The one strict-only finding was a `var presenter` that was never mutated.
+- [Certo] Destination strings: `platform=macOS,arch=arm64` still prints "Using the first of multiple matching destinations" (Mac Catalyst, DriverKit and Designed for iPad also match) but the first listed is the native `My Mac` (no variant), so it is deterministic. `generic/platform=macOS` has one match. Bare `platform=macOS` also picks the native one first and adds `x86_64` candidates.
+- [Certo] Mac Catalyst: `xcodebuild build -scheme NottiSDK -destination 'generic/platform=macOS,variant=Mac Catalyst'` exits 0. `swiftc -target arm64-apple-ios15.0-macabi` confirms `os(macOS)` is false and `targetEnvironment(macCatalyst)` is true there, so a Catalyst app takes the iOS path and reports `platform: "ios"`, as the design says. `canImport(UIKit)` printed false in that bare `swiftc` call (no Catalyst framework search path), but the Xcode build compiled the UIKit branches, which would not compile through the AppKit `#else`; treat `canImport(UIKit)` as true under Xcode for Catalyst [Provável]. No code change for Catalyst.
+- [Certo] `scripts/check-hook-linked.sh spm` (simulator `iPhone Duo`): `loadCount=1 installCount=1`.
+
 ---
 
 ## Requirement traceability

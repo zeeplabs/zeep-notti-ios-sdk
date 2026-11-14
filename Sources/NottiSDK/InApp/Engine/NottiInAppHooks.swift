@@ -97,7 +97,6 @@ extension NottiInAppEngine {
             presenter: presenter,
             emitClick: { clicks.emit($0) }
         )
-        var presenter = presenter
         presenter.events = engine
         return engine
     }

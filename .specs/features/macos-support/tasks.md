@@ -22,6 +22,7 @@ Scope: all 26 requirements. T27 needs a real Mac with an Apple Developer team an
 | Branch | `feat/macos-support` from `docs/macos-support-spec` |
 | macOS gate destination | `platform=macOS,arch=arm64` for tests, `generic/platform=macOS` for builds (design D14); T14 confirms on this machine and on the CI image |
 | macOS evidence before the module compiles | The located-error count of `xcodebuild build -scheme NottiSDK-Package -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO 2>&1 \| grep -E '\.swift:[0-9]+:[0-9]+: error:' \| sort -u \| wc -l`. Baseline after T4 is the Pass 2 list of the design (22); each task in phase 2 records the new number and must not raise it |
+| macOS destination (T14 result) | `platform=macOS,arch=arm64` resolves to the native `My Mac` as the first of several matches (it prints a warning, the first listed is native); `generic/platform=macOS` for builds has one match. Mac Catalyst builds the iOS path |
 | macOS-only tests | Written in T19 to T22, after the module compiles (design C7) |
 | Public surface | The macOS `Void` variant of `didReceiveRemoteNotification` is accepted (design D4); T9 stops if Julio chooses otherwise |
 | iOS regression guard | The iOS suite passes with no edit to an existing assertion. Allowed test edits: wrapping a UIKit-only file or line in `#if canImport(UIKit)`, and making a platform constant conditional |
