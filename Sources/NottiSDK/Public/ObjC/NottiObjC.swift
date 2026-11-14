@@ -1,5 +1,9 @@
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import UserNotifications
 
 // Objective-C interop layer (API-13). Swift namespaces (`Notti.User`, ...) are

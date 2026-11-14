@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 
 /// What the presenter reports to the engine (design "Display state machine"). `NottiInAppEngine` implements it;
@@ -367,3 +368,4 @@ final class NottiInAppPresenter: NottiInAppPresenting {
         card.message.format == .top ? -NottiInAppMotion.barSlide : NottiInAppMotion.barSlide
     }
 }
+#endif

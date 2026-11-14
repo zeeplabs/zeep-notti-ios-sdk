@@ -1,5 +1,9 @@
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import UserNotifications
 
 /// The slice of `UNUserNotificationCenter` the fallback needs, so tests inject a fake center.

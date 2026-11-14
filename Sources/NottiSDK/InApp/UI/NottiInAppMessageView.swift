@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 
 /// What a display's views report. The presenter forwards a tap to `engine.userTapped(displayId:buttonId:action:)`
@@ -434,3 +435,4 @@ final class NottiInAppButtonRow: UIView {
         }
     }
 }
+#endif

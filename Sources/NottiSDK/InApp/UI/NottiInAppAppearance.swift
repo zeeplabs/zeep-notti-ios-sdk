@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 
 /// How one button is drawn: filled with an accent or author color, or tinted (the default second button).
@@ -79,3 +80,4 @@ struct NottiInAppAppearance {
         return UIFont(descriptor: bold, size: 0)
     }
 }
+#endif

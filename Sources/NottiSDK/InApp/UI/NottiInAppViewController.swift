@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 
 /// Root of a display window (RN `NottiInAppViewController`, `NottiInAppPresenter.swift:63-109`): a clear container
@@ -51,3 +52,4 @@ final class NottiInAppViewController: UIViewController {
         content.onEscape()
     }
 }
+#endif

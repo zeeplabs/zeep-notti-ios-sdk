@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 
 /// Layout metrics of an In-App message, ported from RN 0.8.0: `InAppMetrics` (`NottiInAppStyle.swift:126-134`)
@@ -117,3 +118,4 @@ enum NottiInAppLayout {
         return CGRect(x: originX, y: originY, width: frame.width, height: height)
     }
 }
+#endif

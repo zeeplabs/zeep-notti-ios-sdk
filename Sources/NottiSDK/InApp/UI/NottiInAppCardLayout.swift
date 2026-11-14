@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 
 /// The full-size overlay of a `center` or `full` message (IAM-13, IAM-15, IAM-17, IAM-18, IAM-21), a port of RN
@@ -78,3 +79,4 @@ final class NottiInAppCardLayout: UIView, UIGestureRecognizerDelegate {
         return true
     }
 }
+#endif

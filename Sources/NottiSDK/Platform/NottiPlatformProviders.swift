@@ -5,7 +5,11 @@
 // Closure bodies and their main-thread hops are otherwise unchanged.
 
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import UserNotifications
 
 /// The OS-backed reads and prompts `NottiCore` takes as injected closures, one

@@ -1,4 +1,8 @@
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import UserNotifications
 
 /// Manual forwarding for hosts that turn delegate swizzling off (`NottiDisableSwizzling` = `YES` in

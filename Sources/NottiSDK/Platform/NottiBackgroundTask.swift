@@ -3,7 +3,11 @@
 // marked unavailable in app extensions (uses `UIApplication.shared`). Body unchanged.
 
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 @available(iOSApplicationExtension, unavailable)
 enum NottiBackgroundTask {

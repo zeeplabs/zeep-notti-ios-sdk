@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 
 /// Where a display window goes (IAM-36): the active `UIWindowScene`, or the screen for a scene-less app.
@@ -143,3 +144,4 @@ final class NottiInAppWindowHost: NottiInAppWindowHosting {
         }
     }
 }
+#endif

@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import Foundation
 import ImageIO
 import UIKit
@@ -255,3 +256,4 @@ final class NottiInAppImageLoader {
         }
     }
 }
+#endif

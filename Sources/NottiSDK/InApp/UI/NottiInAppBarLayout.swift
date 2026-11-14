@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 
 /// The full-size overlay of a `top` or `bottom` message (IAM-13, IAM-15, IAM-18, IAM-19, IAM-21), a port of RN
@@ -184,3 +185,4 @@ final class NottiInAppBarInteraction: NSObject, UIGestureRecognizerDelegate {
         return true
     }
 }
+#endif
