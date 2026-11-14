@@ -24,12 +24,20 @@ extension Notti.Notifications {
         NottiFacade.shared.pushAdapter.manualDidFail(error: error)
     }
 
-    /// Forward from `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)` and pass the
-    /// returned result (`.noData`) to its completion handler, or choose your own.
-    @discardableResult
-    public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
-        NottiFacade.shared.pushAdapter.manualDidReceiveRemoteNotification(userInfo: userInfo)
-    }
+    #if canImport(UIKit)
+        /// Forward from `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)` and pass the
+        /// returned result (`.noData`) to its completion handler, or choose your own.
+        @discardableResult
+        public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
+            NottiFacade.shared.pushAdapter.manualDidReceiveRemoteNotification(userInfo: userInfo)
+        }
+    #else
+        /// Forward from `application(_:didReceiveRemoteNotification:)` of your `NSApplicationDelegate`. macOS has
+        /// no fetch completion handler, so nothing is returned.
+        public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) {
+            NottiFacade.shared.pushAdapter.manualDidReceiveRemoteNotification(userInfo: userInfo)
+        }
+    #endif
 
     /// Forward from `userNotificationCenter(_:willPresent:withCompletionHandler:)`. Returns
     /// `[.banner, .list, .sound, .badge]` for a Notti push and `[]` for anything else; the host may use,

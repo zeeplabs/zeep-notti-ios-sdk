@@ -214,12 +214,20 @@ public final class NottiNotificationsObjC: NSObject {
         NottiFacade.shared.pushAdapter.manualDidFail(error: error)
     }
 
-    /// Returns the result to pass to the fetch completion handler (`UIBackgroundFetchResultNoData`).
-    @discardableResult
-    @objc(didReceiveRemoteNotification:)
-    public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
-        NottiFacade.shared.pushAdapter.manualDidReceiveRemoteNotification(userInfo: userInfo)
-    }
+    #if canImport(UIKit)
+        /// Returns the result to pass to the fetch completion handler (`UIBackgroundFetchResultNoData`).
+        @discardableResult
+        @objc(didReceiveRemoteNotification:)
+        public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) -> UIBackgroundFetchResult {
+            NottiFacade.shared.pushAdapter.manualDidReceiveRemoteNotification(userInfo: userInfo)
+        }
+    #else
+        /// Forward from `application:didReceiveRemoteNotification:`. `void` on macOS: no fetch completion exists.
+        @objc(didReceiveRemoteNotification:)
+        public static func didReceiveRemoteNotification(_ userInfo: [AnyHashable: Any]) {
+            NottiFacade.shared.pushAdapter.manualDidReceiveRemoteNotification(userInfo: userInfo)
+        }
+    #endif
 
     /// Banner, list, sound and badge for a Notti push, none for anything else.
     @discardableResult
