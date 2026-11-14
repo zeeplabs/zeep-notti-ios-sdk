@@ -81,3 +81,11 @@ Mutants of T21 (applied to the source, macOS tests run, source restored by check
 | M7 terminate observer registers nothing | `observeAppTerminate` listens to a name nobody posts | Killed (4 failures) |
 | M8 the flush does not wait | `handleAppWillTerminate` drops `waitForPendingWork` | Killed (the bounded-wait test) |
 | M9 In-App enabled on macOS | `NottiPlatformInfo.supportsInApp` is true on macOS | Killed (the inert tests) |
+
+Mutants of T22 (macOS):
+
+| Mutant | Edit | Result |
+| --- | --- | --- |
+| M10 the extension imports AppKit and references `NSApplication` | A function in `NottiRichMediaLimits.swift` | Killed: the `otool -L` and the `nm -u` tests |
+| M11 the extension has an unused `import AppKit` | One line | NOT killed by the link tests (an unused import adds no load command or symbol); the textual guard `check-extension-safety.sh` bans the line (proved in T16) |
+| M12 the extension SPM target depends on `NottiSDK`; each podspec without `osx`; the extension pod gaining `Sources/NottiSDK` | Fixtures on a temp copy | Killed by `check-package-graph.sh` (T17) |
