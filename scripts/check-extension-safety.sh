@@ -2,6 +2,8 @@
 # Fails when code shared with, or shipped in, the Notification Service Extension
 # uses API that is unavailable in app extensions. PKG-03.
 #
+# AppKit counterparts (import AppKit, NSApplication, NSWorkspace) are banned too (AD-025, MAC-04).
+#
 # SPM has no APPLICATION_EXTENSION_API_ONLY setting, so this grep is the guard
 # for SPM consumers. CocoaPods applies the setting itself for appex targets.
 #
@@ -10,7 +12,7 @@ set -euo pipefail
 
 root="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
 dirs=("$root/Sources/NottiShared" "$root/Sources/NottiSDKExtension")
-pattern='UIApplication|import UIKit|beginBackgroundTask|registerForRemoteNotifications|CLLocationManager'
+pattern='UIApplication|import UIKit|import AppKit|NSApplication|NSWorkspace|beginBackgroundTask|registerForRemoteNotifications|CLLocationManager'
 
 # A missing directory must fail the check, not pass it silently (GNU grep exits 2
 # on an unreadable path, which would otherwise look like "no match").
