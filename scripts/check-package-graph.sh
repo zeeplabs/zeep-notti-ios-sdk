@@ -42,8 +42,10 @@ errors = []
 
 spm = json.loads(os.environ["SPM_JSON"])
 # PKG-01 and edge case "tools version stays 5.9 so Xcode 15+ can resolve it".
-if spm.get("platforms") != [{"platformName": "ios", "version": "15.0", "options": []}]:
-    errors.append(f"SPM platforms must be exactly iOS 15.0, got {spm.get('platforms')!r}")
+# MAC-01 / AD-025: iOS 15.0 and macOS 12.0, nothing else (order independent).
+spm_platforms = sorted((p.get("platformName"), p.get("version"), tuple(p.get("options", []))) for p in spm.get("platforms", []))
+if spm_platforms != [("ios", "15.0", ()), ("macos", "12.0", ())]:
+    errors.append(f"SPM platforms must be exactly iOS 15.0 and macOS 12.0, got {spm.get('platforms')!r}")
 if spm.get("toolsVersion", {}).get("_version") != "5.9.0":
     errors.append(f"SPM swift-tools-version must be 5.9, got {spm.get('toolsVersion')!r}")
 

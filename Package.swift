@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "NottiSDK",
-    platforms: [.iOS(.v15)],
+    platforms: [.iOS(.v15), .macOS(.v12)],
     products: [
         // App target product. Never link it into a Notification Service Extension.
         .library(name: "NottiSDK", targets: ["NottiSDK"]),
