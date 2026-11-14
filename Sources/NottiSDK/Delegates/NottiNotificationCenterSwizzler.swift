@@ -16,6 +16,7 @@ import NottiShared
 /// A swizzle of `-[UNUserNotificationCenter setDelegate:]` swizzles each newly assigned delegate class
 /// (idempotent by registry) before the original setter runs, so swapping delegates never grows the chain.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiNotificationCenterSwizzler {
 
     private typealias PresentCompletion = @convention(block) (UNNotificationPresentationOptions) -> Void

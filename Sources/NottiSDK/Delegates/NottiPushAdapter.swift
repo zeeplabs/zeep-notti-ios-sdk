@@ -18,6 +18,7 @@ import NottiShared
 /// The `manual…` entry points are for the host's own forwarding calls. While swizzling is active they
 /// are ignored with one `.warn` (no values) so an event is never processed twice (DEL-09).
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiPushAdapter {
 
     /// Presentation options the SDK passes for a Notti push when the host has no `willPresent` (RN parity).

@@ -25,6 +25,7 @@ final class NottiRuntime {
 
     /// The process-wide runtime, wired to `defaultsSuiteName` and the OS providers.
     @available(iOSApplicationExtension, unavailable)
+    @available(macOSApplicationExtension, unavailable)
     static let shared: NottiRuntime = {
         let defaults = UserDefaults(suiteName: defaultsSuiteName) ?? .standard
         let clicks = NottiInAppClickRelay()

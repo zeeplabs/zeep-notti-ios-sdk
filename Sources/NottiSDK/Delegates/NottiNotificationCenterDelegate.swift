@@ -8,11 +8,13 @@ import UserNotifications
 
 /// The slice of `UNUserNotificationCenter` the fallback needs, so tests inject a fake center.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 protocol NottiNotificationCenterHost: AnyObject {
     var delegate: UNUserNotificationCenterDelegate? { get set }
 }
 
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 extension UNUserNotificationCenter: NottiNotificationCenterHost {}
 
 /// The SDK's own `UNUserNotificationCenterDelegate`, used only when the host never sets one (DEL-06).
@@ -21,6 +23,7 @@ extension UNUserNotificationCenter: NottiNotificationCenterHost {}
 /// and completes exactly once (D2 options for `willPresent`). It is never swizzled itself
 /// (`NottiNotificationCenterSwizzler` skips it), so each callback is observed once.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiNotificationCenterDelegate: NSObject, UNUserNotificationCenterDelegate {
 
     private let adapter: NottiPushAdapter
@@ -65,6 +68,7 @@ final class NottiNotificationCenterDelegate: NSObject, UNUserNotificationCenterD
 /// The center's `delegate` is weak, so this object owns the fallback. Center and `NotificationCenter` are
 /// injected.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiFallbackDelegateAssigner {
 
     private let isEnabled: Bool

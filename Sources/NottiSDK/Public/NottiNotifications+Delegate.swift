@@ -12,6 +12,7 @@ import UserNotifications
 /// While swizzling is on, every call here is ignored with one warning in the log, so an event is never
 /// processed twice. Calls made before `Notti.initialize` are buffered like the swizzled path.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 extension Notti.Notifications {
 
     /// Forward from `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)`.

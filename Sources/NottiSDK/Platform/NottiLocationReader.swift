@@ -26,6 +26,7 @@ import Foundation
 /// rate-limits reverse geocoding; `NottiCore` additionally throttles reads).
 /// The SDK never requests permission (SEGTEL-14), only reads it.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiLocationReader: NSObject, CLLocationManagerDelegate {
     private let lock = NSLock()
     private var cachedPermission = false

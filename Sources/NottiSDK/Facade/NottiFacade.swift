@@ -10,6 +10,7 @@ import NottiShared
 /// The public shell forwards to `NottiFacade.shared`. Tests build isolated
 /// instances over an isolated `NottiRuntime` and never touch `shared`.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiFacade {
 
     /// Host used when the integrator passes no `baseUrl` (RN `SAAS_BASE_URL`,

@@ -2,6 +2,7 @@ import Foundation
 
 /// In-App messages behind the public `Notti.trackEvent` and `Notti.InAppMessages` (IAM-08, IAM-11, IAM-24).
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 extension NottiFacade {
 
     /// Hands the name to the engine, which ignores a blank name, a call before `initialize` and a call with

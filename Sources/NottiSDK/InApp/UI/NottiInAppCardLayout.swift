@@ -9,6 +9,7 @@ import UIKit
 /// dismiss gesture (the close control is the only way out), corner radius 0 with `margin: false`. Both block the
 /// touches to the app (IAM-36). The frame is recomputed on every layout pass.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiInAppCardLayout: UIView, UIGestureRecognizerDelegate {
 
     let messageView: NottiInAppMessageView

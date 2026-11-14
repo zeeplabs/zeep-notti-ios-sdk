@@ -15,6 +15,7 @@ import NottiShared
 /// the XCTest agent, even though `bundleIdentifier` is set there). The installer is built at process launch,
 /// so the center must not be touched until the end of launch or a later `initialize`.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiCurrentNotificationCenter: NottiNotificationCenterHost {
 
     var delegate: UNUserNotificationCenterDelegate? {
@@ -43,6 +44,7 @@ final class NottiCurrentNotificationCenter: NottiNotificationCenterHost {
 /// method swizzler (its registry), both delegate swizzlers and the fallback assigner for the life of the
 /// process.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 @objc(NottiDelegateInstaller)
 final class NottiDelegateInstaller: NSObject {
 

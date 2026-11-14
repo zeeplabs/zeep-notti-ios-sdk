@@ -4,6 +4,7 @@ import UIKit
 /// Layout metrics of an In-App message, ported from RN 0.8.0: `InAppMetrics` (`NottiInAppStyle.swift:126-134`)
 /// and the card metrics of `NottiInAppViews.swift:4-18`.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 enum NottiInAppMetrics {
     /// The `margin: true` inset, measured from the safe-area edge.
     static let margin: CGFloat = 16
@@ -31,6 +32,7 @@ enum NottiInAppMetrics {
 }
 
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 enum NottiInAppGravity: Equatable {
     case top
     case bottom
@@ -42,6 +44,7 @@ enum NottiInAppGravity: Equatable {
 /// container edges, safe area included; a `.center` card is centered inside them. The height grows with the
 /// content up to `maxHeight` (`.fill` always takes `maxHeight`).
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 struct NottiInAppFrame: Equatable {
     let gravity: NottiInAppGravity
     let marginLeft: CGFloat
@@ -55,6 +58,7 @@ struct NottiInAppFrame: Equatable {
 /// Pure bounds per layout (IAM-13, IAM-21), a port of RN `computeFrame` (`NottiInAppStyle.swift:140-182`) and of
 /// the placement in `InAppOverlayView.layoutSubviews` (`NottiInAppViews.swift:63-92`).
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 enum NottiInAppLayout {
 
     /// The 16 pt margin is measured from the safe-area edge; without it the message touches the safe-area

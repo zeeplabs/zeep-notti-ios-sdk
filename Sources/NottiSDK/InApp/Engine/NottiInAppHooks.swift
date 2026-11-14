@@ -86,6 +86,7 @@ extension NottiInAppEngine {
     /// client factory. Clicks go to `clicks` (the facade's listener hub attaches there). `presenter` shows the
     /// displays and reports back to the returned engine, which it holds weakly (the engine owns it).
     @available(iOSApplicationExtension, unavailable)
+    @available(macOSApplicationExtension, unavailable)
     static func live(
         defaults: UserDefaults,
         clicks: NottiInAppClickRelay,

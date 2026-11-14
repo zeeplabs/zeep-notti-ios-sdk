@@ -36,6 +36,7 @@ final class NottiInAppURLOpener {
         // never gets a `system` platform and `check-no-url-open.sh` needs no macOS allowlist entry.
         #if canImport(UIKit)
             @available(iOSApplicationExtension, unavailable)
+            @available(macOSApplicationExtension, unavailable)
             static let system = Platform(open: NottiInAppURLOpener.openInSystemBrowser)
         #endif
     }
@@ -78,6 +79,7 @@ final class NottiInAppURLOpener {
     #if canImport(UIKit)
         /// The production opener: the external browser (or the app of a universal link), on the main thread.
         @available(iOSApplicationExtension, unavailable)
+        @available(macOSApplicationExtension, unavailable)
         static func openInSystemBrowser(_ url: URL, completion: @escaping (Bool) -> Void) {
             DispatchQueue.main.async {
                 UIApplication.shared.open(url, options: [:], completionHandler: completion)

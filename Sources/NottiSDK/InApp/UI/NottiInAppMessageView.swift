@@ -4,6 +4,7 @@ import UIKit
 /// What a display's views report. The presenter forwards a tap to `engine.userTapped(displayId:buttonId:action:)`
 /// and a dismiss to `engine.userDismissed(displayId:reason:)` (`NottiInAppDismissReason`).
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 enum NottiInAppViewOutcome: Equatable {
     /// `buttonId` is a button id, or `image` for the image; `action` is passed untouched.
     case tap(buttonId: String, action: NottiInAppButtonAction?)
@@ -17,6 +18,7 @@ enum NottiInAppViewOutcome: Equatable {
 /// scroll view. The layouts (`NottiInAppBarLayout`, `NottiInAppCardLayout`) size and place it; it never reports an
 /// impression. Only the first outcome is delivered: a second tap on a closing display is ignored.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiInAppMessageView: UIView {
 
     /// How the content is arranged: `bar` (`top`, `bottom`: leading thumbnail), `card` (`center`: image above
@@ -370,6 +372,7 @@ final class NottiInAppMessageView: UIView {
 /// line, else one per row; each at least 44 pt tall. Measured, never guessed (RN `InAppButtonRow`,
 /// `NottiInAppViews.swift:279-341`).
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiInAppButtonRow: UIView {
 
     let buttons: [UIButton]

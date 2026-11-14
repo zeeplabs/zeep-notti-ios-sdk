@@ -17,6 +17,7 @@ enum NottiInAppMotion {
 
 /// The VoiceOver notifications of a shown display (RN `NottiInAppAccessibility.onShown`, `NottiInAppViews.swift:584-605`).
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 enum NottiInAppAccessibility {
 
     typealias Poster = (UIAccessibility.Notification, Any?) -> Void
@@ -50,6 +51,7 @@ enum NottiInAppAccessibility {
 /// scene when its scene disconnects (no new impression, no dismiss). The views are disposable; the display is not.
 /// Main thread only; the engine (`events`) is held weakly, it owns the presenter.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiInAppPresenter: NottiInAppPresenting {
 
     /// Longest wait for the image before the message shows without it (D10).

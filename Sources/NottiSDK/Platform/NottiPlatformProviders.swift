@@ -62,6 +62,7 @@ struct NottiPlatformProviders {
     /// `NottiImpl.init` did, so its permission seed is enqueued on main before
     /// a core built from these providers enqueues its `appStateProvider` read.
     @available(iOSApplicationExtension, unavailable)
+    @available(macOSApplicationExtension, unavailable)
     static func live() -> NottiPlatformProviders {
         let locationReader = NottiLocationReader()
         return NottiPlatformProviders(

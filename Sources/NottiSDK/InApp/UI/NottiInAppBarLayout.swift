@@ -7,6 +7,7 @@ import UIKit
 /// recomputes the frame on every layout pass (rotation, resize), and lets every touch outside the card reach the
 /// app. The swipe and the body tap are set up by `NottiInAppBarInteraction`, whose handlers tests call directly.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiInAppBarLayout: UIView {
 
     let messageView: NottiInAppMessageView
@@ -63,6 +64,7 @@ final class NottiInAppBarLayout: UIView {
 /// The swipe and the body tap of a bar. Only the first outcome counts (the card's gate): a swipe or tap on a
 /// closing display is ignored.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiInAppBarInteraction: NSObject, UIGestureRecognizerDelegate {
 
     private unowned let messageView: NottiInAppMessageView

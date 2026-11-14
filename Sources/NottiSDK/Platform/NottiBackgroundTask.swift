@@ -56,6 +56,7 @@ import AppKit
 #else
 
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 enum NottiBackgroundTask {
 
     /// Begins a UIKit background task and returns an idempotent closure that

@@ -6,6 +6,7 @@ import Foundation
 /// other type (string, number) is treated as on and sets `invalidValueWarning`, so the
 /// installer can log one warning. The dictionary is injected: tests never read the real bundle.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 struct NottiSwizzlingConfiguration {
 
     /// Info.plist key that disables swizzling. Part of the public integration contract.

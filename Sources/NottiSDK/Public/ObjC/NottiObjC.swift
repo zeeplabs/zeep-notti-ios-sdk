@@ -32,6 +32,7 @@ import UserNotifications
 /// Objective-C name: `NottiSDKFacade` (AD-021, AD-023). Initialize, identity, location sharing and log level.
 @objc(NottiSDKFacade)
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 public final class NottiObjC: NSObject {
 
     /// Starts the SDK. `baseUrl` may be `nil` (default host). Same as passing
@@ -100,6 +101,7 @@ public final class NottiObjC: NSObject {
 /// Objective-C name: `NottiInAppMessages`. Taps on In-App messages.
 @objc(NottiInAppMessages)
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 public final class NottiInAppMessagesObjC: NSObject {
 
     /// `handler` runs on the main thread with `messageId`, `buttonId` and
@@ -117,6 +119,7 @@ public final class NottiInAppMessagesObjC: NSObject {
 /// Objective-C name: `NottiUser`. Tags, email, phone and subscription.
 @objc(NottiUser)
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 public final class NottiUserObjC: NSObject {
 
     @objc(addTag:value:)
@@ -171,6 +174,7 @@ public final class NottiUserObjC: NSObject {
 /// Objective-C name: `NottiNotifications`. Permission, listeners and the launch notification.
 @objc(NottiNotifications)
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 public final class NottiNotificationsObjC: NSObject {
 
     /// `completion` runs once, on the main thread. `NO` before initialize.

@@ -53,6 +53,7 @@ final class NottiPushPermissionAction {
         // Only where UIKit exists (AD-025): the In-App push-permission button has no macOS platform.
         #if canImport(UIKit)
             @available(iOSApplicationExtension, unavailable)
+            @available(macOSApplicationExtension, unavailable)
             static let system = Platform(
                 readState: NottiPushPermissionAction.systemState,
                 openNotificationSettings: NottiPushPermissionAction.openSystemNotificationSettings
@@ -91,6 +92,7 @@ final class NottiPushPermissionAction {
 
     /// The production state reader.
     @available(iOSApplicationExtension, unavailable)
+    @available(macOSApplicationExtension, unavailable)
     static func systemState(_ callback: @escaping (State) -> Void) {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             callback(State(settings.authorizationStatus))
@@ -101,6 +103,7 @@ final class NottiPushPermissionAction {
         /// Opens the app's notification settings where the OS has such a page (iOS 16+), else its settings page.
         /// The address is always a system constant.
         @available(iOSApplicationExtension, unavailable)
+        @available(macOSApplicationExtension, unavailable)
         static func openSystemNotificationSettings() {
             DispatchQueue.main.async {
                 let raw: String

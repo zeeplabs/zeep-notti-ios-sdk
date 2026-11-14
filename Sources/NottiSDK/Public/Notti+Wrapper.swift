@@ -3,6 +3,7 @@ import Foundation
 // MARK: - Wrapper SDK entry point (AD-024)
 
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 extension Notti {
 
     /// For wrapper SDKs built on this one (`react-native-notti`), not for apps. Same as

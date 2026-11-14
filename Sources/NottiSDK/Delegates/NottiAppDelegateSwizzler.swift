@@ -24,6 +24,7 @@ import NottiShared
 /// `-[UIApplication setDelegate:]` (`-[NSApplication setDelegate:]` on macOS) so a delegate assigned later is
 /// reached before the system queries it.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiAppDelegateSwizzler {
 
     private typealias TokenFunction = @convention(c) (AnyObject, Selector, AnyObject, NSData) -> Void

@@ -6,6 +6,7 @@ import UIKit
 /// or status bar: it reports the host key window's root view controller values (IAM-18). It is in the overlay's
 /// responder chain, so it also receives the accessibility escape gesture (IAM-38).
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 final class NottiInAppViewController: UIViewController {
 
     let content: NottiInAppWindowContent

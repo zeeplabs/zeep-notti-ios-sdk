@@ -3,6 +3,7 @@ import UIKit
 
 /// How one button is drawn: filled with an accent or author color, or tinted (the default second button).
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 struct NottiInAppButtonLook: Equatable {
     enum Kind: Equatable {
         case filled
@@ -19,6 +20,7 @@ struct NottiInAppButtonLook: Equatable {
 /// Each token falls back on its own to a semantic system color (light and dark follow the system); no color is
 /// derived from another; author colors are opaque and fixed in both themes. A button token applies to every button.
 @available(iOSApplicationExtension, unavailable)
+@available(macOSApplicationExtension, unavailable)
 struct NottiInAppAppearance {
     let background: UIColor
     let text: UIColor
