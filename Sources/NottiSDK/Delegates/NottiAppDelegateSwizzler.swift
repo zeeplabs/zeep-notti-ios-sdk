@@ -9,29 +9,41 @@ import AppKit
 import NottiShared
 #endif
 
-/// Observes the `UIApplicationDelegate` callbacks the SDK needs (DEL-03, DEL-15, DEL-16):
-/// the APNs token, the APNs failure and the silent-push `fetchCompletionHandler` variant.
+/// Observes the `UIApplicationDelegate` (iOS) or `NSApplicationDelegate` (macOS, AD-025) callbacks the SDK
+/// needs (DEL-03, DEL-15, DEL-16): the APNs token, the APNs failure and the silent push. The silent push is
+/// the `fetchCompletionHandler` variant on iOS and `application(_:didReceiveRemoteNotification:)` on macOS,
+/// which has no completion handler.
 ///
 /// Each callback goes to `NottiPushAdapter` first and then to the host's original with the same
-/// arguments. A callback the host does not implement is added, except the fetch variant when the host
+/// arguments. A callback the host does not implement is added, except on iOS the fetch variant when the host
 /// implements only the legacy `application(_:didReceiveRemoteNotification:)`: adding it would make UIKit
-/// stop calling the legacy method (D3).
+/// stop calling the legacy method (D3). macOS has no second variant, so that trap does not exist there
+/// (design S3, UNCONFIRMED: adding the method to a host that lacks it is harmless).
 ///
 /// Two entry points reach a delegate class: `swizzle(delegateClass:)` directly, and a swizzle of
-/// `-[UIApplication setDelegate:]` so a delegate assigned later is reached before UIKit queries it.
+/// `-[UIApplication setDelegate:]` (`-[NSApplication setDelegate:]` on macOS) so a delegate assigned later is
+/// reached before the system queries it.
 @available(iOSApplicationExtension, unavailable)
 final class NottiAppDelegateSwizzler {
 
     private typealias TokenFunction = @convention(c) (AnyObject, Selector, AnyObject, NSData) -> Void
     private typealias FailureFunction = @convention(c) (AnyObject, Selector, AnyObject, NSError) -> Void
-    private typealias FetchCompletion = @convention(block) (UIBackgroundFetchResult) -> Void
-    private typealias FetchFunction = @convention(c) (AnyObject, Selector, AnyObject, NSDictionary, FetchCompletion) -> Void
-    private typealias FetchBlock = @convention(block) (AnyObject, AnyObject, NSDictionary, @escaping FetchCompletion) -> Void
+    #if canImport(UIKit)
+        private typealias FetchCompletion = @convention(block) (UIBackgroundFetchResult) -> Void
+        private typealias FetchFunction = @convention(c) (AnyObject, Selector, AnyObject, NSDictionary, FetchCompletion) -> Void
+        private typealias FetchBlock = @convention(block) (AnyObject, AnyObject, NSDictionary, @escaping FetchCompletion) -> Void
+    #else
+        private typealias RemoteFunction = @convention(c) (AnyObject, Selector, AnyObject, NSDictionary) -> Void
+        private typealias RemoteBlock = @convention(block) (AnyObject, AnyObject, NSDictionary) -> Void
+    #endif
     private typealias SetDelegateFunction = @convention(c) (AnyObject, Selector, AnyObject?) -> Void
 
     private static let tokenSelector = NSSelectorFromString("application:didRegisterForRemoteNotificationsWithDeviceToken:")
     private static let failureSelector = NSSelectorFromString("application:didFailToRegisterForRemoteNotificationsWithError:")
-    private static let fetchSelector = NSSelectorFromString("application:didReceiveRemoteNotification:fetchCompletionHandler:")
+    #if canImport(UIKit)
+        private static let fetchSelector = NSSelectorFromString("application:didReceiveRemoteNotification:fetchCompletionHandler:")
+    #endif
+    /// iOS: the legacy variant, only probed (DEL-16). macOS: the one silent-push callback, swizzled.
     private static let legacySelector = NSSelectorFromString("application:didReceiveRemoteNotification:")
     private static let setDelegateSelector = NSSelectorFromString("setDelegate:")
 
@@ -72,8 +84,8 @@ final class NottiAppDelegateSwizzler {
         }
         let token = swizzleToken(cls)
         let failure = swizzleFailure(cls)
-        let fetch = swizzleFetchIfSafe(cls)
-        return token && failure && fetch
+        let remote = swizzleRemoteNotification(cls)
+        return token && failure && remote
     }
 
     /// Swizzles the class of a delegate instance: from the `setDelegate:` hook and from the late path, when
@@ -145,27 +157,48 @@ final class NottiAppDelegateSwizzler {
         }
     }
 
-    /// DEL-16: never add the fetch variant over a host that has only the legacy method.
-    private func swizzleFetchIfSafe(_ cls: AnyClass) -> Bool {
-        let hasFetch = class_respondsToSelector(cls, Self.fetchSelector)
-        if !hasFetch && class_respondsToSelector(cls, Self.legacySelector) {
-            return true
+    #if canImport(UIKit)
+        private func swizzleRemoteNotification(_ cls: AnyClass) -> Bool {
+            swizzleFetchIfSafe(cls)
         }
-        let selector = Self.fetchSelector
-        return swizzler.swizzle(cls, selector, typeEncoding: "v@:@@@?") { [adapter] previous in
-            let original = previous.map { unsafeBitCast($0, to: FetchFunction.self) }
-            let block: FetchBlock = { object, application, userInfo, completion in
-                let result = adapter.didReceiveRemoteNotification(userInfo: userInfo as? [AnyHashable: Any] ?? [:])
-                if let original {
-                    // The host's completion is the one that reaches the OS.
-                    original(object, selector, application, userInfo, completion)
-                } else {
-                    completion(result)
-                }
+
+        /// DEL-16: never add the fetch variant over a host that has only the legacy method.
+        private func swizzleFetchIfSafe(_ cls: AnyClass) -> Bool {
+            let hasFetch = class_respondsToSelector(cls, Self.fetchSelector)
+            if !hasFetch && class_respondsToSelector(cls, Self.legacySelector) {
+                return true
             }
-            return block
+            let selector = Self.fetchSelector
+            return swizzler.swizzle(cls, selector, typeEncoding: "v@:@@@?") { [adapter] previous in
+                let original = previous.map { unsafeBitCast($0, to: FetchFunction.self) }
+                let block: FetchBlock = { object, application, userInfo, completion in
+                    let result = adapter.didReceiveRemoteNotification(userInfo: userInfo as? [AnyHashable: Any] ?? [:])
+                    if let original {
+                        // The host's completion is the one that reaches the OS.
+                        original(object, selector, application, userInfo, completion)
+                    } else {
+                        completion(result)
+                    }
+                }
+                return block
+            }
         }
-    }
+    #else
+        /// macOS: `application(_:didReceiveRemoteNotification:)` has no completion handler. The adapter sees
+        /// the push once, then the host's original (if any) runs with the same arguments. Added when the
+        /// host lacks it (design S3, UNCONFIRMED).
+        private func swizzleRemoteNotification(_ cls: AnyClass) -> Bool {
+            let selector = Self.legacySelector
+            return swizzler.swizzle(cls, selector, typeEncoding: "v@:@@") { [adapter] previous in
+                let original = previous.map { unsafeBitCast($0, to: RemoteFunction.self) }
+                let block: RemoteBlock = { object, application, userInfo in
+                    adapter.didReceiveRemoteNotification(userInfo: userInfo as? [AnyHashable: Any] ?? [:])
+                    original?(object, selector, application, userInfo)
+                }
+                return block
+            }
+        }
+    #endif
 
     private func warnAboutSwiftUIOnce() {
         let shouldWarn: Bool = lock.withLock {
