@@ -71,3 +71,13 @@ Each mutant was applied to the source, the macOS tests were run, and the source 
 | M2 swizzler forwards twice | The original is called twice | Killed: 4 failures |
 | M3 adapter skipped | The macOS block no longer calls `adapter.didReceiveRemoteNotification` | Killed: 6 failures |
 | M4 wrong platform constant | `NottiSDKVersion.platform` is `"ios"` under `os(macOS)` | Killed: the registration body test, the `sdk_name` PATCH test and the `NottiSharedTests` literal test |
+
+Mutants of T21 (applied to the source, macOS tests run, source restored by checkout):
+
+| Mutant | Edit | Result |
+| --- | --- | --- |
+| M5 foreground observer registers nothing | `NottiCore.observeAppForeground` listens to a name nobody posts | Killed (`NottiCoreTerminateTests`) |
+| M6 background observer registers nothing | `observeAppBackground` listens to a name nobody posts | Killed |
+| M7 terminate observer registers nothing | `observeAppTerminate` listens to a name nobody posts | Killed (4 failures) |
+| M8 the flush does not wait | `handleAppWillTerminate` drops `waitForPendingWork` | Killed (the bounded-wait test) |
+| M9 In-App enabled on macOS | `NottiPlatformInfo.supportsInApp` is true on macOS | Killed (the inert tests) |
