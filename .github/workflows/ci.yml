@@ -150,6 +150,10 @@ jobs:
       - name: Launch hook is linked and runs (DEL-01)
         run: scripts/check-hook-linked.sh spm
 
+      # The same proof for a Mac consumer, run directly (MAC-09, MAC-24).
+      - name: Launch hook is linked and runs on macOS (MAC-09)
+        run: scripts/check-hook-linked.sh spm-macos
+
   pod-lint:
     runs-on: macos-26
     steps:
@@ -182,6 +186,9 @@ jobs:
       # Lints NottiSDK keeping the build, then checks the class is in the pod product (DEL-01).
       - name: Launch hook is in the pod product (DEL-01)
         run: scripts/check-hook-linked.sh pod
+
+      - name: Launch hook is in the macOS pod product (MAC-09)
+        run: scripts/check-hook-linked.sh pod osx
 
   # Builds and tests the example app through SPM and the three CocoaPods linkages (EXR-17, EXR-23). Each leg runs
   # on its own runner and its steps run one after another, so no two xcodebuild processes share a checkout.

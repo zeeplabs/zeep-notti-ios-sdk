@@ -6,7 +6,7 @@ import PackageDescription
 // before `main`. Not shipped, not a product of the SDK package.
 let package = Package(
     name: "HookConsumer",
-    platforms: [.iOS(.v15)],
+    platforms: [.iOS(.v15), .macOS(.v12)],
     dependencies: [.package(path: "../..")],
     targets: [
         .executableTarget(

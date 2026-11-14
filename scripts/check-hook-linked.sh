@@ -4,17 +4,22 @@
 #   spm  Builds scripts/hook-consumer (an executable that depends on the package and never names the hook) in
 #        Release for an iOS simulator, runs it there and requires `loadCount == 1` and `installCount == 1`:
 #        `+load` ran once and found the Swift installer. Fails when the bootstrap target is not linked.
+#   spm-macos  The same on macOS (AD-025, MAC-09): builds the consumer in Release for the Mac, runs the binary
+#        directly and requires `loadCount == 1` and `installCount == 1`. No simulator is needed.
 #   pod  Lints NottiSDK.podspec with `pod lib lint --no-clean` and requires `_OBJC_CLASS_$_NottiBootstrap` in
 #        the built NottiSDK binary (`nm`). CocoaPods links the pod; this proves the class made it into the product.
+#        `pod osx` lints and inspects the macOS product (default `ios`).
 #
 # The consumer is copied to a temp dir and the package is linked there under its repo name, so the check
 # also works in a git worktree or a checkout with a different directory name, and leaves no .build behind.
 #
-# Needs Xcode (spm: a simulator named $NOTTI_SIM, default "iPhone 17", booted here if needed; pod: `pod`).
-# Usage: scripts/check-hook-linked.sh [spm|pod]
+# Needs Xcode (spm: a simulator named $NOTTI_SIM, default "iPhone 17", booted here if needed; spm-macos: none;
+# pod: `pod`).
+# Usage: scripts/check-hook-linked.sh [spm|spm-macos|pod [ios|osx]]
 set -euo pipefail
 
 mode="${1:-spm}"
+pod_platform="${2:-ios}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
 tmp="$(mktemp -d)"
 booted_by_us=""
@@ -77,9 +82,45 @@ sys.exit(1)')" || { echo "error: no available simulator named '$sim' (set NOTTI_
   echo "hook linked ok (spm)"
 }
 
+# Builds the consumer for the Mac and runs the binary itself: `+load` runs before `main`, and `main` prints the
+# counters. The package platform of the consumer lists macOS 12 (see its Package.swift).
+check_spm_macos() {
+  ln -s "$root" "$tmp/zeep-notti-ios-sdk"
+  cp -R "$root/scripts/hook-consumer" "$tmp/hook-consumer"
+  rm -rf "$tmp/hook-consumer/.build"
+  sed -i.bak 's#path: "../.."#path: "../zeep-notti-ios-sdk"#' "$tmp/hook-consumer/Package.swift"
+  rm -f "$tmp/hook-consumer/Package.swift.bak"
+
+  (
+    cd "$tmp/hook-consumer"
+    xcodebuild build \
+      -scheme HookConsumer \
+      -destination 'platform=macOS,arch=arm64' \
+      -configuration Release \
+      -derivedDataPath "$tmp/dd" \
+      CODE_SIGNING_ALLOWED=NO \
+      -quiet
+  )
+
+  local binary
+  binary="$(find "$tmp/dd/Build/Products/Release" -maxdepth 1 -type f -name App -perm -u+x | head -1)"
+  if [[ -z "$binary" ]]; then
+    echo "error: the macOS consumer binary was not built" >&2
+    exit 1
+  fi
+  local output
+  output="$("$binary" 2>&1)"
+  echo "$output"
+  if ! grep -qx 'NOTTI_HOOK loadCount=1 installCount=1' <<<"$output"; then
+    echo "error: expected 'NOTTI_HOOK loadCount=1 installCount=1' (loadCount=-1 means NottiBootstrap is not linked)" >&2
+    exit 1
+  fi
+  echo "hook linked ok (spm-macos)"
+}
+
 check_pod() {
   local log="$tmp/lint.log"
-  if ! (cd "$root" && pod lib lint NottiSDK.podspec --platforms=ios --no-clean >"$log" 2>&1); then
+  if ! (cd "$root" && pod lib lint NottiSDK.podspec --platforms="$pod_platform" --no-clean >"$log" 2>&1); then
     cat "$log" >&2
     echo "error: pod lib lint failed" >&2
     exit 1
@@ -105,7 +146,12 @@ check_pod() {
     echo "error: no DerivedData entry for $workspace" >&2
     exit 1
   fi
-  local binary="$derived/Build/Products/Release-iphonesimulator/NottiSDK/NottiSDK.framework/NottiSDK"
+  local binary
+  if [[ "$pod_platform" == "osx" ]]; then
+    binary="$derived/Build/Products/Release/NottiSDK/NottiSDK.framework/Versions/A/NottiSDK"
+  else
+    binary="$derived/Build/Products/Release-iphonesimulator/NottiSDK/NottiSDK.framework/NottiSDK"
+  fi
   local status=0 symbols=""
   # Captured first: `grep -q` closing the pipe early would fail `nm` under pipefail.
   [[ -f "$binary" ]] && symbols="$(nm "$binary" 2>/dev/null || true)"
@@ -118,11 +164,15 @@ check_pod() {
   fi
   rm -rf "$lint_dir" "$derived"
   [[ $status -eq 0 ]] || exit 1
-  echo "hook linked ok (pod)"
+  [[ "$pod_platform" == "ios" ]] && echo "hook linked ok (pod)" || echo "hook linked ok (pod, $pod_platform)"
 }
 
 case "$mode" in
   spm) check_spm ;;
-  pod) check_pod ;;
-  *) echo "usage: $0 [spm|pod]" >&2; exit 2 ;;
+  spm-macos) check_spm_macos ;;
+  pod)
+    case "$pod_platform" in ios | osx) ;; *) echo "usage: $0 pod [ios|osx]" >&2; exit 2 ;; esac
+    check_pod
+    ;;
+  *) echo "usage: $0 [spm|spm-macos|pod [ios|osx]]" >&2; exit 2 ;;
 esac
