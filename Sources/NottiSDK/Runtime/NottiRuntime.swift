@@ -28,14 +28,28 @@ final class NottiRuntime {
     static let shared: NottiRuntime = {
         let defaults = UserDefaults(suiteName: defaultsSuiteName) ?? .standard
         let clicks = NottiInAppClickRelay()
-        return NottiRuntime(
-            defaults: defaults,
-            providers: .live(),
-            inAppEngine: .live(defaults: defaults, clicks: clicks, presenter: NottiInAppPresenter()),
-            inAppClicks: clicks,
-            pushPermissionPlatform: .system,
-            urlOpenPlatform: .system
-        )
+        #if canImport(UIKit)
+            return NottiRuntime(
+                defaults: defaults,
+                providers: .live(),
+                inAppEngine: .live(defaults: defaults, clicks: clicks, presenter: NottiInAppPresenter()),
+                inAppClicks: clicks,
+                pushPermissionPlatform: .system,
+                urlOpenPlatform: .system
+            )
+        #else
+            // macOS (AD-025, design D8, UNCONFIRMED): the In-App API compiles and is inert. The placeholder
+            // presenter shows nothing, no push-permission or URL-open platform exists, and `start` never
+            // configures the engine, so it never fetches, flushes or writes `notti_pending_inapp_events`.
+            return NottiRuntime(
+                defaults: defaults,
+                providers: .live(),
+                inAppEngine: .live(defaults: defaults, clicks: clicks, presenter: NottiInAppPlaceholderPresenter()),
+                inAppClicks: clicks,
+                pushPermissionPlatform: nil,
+                urlOpenPlatform: nil
+            )
+        #endif
     }()
 
     let eventStore: NottiEventStore
@@ -190,7 +204,10 @@ final class NottiRuntime {
         // In-App first, from this thread, so a `trackEvent` right after `start`
         // finds the config (D12). Invalid input is left to the core, which logs it.
         var inAppConfig: NottiInAppConfig?
-        if !appId.isEmpty, !clientKey.isEmpty, let normalized = NottiApiClient.validatedBaseUrl(baseUrl) {
+        // `supportsInApp` is false on macOS (D8): no config, so the engine stays inert and the core forwards no
+        // registration to it.
+        if NottiPlatformInfo.supportsInApp, !appId.isEmpty, !clientKey.isEmpty,
+           let normalized = NottiApiClient.validatedBaseUrl(baseUrl) {
             inAppEngine.configure(appId: appId, clientKey: clientKey, baseUrl: normalized)
             inAppConfig = NottiInAppConfig(appId: appId, clientKey: clientKey, baseUrl: normalized)
         }
