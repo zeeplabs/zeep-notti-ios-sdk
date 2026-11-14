@@ -187,7 +187,7 @@ final class NottiDelegateInstaller: NSObject {
         let centerInstalled = center.swizzleSetDelegate(on: environment.centerClass)
 
         launchObserver = environment.notificationCenter.addObserver(
-            forName: UIApplication.didFinishLaunchingNotification,
+            forName: NottiLifecycle.didFinishLaunching,
             object: nil,
             queue: nil
         ) { [weak self] _ in

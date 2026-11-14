@@ -5,9 +5,6 @@
 // swiftlint:disable closure_parameter_position line_length cyclomatic_complexity function_parameter_count
 
 import Foundation
-#if canImport(UIKit)
-import UIKit
-#endif
 #if canImport(NottiShared)
 import NottiShared
 #endif
@@ -990,40 +987,36 @@ class NottiCore {
         }
     }
 
-    /// Subscribes to `UIApplication.didBecomeActiveNotification` directly - a
-    /// plain system notification, so no host-`AppDelegate` forwarding is needed
-    /// (unlike the APNs callbacks). Without this, a registration that exhausted
-    /// its 5 attempts never retried until the app was relaunched.
+    /// Subscribes to the `NottiLifecycle.didBecomeActive` system notification
+    /// (`UIApplication` or `NSApplication`, AD-025) directly - a plain system
+    /// notification, so no host-delegate forwarding is needed (unlike the APNs
+    /// callbacks). Without this, a registration that exhausted its 5 attempts
+    /// never retried until the app was relaunched.
     private func observeAppForeground() {
-        #if canImport(UIKit)
-            foregroundObserver = NotificationCenter.default.addObserver(
-                forName: UIApplication.didBecomeActiveNotification,
-                object: nil,
-                queue: nil
-            ) { [weak self] _ in
-                guard let self = self else { return }
-                // Review item 3: timestamp captured in the callback, not when the
-                // (possibly busy) work queue eventually runs the block.
-                self.handleAppDidBecomeActive(atMs: self.nowMs())
-            }
-        #endif
+        foregroundObserver = NotificationCenter.default.addObserver(
+            forName: NottiLifecycle.didBecomeActive,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            // Review item 3: timestamp captured in the callback, not when the
+            // (possibly busy) work queue eventually runs the block.
+            self.handleAppDidBecomeActive(atMs: self.nowMs())
+        }
     }
 
     /// The T8 session-end hook: mirrors `observeAppForeground` on
-    /// `UIApplication.didEnterBackgroundNotification` (also plain system
-    /// notifications, zero AppDelegate forwarding). Removed in `deinit` like the
-    /// foreground observer.
+    /// `NottiLifecycle.didEnterBackground` (also plain system notifications,
+    /// zero delegate forwarding). Removed in `deinit` like the foreground observer.
     private func observeAppBackground() {
-        #if canImport(UIKit)
-            backgroundObserver = NotificationCenter.default.addObserver(
-                forName: UIApplication.didEnterBackgroundNotification,
-                object: nil,
-                queue: nil
-            ) { [weak self] _ in
-                guard let self = self else { return }
-                self.handleAppDidEnterBackground(atMs: self.nowMs())
-            }
-        #endif
+        backgroundObserver = NotificationCenter.default.addObserver(
+            forName: NottiLifecycle.didEnterBackground,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            self.handleAppDidEnterBackground(atMs: self.nowMs())
+        }
     }
 
     private func handleAppDidBecomeActive(atMs activatedAtMs: Int64) {

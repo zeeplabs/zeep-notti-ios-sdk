@@ -131,7 +131,7 @@ final class NottiRuntime {
         let gate = sessionGate
         let engine = self.inAppEngine
         backgroundObserver = notificationCenter.addObserver(
-            forName: UIApplication.didEnterBackgroundNotification,
+            forName: NottiLifecycle.didEnterBackground,
             object: nil,
             queue: nil
         ) { _ in
@@ -140,14 +140,17 @@ final class NottiRuntime {
             engine.appBackgrounded()
         }
         // RN `processForegroundObserver`: later In-App sessions open here, without
-        // waiting for the core's work queue (IAM-51).
-        foregroundObserver = notificationCenter.addObserver(
-            forName: UIApplication.willEnterForegroundNotification,
-            object: nil,
-            queue: nil
-        ) { _ in
-            engine.appForegrounded()
-        }
+        // waiting for the core's work queue (IAM-51). Not registered on macOS: the
+        // In-App engine is inert there and `didBecomeActive` starts the session (D3).
+        #if canImport(UIKit)
+            foregroundObserver = notificationCenter.addObserver(
+                forName: NottiLifecycle.willEnterForeground,
+                object: nil,
+                queue: nil
+            ) { _ in
+                engine.appForegrounded()
+            }
+        #endif
         observer.start()
     }
 

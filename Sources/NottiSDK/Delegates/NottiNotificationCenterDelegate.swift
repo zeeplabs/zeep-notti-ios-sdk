@@ -103,7 +103,7 @@ final class NottiFallbackDelegateAssigner {
         lock.withLock {
             guard observer == nil, fallback == nil else { return }
             observer = notificationCenter.addObserver(
-                forName: UIApplication.didFinishLaunchingNotification,
+                forName: NottiLifecycle.didFinishLaunching,
                 object: nil,
                 queue: nil
             ) { [weak self] _ in
