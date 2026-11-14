@@ -1,6 +1,8 @@
 @import XCTest;
 @import NottiSDK;
+#if TARGET_OS_IOS
 @import UIKit;
+#endif
 @import UserNotifications;
 
 // API-13: every P1 capability is callable from Objective-C. These tests only use
@@ -140,8 +142,13 @@
     [NottiNotifications didRegisterForRemoteNotificationsWithDeviceToken:[NSData data]];
     [NottiNotifications didFailToRegisterForRemoteNotificationsWithError:
         [NSError errorWithDomain:@"fixture.apns" code:1 userInfo:nil]];
+#if TARGET_OS_IOS
     UIBackgroundFetchResult result = [NottiNotifications didReceiveRemoteNotification:@{@"aps": @{@"content-available": @1}}];
     XCTAssertEqual(result, UIBackgroundFetchResultNoData);
+#else
+    // macOS (AD-025, D4): no fetch completion, so the call returns void.
+    [NottiNotifications didReceiveRemoteNotification:@{@"aps": @{@"content-available": @1}}];
+#endif
 
     UNNotification *notification = [self fixtureNotification];
     UNNotificationPresentationOptions options = [NottiNotifications willPresentNotification:notification];

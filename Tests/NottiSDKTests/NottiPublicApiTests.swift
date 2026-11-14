@@ -1,4 +1,6 @@
+#if canImport(UIKit)
 import UIKit
+#endif
 import UserNotifications
 import XCTest
 @_spi(Wrapper) @testable import NottiSDK
@@ -357,7 +359,11 @@ final class NottiPublicApiTests: XCTestCase {
     }
 
     func test_manualDidReceiveRemoteNotificationReportsASilentPushAndReturnsNoData() {
-        XCTAssertEqual(Notti.Notifications.didReceiveRemoteNotification(silentUserInfo), .noData)
+        #if canImport(UIKit)
+            XCTAssertEqual(Notti.Notifications.didReceiveRemoteNotification(silentUserInfo), .noData)
+        #else
+            Notti.Notifications.didReceiveRemoteNotification(silentUserInfo)  // macOS: no fetch result (D4)
+        #endif
         XCTAssertEqual(storedTypes, ["received"])
     }
 

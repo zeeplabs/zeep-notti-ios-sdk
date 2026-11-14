@@ -1,4 +1,6 @@
+#if canImport(UIKit)
 import UIKit
+#endif
 import UserNotifications
 import XCTest
 @testable import NottiSDK
@@ -236,16 +238,22 @@ final class NottiPushAdapterTests: XCTestCase {
     // MARK: - Silent push
 
     func test_silentPushReportsReceivedAndReturnsNoData() {
-        let result = adapter.didReceiveRemoteNotification(userInfo: makeSilentUserInfo())
-
-        XCTAssertEqual(result, .noData)
+        #if canImport(UIKit)
+            let result = adapter.didReceiveRemoteNotification(userInfo: makeSilentUserInfo())
+            XCTAssertEqual(result, .noData)
+        #else
+            adapter.didReceiveRemoteNotification(userInfo: makeSilentUserInfo())
+        #endif
         XCTAssertEqual(storedTypes, ["received"])
     }
 
     func test_visiblePushOnTheSilentPathReportsNothingAndReturnsNoData() {
-        let result = adapter.didReceiveRemoteNotification(userInfo: makeRemoteUserInfo())
-
-        XCTAssertEqual(result, .noData)
+        #if canImport(UIKit)
+            let result = adapter.didReceiveRemoteNotification(userInfo: makeRemoteUserInfo())
+            XCTAssertEqual(result, .noData)
+        #else
+            adapter.didReceiveRemoteNotification(userInfo: makeRemoteUserInfo())
+        #endif
         XCTAssertTrue(runtime.eventStore.all().isEmpty)
     }
 
@@ -265,7 +273,11 @@ final class NottiPushAdapterTests: XCTestCase {
             userInfo: makeRemoteUserInfo(),
             identifier: "req-1"
         )
-        XCTAssertEqual(adapter.manualDidReceiveRemoteNotification(userInfo: makeSilentUserInfo()), .noData)
+        #if canImport(UIKit)
+            XCTAssertEqual(adapter.manualDidReceiveRemoteNotification(userInfo: makeSilentUserInfo()), .noData)
+        #else
+            adapter.manualDidReceiveRemoteNotification(userInfo: makeSilentUserInfo())
+        #endif
         adapter.manualDidFail(error: NSError(domain: "fixture.apns", code: 1))
 
         XCTAssertEqual(Set(storedTypes), ["received", "opened", "clicked"])

@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import XCTest
 import UIKit
 @testable import NottiSDK
@@ -504,3 +505,4 @@ final class InAppPresenterEngineFixture {
         defaults.removePersistentDomain(forName: suiteName)
     }
 }
+#endif

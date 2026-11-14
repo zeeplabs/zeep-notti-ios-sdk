@@ -1,4 +1,6 @@
+#if canImport(UIKit)
 import UIKit
+#endif
 import XCTest
 @testable import NottiSDK
 @testable import NottiShared
@@ -125,7 +127,11 @@ final class NottiRuntimeTests: XCTestCase {
     // MARK: - sdk_name (wrapper-support WRAP-16, WRAP-17, AD-024)
 
     func test_theProductionDefaultSdkNameIsIos() {
-        XCTAssertEqual(NottiSDKVersion.name, "ios", "backend AD-044 enum value for native iOS")
+        #if canImport(UIKit)
+            XCTAssertEqual(NottiSDKVersion.name, "ios", "backend AD-044 enum value for native iOS")
+        #else
+            XCTAssertEqual(NottiSDKVersion.name, "macos", "backend value for native macOS (AD-025)")
+        #endif
         StubURLProtocol.enqueue(.echoDevice()) // registration
         StubURLProtocol.enqueue(.echoDevice()) // sdk_name PATCH
         let config = URLSessionConfiguration.ephemeral
@@ -148,7 +154,11 @@ final class NottiRuntimeTests: XCTestCase {
         runtime.start(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
         drain(runtime.core)
 
-        XCTAssertEqual(bodies("PATCH").compactMap { $0["sdk_name"] as? String }, ["ios"])
+        #if canImport(UIKit)
+            XCTAssertEqual(bodies("PATCH").compactMap { $0["sdk_name"] as? String }, ["ios"])
+        #else
+            XCTAssertEqual(bodies("PATCH").compactMap { $0["sdk_name"] as? String }, ["macos"])
+        #endif
     }
 
     func test_startWithWrapperValuesSendsThemInsteadOfTheRuntimeOnes() {

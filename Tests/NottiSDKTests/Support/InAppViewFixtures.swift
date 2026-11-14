@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 @testable import NottiSDK
 
@@ -89,3 +90,4 @@ enum InAppViewFixtures {
             .deletingLastPathComponent().deletingLastPathComponent()
     }
 }
+#endif

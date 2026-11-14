@@ -1,4 +1,6 @@
+#if canImport(UIKit)
 import UIKit
+#endif
 import XCTest
 @testable import NottiSDK
 @testable import NottiShared

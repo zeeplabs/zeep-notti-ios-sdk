@@ -1,6 +1,8 @@
 import XCTest
 #if canImport(UIKit)
+#if canImport(UIKit)
 import UIKit
+#endif
 #elseif canImport(AppKit)
 import AppKit
 #endif

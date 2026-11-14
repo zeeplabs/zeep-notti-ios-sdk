@@ -1,5 +1,8 @@
+#if canImport(UIKit)
 import XCTest
+#if canImport(UIKit)
 import UIKit
+#endif
 @testable import NottiSDK
 #if canImport(NottiShared)
 import NottiShared
@@ -583,3 +586,4 @@ enum NottiInAppSourceGuard {
         return found
     }
 }
+#endif

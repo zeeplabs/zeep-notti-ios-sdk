@@ -1,4 +1,6 @@
+#if canImport(UIKit)
 import UIKit
+#endif
 import UserNotifications
 import XCTest
 @testable import NottiSDK
@@ -44,7 +46,12 @@ final class NottiPushPermissionActionTests: XCTestCase {
     }
 
     func test_authorizedProvisionalAndEphemeralDoNothing() {
-        for status in [UNAuthorizationStatus.authorized, .provisional, .ephemeral] {
+        #if canImport(UIKit)
+            let statuses: [UNAuthorizationStatus] = [.authorized, .provisional, .ephemeral]
+        #else
+            let statuses: [UNAuthorizationStatus] = [.authorized, .provisional]  // `.ephemeral` is unavailable on macOS
+        #endif
+        for status in statuses {
             let probe = Probe(state: NottiPushPermissionAction.State(status))
             probe.action.run()
             XCTAssertEqual(probe.effects, [], "\(status.rawValue)")
@@ -64,7 +71,9 @@ final class NottiPushPermissionActionTests: XCTestCase {
         XCTAssertEqual(NottiPushPermissionAction.State(.denied), .denied)
         XCTAssertEqual(NottiPushPermissionAction.State(.authorized), .granted)
         XCTAssertEqual(NottiPushPermissionAction.State(.provisional), .granted)
-        XCTAssertEqual(NottiPushPermissionAction.State(.ephemeral), .granted)
+        #if canImport(UIKit)
+            XCTAssertEqual(NottiPushPermissionAction.State(.ephemeral), .granted)
+        #endif
     }
 
     func test_aStateAnsweredOnABackgroundThreadStillRunsTheRowOnce() {
@@ -113,6 +122,7 @@ final class NottiPushPermissionActionTests: XCTestCase {
     }
 }
 
+#if canImport(UIKit)
 /// The runtime hands the engine a port built at `start` whose prompt goes through the current core.
 final class NottiPushPermissionPortWiringTests: XCTestCase {
 
@@ -271,3 +281,4 @@ final class NottiPushPermissionPortWiringTests: XCTestCase {
         XCTAssertEqual(presenter.closed.count, 1, "the tap still reports and closes")
     }
 }
+#endif
