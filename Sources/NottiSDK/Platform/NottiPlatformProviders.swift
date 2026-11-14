@@ -75,7 +75,13 @@ struct NottiPlatformProviders {
                 // which performs the actual registration (both the first-time
                 // and any later refresh, uniformly).
                 DispatchQueue.main.async {
-                    UIApplication.shared.registerForRemoteNotifications()
+                    #if canImport(UIKit)
+                        UIApplication.shared.registerForRemoteNotifications()
+                    #else
+                        // AD-025: `NSApp` is nil until an application exists, so a library call in a non-app
+                        // process never instantiates one. Same asynchronous callback contract as iOS.
+                        NSApp?.registerForRemoteNotifications()
+                    #endif
                 }
             },
             permissionRequester: { callback in
@@ -149,7 +155,11 @@ struct NottiPlatformProviders {
             // could deadlock a module constructed while main waits on it).
             appStateProvider: { callback in
                 DispatchQueue.main.async {
-                    callback(UIApplication.shared.applicationState == .active)
+                    #if canImport(UIKit)
+                        callback(UIApplication.shared.applicationState == .active)
+                    #else
+                        callback(NSApp?.isActive == true)
+                    #endif
                 }
             },
             // Review item 3: keep the process alive while the session-end
