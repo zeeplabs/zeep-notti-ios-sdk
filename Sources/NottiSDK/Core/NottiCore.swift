@@ -272,7 +272,7 @@ class NottiCore {
         appStateProvider: @escaping (@escaping (_ isActive: Bool) -> Void) -> Void = { $0(false) },
         beginBackgroundTask: @escaping () -> (() -> Void) = { {} },
         heartbeatInterval: TimeInterval = 60,
-        platform: String = "ios",
+        platform: String = NottiSDKVersion.platform,
         logger: @escaping (NottiLogLevel, String) -> Void = { _, _ in },
         onDeviceIdChanged: @escaping (String) -> Void = { _ in },
         inAppHooks: NottiInAppHooks = NottiInAppHooks(),

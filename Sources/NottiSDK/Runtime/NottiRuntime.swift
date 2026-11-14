@@ -312,6 +312,7 @@ final class NottiRuntime {
             permissionStatusProvider: providers.permissionStatusProvider,
             appStateProvider: providers.appStateProvider,
             beginBackgroundTask: providers.beginBackgroundTask,
+            platform: NottiSDKVersion.platform,
             logger: { level, message in NottiLogger.log(level, message) },
             onDeviceIdChanged: { [weak self] deviceId in self?.onDeviceIdChanged?(deviceId) },
             inAppHooks: .forwarding(to: inAppEngine, config: inAppConfig),
