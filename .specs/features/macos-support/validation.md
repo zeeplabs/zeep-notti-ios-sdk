@@ -2,19 +2,20 @@
 
 **Spec**: `.specs/features/macos-support/spec.md` (MAC-01..26)
 **Branch**: `feat/macos-support` (from `docs/macos-support-spec`)
-**Status**: Execute in progress. This file is written by the implementer. It is NOT the Verifier report: the Verifier (T27, a different agent or person, on a real Mac) has not run, so there is no PASS or FAIL verdict here and the feature is not done.
+**Status**: Execute T1-T26 done; T27 and T28 blocked (see Task status). This file is written by the implementer. It is NOT the Verifier report: the Verifier (T27, a different agent or person, on a real Mac) has not run, so no verdict exists and the feature is not done.
+**Result**: PENDING, no Verifier verdict yet.
 
 Environment of every run below: Xcode 27.2 (27B52), macOS SDK 27.2, macOS 27.0 on Apple silicon, 2026-11-14. The iOS simulator `iPhone 17` of the spec is not installed here; the only installed simulator is `iPhone Duo` (iOS 27.1), used for every iOS run.
 
 ## Test counts
 
-| Bundle | Baseline (main @ 9d82410, T1) | After T14 (iOS) | After T14 (macOS) |
+| Bundle | Baseline (main @ 9d82410, T1) | Final iOS (iPhone Duo) | Final macOS (`platform=macOS,arch=arm64`) |
 | --- | --- | --- | --- |
-| NottiSharedTests | 14 | 15 (+1, T3) | not run yet (T19) |
-| NottiSDKTests | 921 | 934 (+2 T5, +11 T6) | not run yet (T19) |
-| NottiSDKObjCTests | 8 | 8 | not run yet (T19) |
-| NottiSDKExtensionTests | 110 | 110 | not run yet (T19) |
-| NottiSDKExtensionObjCTests | 3 | 3 | not run yet (T19) |
+| NottiSharedTests | 14 | 15 (+1, T3) | 15 |
+| NottiSDKTests | 921 | 935 (+2 T5, +11 T6, +1 T18) | 775 (iOS-only UI and wiring tests are gated; +25 T20, +19 T21 lifecycle, +6 T21 In-App inert) |
+| NottiSDKObjCTests | 8 | 8 | 8 |
+| NottiSDKExtensionTests | 110 | 110 | 112 (+2 T22 link tests) |
+| NottiSDKExtensionObjCTests | 3 | 3 | 3 |
 
 The older note of 907 SDK tests (STATE, design) predates `wrapper-support`; the real baseline on `main` is 921.
 
@@ -33,6 +34,15 @@ The older note of 907 SDK tests (STATE, design) predates `wrapper-support`; the 
 | 9 | T11 `sharedApplication` | `perform(NSSelectorFromString("sharedApplication"))` | Same, and on macOS only when `Bundle.main` is an `.app` | `+[NSApplication sharedApplication]` creates an application when none exists; a library call in a non-app process must not (same guard as `NottiCurrentNotificationCenter`) |
 | 10 | T7 commit body | n/a | Commit `d06ebaa` body says "NottiPushAdapter-side NottiPushPermissionAction.State.init"; the file changed is `NottiPushPermissionAction.swift` only | Typo in a published commit message, not amended |
 | 11 | T9 commit body | n/a | Says "the four UIBackgroundFetchResult errors are gone"; two of them were in the swizzler and left in T10 | Counting slip in a published commit message, not amended |
+| 12 | T19 platform literals | "make `ios` literals platform-aware" | The lifecycle tests keep their `UIApplication.*Notification` spellings on macOS through `Tests/NottiSDKTests/Support/MacLifecycleShim.swift` (a macOS-only enum), `NottiLifecycleTests` pins the seam to the real constants; the `"ios"` assertions are conditional | No iOS assertion edited, and the same tests run on both platforms |
+| 13 | T19 gating | Gate UI view, layout, presenter, window, image loader tests | Also gated: `NottiInAppPrivacyTests` (whole file, it drives the UIKit presenter harness), `NottiInAppPublicApiTests` and `NottiInAppWiringTests` (they need a configured engine, which macOS never has), `NottiInAppOpenURLPublicApiTests`, `NottiPushPermissionPortWiringTests`, the objcTrackEvent test, `NottiAppDelegateSwizzlerTests` (iOS fetch variant) | They test iOS-only behavior; the macOS equivalents are the T20 and T21 tests. The macOS SDK count (775) is therefore lower than the iOS count (935) |
+| 14 | T16 `check-launch-hook-purity.sh` | Ban "AppKit and NSApplication instances" | `NottiBootstrap.m` bans `AppKit`, `NSApplication`, `NSApp`; the installer bans `NSApplication.shared` and `NSApp`; `NSApplication.self` and the `NSApplication.perform(...)` lookup stay allowed | The installer imports AppKit itself and needs the class reference and the selector lookup |
+| 15 | T16 `check-no-url-open.sh` | Ban `NSWorkspace.shared.open` style opens | Any `NSWorkspace` under `Sources/NottiSDK` and `Sources/NottiSDKBootstrap` fails | Simpler and stricter; no macOS allowlist entry |
+| 16 | T17 | Podspecs add `osx` | The `NottiSDK` pod summary now says "iOS and macOS" | The old text would be wrong on trunk |
+| 17 | T22 `nm` test | An AppKit-importing mutant fails it | A used AppKit reference fails it; an unused `import AppKit` does not (no symbol or load command), and the textual guard catches it | See the T22 mutant table |
+| 18 | T24 | `hook-consumer` gets "a macOS target in its own generated project" | The same consumer package gets `.macOS(.v12)` in its `Package.swift` and `spm-macos` builds it with `xcodebuild` | The consumer is a SwiftPM executable, no generated project exists |
+| 19 | T25 | Example reuses the iOS helpers | `ExampleConfig.swift` and `ExampleLog.swift` are compiled into the Mac target by path, so the redaction guarantee is shared | No copy of the log or the config reader |
+| 20 | Whole run | Branch from `docs/macos-support-spec` | The worktree started on `main`; the branch was created from `docs/macos-support-spec` after that and the worktree branch was left untouched | The brief required the spec to travel with the code |
 
 ## Compile survey burndown (macOS located errors, `generic/platform=macOS`)
 
@@ -56,36 +66,23 @@ Implemented as designed, each isolated so it is cheap to change. The owner has n
 
 | Task | Status |
 | --- | --- |
-| T1-T14 | Done, committed and pushed. See the commit bodies for gate evidence |
-| T15-T26 | Pending in this run, see the tail of this file as they complete |
-| T27 | BLOCKED: needs a real Mac with a signed app, an Apple Developer team, the backend `macos-platform` deployed and an independent Verifier |
-| T28 | BLOCKED: release, tag, GitHub Release and `pod trunk push` wait for T27 and the backend deploy, and are Julio's |
+| T1-T26 | Done, one commit each, pushed to `origin/feat/macos-support`. Gate evidence is in each commit body |
+| T27 | BLOCKED: needs a real Mac with a signed app and an Apple Developer team, the backend `macos-platform` deployed to a reachable environment, a real push, and an independent Verifier. Remaining: run D22 to D33 of `docs/DEVICE_CHECKLIST.md` and spikes S1 to S10, record pass or fail per item, write the Verifier verdict here, record the owner's decision on every unconfirmed decision above, and archive the macOS privacy report (T18 left that part open) |
+| T28 | BLOCKED: the version bump to `0.3.0` (`NottiSDKVersion.current`, both podspecs), the CHANGELOG `[0.3.0]`, the README pin to the new minor, the tag, the GitHub Release and `pod trunk push` wait for T27 and the backend deploy, and are Julio's (after 2026-12-02 follow AD-022 plan B). Nothing was bumped: `scripts/check-version.sh` still reports 0.2.0 |
 
-## Mutants (T20, macOS, `NottiAppDelegateSwizzlerMacTests` and `NottiSDKVersionTests`)
+## Final state of the gate (local equivalent of `ci.yml`, 2026-11-14)
 
-Each mutant was applied to the source, the macOS tests were run, and the source was restored with a checkout.
+- iOS full run and macOS full run: counts above, all green.
+- Seven guard scripts, `check-example-config.sh`, `check-example-coverage.sh`, `check-readme-snippets.sh`: ok. `check-public-surface.sh`: 89 declarations, the only diff against `main` is the two macOS `didReceiveRemoteNotification` lines (D4).
+- SwiftLint strict (0.65.1 in docker): 0 violations.
+- Strict builds (`SWIFT_TREAT_WARNINGS_AS_ERRORS`, `GCC_TREAT_WARNINGS_AS_ERRORS`) of `NottiSDK` and `NottiSDKExtension` (API-only) for `generic/platform=iOS` and `generic/platform=macOS`: exit 0 (last full run at T15; sources unchanged since except tests, docs, scripts and the example).
+- `pod lib lint` for both podspecs with `--platforms=ios,osx`: default (dynamic frameworks), `--use-libraries` and `--use-static-frameworks` all passed (T17).
+- `scripts/check-hook-linked.sh`: `spm` (iPhone Duo), `spm-macos`, `pod`, `pod osx`: ok.
+- Mac example: `xcodegen generate --spec project-mac.yml` and a strict build of `NottiExampleMac`: ok.
 
-| Mutant | Edit | Result |
-| --- | --- | --- |
-| M1 swizzler forwards zero times | The macOS block no longer calls the host original | Killed: 7 failures (order, all-three, same-arguments, subclass, double swizzle) |
-| M2 swizzler forwards twice | The original is called twice | Killed: 4 failures |
-| M3 adapter skipped | The macOS block no longer calls `adapter.didReceiveRemoteNotification` | Killed: 6 failures |
-| M4 wrong platform constant | `NottiSDKVersion.platform` is `"ios"` under `os(macOS)` | Killed: the registration body test, the `sdk_name` PATCH test and the `NottiSharedTests` literal test |
+## Not run
 
-Mutants of T21 (applied to the source, macOS tests run, source restored by checkout):
-
-| Mutant | Edit | Result |
-| --- | --- | --- |
-| M5 foreground observer registers nothing | `NottiCore.observeAppForeground` listens to a name nobody posts | Killed (`NottiCoreTerminateTests`) |
-| M6 background observer registers nothing | `observeAppBackground` listens to a name nobody posts | Killed |
-| M7 terminate observer registers nothing | `observeAppTerminate` listens to a name nobody posts | Killed (4 failures) |
-| M8 the flush does not wait | `handleAppWillTerminate` drops `waitForPendingWork` | Killed (the bounded-wait test) |
-| M9 In-App enabled on macOS | `NottiPlatformInfo.supportsInApp` is true on macOS | Killed (the inert tests) |
-
-Mutants of T22 (macOS):
-
-| Mutant | Edit | Result |
-| --- | --- | --- |
-| M10 the extension imports AppKit and references `NSApplication` | A function in `NottiRichMediaLimits.swift` | Killed: the `otool -L` and the `nm -u` tests |
-| M11 the extension has an unused `import AppKit` | One line | NOT killed by the link tests (an unused import adds no load command or symbol); the textual guard `check-extension-safety.sh` bans the line (proved in T16) |
-| M12 the extension SPM target depends on `NottiSDK`; each podspec without `osx`; the extension pod gaining `Sources/NottiSDK` | Fixtures on a temp copy | Killed by `check-package-graph.sh` (T17) |
+- The hosted GitHub Actions workflow (the local equivalent above is the evidence; billing may block it, design C10).
+- Any signed app, real APNs delivery, Notification Center click, quit path, SwiftUI `@NSApplicationDelegateAdaptor`, NSE rendering on macOS, sandbox and hardened runtime, Xcode privacy report of a macOS archive (T27, spikes S1 to S10).
+- The iOS Simulator `iPhone 17` of the spec (not installed; `iPhone Duo` was used).
+- `validate_state.py` for this feature: it reports "no validation.md verdict" until the T27 Verifier writes one, as designed.
