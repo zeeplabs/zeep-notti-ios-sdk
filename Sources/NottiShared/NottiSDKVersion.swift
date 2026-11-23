@@ -5,7 +5,7 @@ import Foundation
 /// `current` is sent to the backend as `sdk_version`. `scripts/check-version.sh`
 /// fails CI when `NottiSDK.podspec` (or a release tag) disagrees with it.
 package enum NottiSDKVersion {
-    package static let current = "0.2.0"
+    package static let current = "0.3.0"
     /// The wire platform of this build (AD-025): sent as `platform` on
     /// `POST /devices`. `ios` for the UIKit platforms, `macos` for a macOS build.
     /// Mac Catalyst builds the iOS path and reports `ios` (not supported).

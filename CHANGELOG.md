@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-23
+
+macOS support. One package, the same `NottiSDK` and `NottiSDKExtension` products and pod names, now for macOS 12 or later next to iOS 15 or later (AD-025).
+
+### Added
+
+- macOS 12+ support through Swift Package Manager and CocoaPods (both pods declare `osx` 12.0). A Mac registers with `platform: "macos"` and `sdk_name: "macos"` (a wrapper still overrides `sdk_name`); `device_model` is the hardware identifier from `sysctl hw.model` (never a serial number or hardware UUID) and `device_os` is the macOS version. No new data type is collected.
+- AppKit lifecycle: a session starts when the app becomes active and ends when it resigns active (Cmd-Tab produces several short sessions); on quit the SDK waits up to 1.5 seconds for the session report.
+- Delegate integration on `NSApplicationDelegate` and `UNUserNotificationCenter`, with the same `NottiDisableSwizzling` opt-out.
+- `NottiSDKExtension` runs as a Notification Service Extension of a Mac app, extension-safe.
+- A macOS example app and extension (`Example/project-mac.yml`) and macOS jobs in CI (build, tests, launch-hook proof).
+
+### Changed
+
+- **Backend dependency:** a Mac registration needs `zeep-notti` v0.32.0 or later. Older backends reject `platform: "macos"`.
+- **Platform differences on macOS:** `application(_:didReceiveRemoteNotification:)` returns nothing (no fetch completion handler); In-App Messages are inert (the API compiles and does nothing, no request is made, no URL is opened); Mac Catalyst is not supported and registers as `ios`.
+
+### Upgrade notes
+
+- iOS apps: no API change. Pin to the minor version: CocoaPods `'~> 0.3.0'`, Swift Package Manager `.upToNextMinor(from: "0.3.0")`.
+- **Backend side:** broadcasts without a platform filter will also reach macOS devices once they register, and macOS devices count in monthly active devices (MAU). Review the audience filters of your campaigns before shipping a Mac build.
+
+### Known limitations
+
+- **macOS has not been run on a real Mac with a signed app and a real push.** The build, the unit tests, the guards and the launch hook pass on macOS in CI, but delegate callbacks, the cold-start click, the session end at quit, the SwiftUI adaptor, rich media and the privacy report are pending the macOS items of the [device checklist](docs/DEVICE_CHECKLIST.md). The result will be recorded in a later release.
+
 ### Fixed
 
 - `Notti.User.setEmail` and `setPhone` called before `Notti.initialize` are now sent at that registration even when the write was still queued. Before, in rare cases the registration re-sync ran before the value was stored and it was only sent at the next launch (the value was kept on the device). `initialize` now makes the new core's first work item wait, up to 5 seconds and off the caller's thread, for the work the replaced core already had queued.
