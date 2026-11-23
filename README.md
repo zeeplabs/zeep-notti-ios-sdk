@@ -2,17 +2,17 @@
 
 Native iOS and macOS SDK for [Zeep Notti](https://github.com/zeeplabs) push notifications: device registration, user identity, tags, engagement events (`received` / `opened` / `clicked`), rich media in a Notification Service Extension, and In-App Messages (iOS).
 
-> **macOS (unreleased, planned for `0.3.0`).** The SDK compiles and passes its tests on macOS 12 or later, but it has not been run on a real Mac with a signed app and a real push yet: the macOS items of the [device checklist](docs/DEVICE_CHECKLIST.md) are pending. See [macOS](#macos). The `0.2.0` release below is iOS only.
+> **macOS (new in `0.3.0`).** The SDK builds and passes its tests on macOS 12 or later, but it has **not been run on a real Mac with a signed app and a real push yet**: the macOS items of the [device checklist](docs/DEVICE_CHECKLIST.md) are pending and will be recorded in a later release. Treat macOS as unverified on hardware. See [macOS](#macos).
 
-> **Status: `0.2.0`.** It ports `react-native-notti` 0.8.0 to iOS, In-App Messages included; 0.2.0 adds the `sdk_name` device field and renames the Objective-C facade class. The [device checklist](docs/DEVICE_CHECKLIST.md) passed on the maintainer's devices and App Store validation passed; a beta in a production host app follows. See [Known limitations](#known-limitations) and the [CHANGELOG](CHANGELOG.md).
+> **Status: `0.3.0`.** It ports `react-native-notti` 0.8.0 to iOS, In-App Messages included; 0.2.0 added the `sdk_name` device field and renamed the Objective-C facade class; 0.3.0 adds macOS support. On iOS, the [device checklist](docs/DEVICE_CHECKLIST.md) passed on the maintainer's devices and App Store validation passed; a beta in a production host app follows. See [Known limitations](#known-limitations) and the [CHANGELOG](CHANGELOG.md).
 
 ## Requirements
 
-- iOS 15.0+, or macOS 12.0+ (from `0.3.0`; Mac Catalyst is not supported, see [macOS](#macos))
+- iOS 15.0+, or macOS 12.0+ (from `0.3.0`, not yet run on a real Mac; Mac Catalyst is not supported, see [macOS](#macos))
 - Xcode 15.3 or later. The extension target uses `nonisolated(unsafe)`, which needs Swift 5.10. Only Xcode 26.6 and 27.1 are tested.
 - A Notti backend (`zeep-notti`) that accepts what the SDK sends: v0.10.0 or later for the device-profile fields, v0.11.0 or later for the `opened` event, v0.23.0 or later for In-App Messages, v0.24.0 or later for the `logout` unlink and a release after v0.26.0 for `sdk_name` (see [Known limitations](#known-limitations)). An older backend rejects those fields or events and the SDK drops them.
 - An Apple Developer account with push notifications and an APNs key configured in your Notti app
-- macOS only: a `zeep-notti` release that accepts `platform: "macos"` (the `macos-platform` change). The release number is recorded here when it ships; until then a Mac registration is answered with an error and the SDK retries on its normal schedule
+- macOS only: `zeep-notti` v0.32.0 or later, the first release that accepts `platform: "macos"`. An older backend answers a Mac registration with an error and the SDK retries on its normal schedule
 
 ## Installation
 
@@ -24,7 +24,7 @@ In Xcode: **File → Add Package Dependencies…** and enter:
 https://github.com/zeeplabs/zeep-notti-ios-sdk.git
 ```
 
-Choose the dependency rule **Up to Next Minor Version** from `0.2.0`. Before 1.0 a minor release can break the API (0.2.0 renamed the Objective-C class), so the rule stops before `0.3.0`.
+Choose the dependency rule **Up to Next Minor Version** from `0.3.0`. Before 1.0 a minor release can break the API (0.2.0 renamed the Objective-C class), so the rule stops before `0.4.0`.
 
 - Add the **`NottiSDK`** product to your app target.
 - Add the **`NottiSDKExtension`** product to your Notification Service Extension target (optional, for rich media).
@@ -33,7 +33,7 @@ In a `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/zeeplabs/zeep-notti-ios-sdk.git", .upToNextMinor(from: "0.2.0")),
+    .package(url: "https://github.com/zeeplabs/zeep-notti-ios-sdk.git", .upToNextMinor(from: "0.3.0")),
 ],
 targets: [
     .target(name: "YourApp", dependencies: [.product(name: "NottiSDK", package: "zeep-notti-ios-sdk")]),
@@ -49,11 +49,11 @@ Swift Package Manager is the recommended way for native apps.
 platform :ios, '15.0'
 
 target 'YourApp' do
-  pod 'NottiSDK', '~> 0.2.0'
+  pod 'NottiSDK', '~> 0.3.0'
 end
 
 target 'YourNotificationServiceExtension' do
-  pod 'NottiSDKExtension', '~> 0.2.0'
+  pod 'NottiSDKExtension', '~> 0.3.0'
 end
 ```
 

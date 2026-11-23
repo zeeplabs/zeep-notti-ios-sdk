@@ -346,7 +346,7 @@ class NottiCore {
     /// work queue itself) or asynchronously on an arbitrary thread, and the
     /// synchronous case must keep running as part of the *current* work item
     /// rather than being re-enqueued behind whatever landed in the meantime.
-    private func onWorkQueue(_ block: @escaping () -> Void) {
+    func onWorkQueue(_ block: @escaping () -> Void) {
         if DispatchQueue.getSpecific(key: Self.workQueueKey) != nil {
             block()
         } else {
@@ -645,6 +645,14 @@ class NottiCore {
         let semaphore = DispatchSemaphore(value: 0)
         workQueue.async { semaphore.signal() }
         return semaphore.wait(timeout: .now() + timeout) == .success
+    }
+
+    /// Enqueues on this core's `workQueue` a wait for `other`'s queue to drain, so the next work item
+    /// runs after everything `other` already had queued. Bounded by `timeout`; never blocks the caller.
+    func runAfterDrainOf(_ other: NottiCore, timeout: TimeInterval) {
+        workQueue.async { [weak other] in
+            _ = other?.waitForPendingWork(timeout: timeout)
+        }
     }
 
     /// Flush trigger for the network observer and the push delegate's

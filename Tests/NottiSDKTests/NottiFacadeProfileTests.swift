@@ -210,6 +210,30 @@ final class NottiFacadeProfileTests: XCTestCase {
         XCTAssertTrue(sent.contains { $0["phone"] as? String == "+10000000000" })
     }
 
+    /// The ensured (pre-`initialize`) core persists email and phone on its own serial queue, and the core
+    /// `initialize` builds reads them on another one. When the old queue is still busy, the new core must
+    /// wait for it before registering, or the registration re-sync reads nothing and the values are only
+    /// sent at the next launch.
+    func test_emailAndPhoneStillQueuedOnTheEnsuredCoreAreSentAtRegistrationWhenInitializeReplacesIt() {
+        let ensured = runtime.ensureCore()
+        let gate = DispatchSemaphore(value: 0)
+        ensured.onWorkQueue { gate.wait() } // the ensured core's queue is busy, so the writes below stay queued
+        facade.setEmail("user@example.invalid")
+        facade.setPhone("+10000000000")
+        StubURLProtocol.enqueue(.echoDevice()) // registration
+        StubURLProtocol.enqueue(.echoDevice()) // email
+        StubURLProtocol.enqueue(.echoDevice()) // phone
+        DispatchQueue.global().asyncAfter(deadline: .now() + 2) { gate.signal() }
+        facade.initialize(appId: appId, clientKey: clientKey, baseUrl: baseUrl)
+        drain()
+
+        XCTAssertEqual(store.getEmail(), "user@example.invalid")
+        XCTAssertEqual(store.getPhone(), "+10000000000")
+        let sent = bodies("PATCH")
+        XCTAssertTrue(sent.contains { $0["email"] as? String == "user@example.invalid" })
+        XCTAssertTrue(sent.contains { $0["phone"] as? String == "+10000000000" })
+    }
+
     // Verifier r1 G1: each method below is the FIRST call on a brand-new runtime.
     // An earlier call would create the core and hide a `runtime.core?.` regression.
 
