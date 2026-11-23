@@ -233,6 +233,7 @@ wrapper-support, 2026-10-31 (WRAP-10, candidate lesson):
 
 | #   | Description | Date | Commit | Status |
 | --- | ----------- | ---- | ------ | ------ |
+| 1 | Pre-`initialize` `setEmail`/`setPhone` race: the registration re-sync of the new core could read the device store before the replaced core's queued write ran, so the value was sent only at the next launch (never lost). Reproduced 1 in 200 on `main` @ `9d82410`; fixed by `NottiCore.runAfterDrainOf` queued by `NottiRuntime.start` before `initialize` (bounded 5 s, on the new core's queue only). Regression test `test_emailAndPhoneStillQueuedOnTheEnsuredCoreAreSentAtRegistrationWhenInitializeReplacesIt`; `NottiCore.onWorkQueue` is `internal` for it. AD-002 no longer restricts ported files (status note of 2026-11-14). | 2026-11-23 | branch `fix/pre-init-profile-race` | In review |
 
 ---
 

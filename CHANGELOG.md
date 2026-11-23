@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- `Notti.User.setEmail` and `setPhone` called before `Notti.initialize` are now sent at that registration even when the write was still queued. Before, in rare cases the registration re-sync ran before the value was stored and it was only sent at the next launch (the value was kept on the device). `initialize` now makes the new core's first work item wait, up to 5 seconds and off the caller's thread, for the work the replaced core already had queued.
+
 ## [0.2.0] - 2026-11-05
 
 ### Added

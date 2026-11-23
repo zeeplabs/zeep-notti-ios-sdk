@@ -201,7 +201,7 @@ final class NottiRuntime {
     func start(appId: String, clientKey: String, baseUrl: String, sdkName: String? = nil, sdkVersion: String? = nil) {
         lifecycleLock.lock()
         defer { lifecycleLock.unlock() }
-        invalidateCurrentCore()
+        let previous = invalidateCurrentCore()
         // In-App first, from this thread, so a `trackEvent` right after `start`
         // finds the config (D12). Invalid input is left to the core, which logs it.
         var inAppConfig: NottiInAppConfig?
@@ -215,6 +215,10 @@ final class NottiRuntime {
         wirePushPermissionPort()
         let core = makeCore(inAppConfig: inAppConfig)
         lock.withLock { _core = core }
+        // Queued before `initialize`, so the new core's first work item runs after everything the old core
+        // already had queued (a pre-`initialize` `setEmail` or `setPhone` persists on the old core's queue,
+        // and the registration re-sync of this core reads that value on its own queue).
+        if let previous { core.runAfterDrainOf(previous, timeout: Self.predecessorDrainTimeout) }
         core.initialize(
             appId: appId, clientKey: clientKey, baseUrl: baseUrl,
             sdkVersion: sdkVersion ?? self.sdkVersion, sdkName: sdkName ?? self.sdkName)
@@ -299,13 +303,14 @@ final class NottiRuntime {
     }
 
     /// Caller holds `lifecycleLock`.
-    private func invalidateCurrentCore() {
+    @discardableResult
+    private func invalidateCurrentCore() -> NottiCore? {
         let previous: NottiCore? = lock.withLock {
             let current = _core
             _core = nil
             return current
         }
-        guard let previous else { return }
+        guard let previous else { return nil }
         previous.invalidate()
         // Mutations already queued on the old core capture it weakly, so releasing
         // it here would silently drop them (a `setEmail` made before `initialize`
@@ -314,7 +319,12 @@ final class NottiRuntime {
         DispatchQueue.global(qos: .utility).async {
             _ = previous.waitForPendingWork(timeout: Self.retireTimeout)
         }
+        return previous
     }
+
+    /// How long a new core's queue waits for the core it replaces, which keeps `start` from stalling on an
+    /// old core stuck in a slow request. Only the new core's own queue waits, never the caller's thread.
+    private static let predecessorDrainTimeout: TimeInterval = 5
 
     /// How long a replaced core is kept alive to finish the work already queued on it.
     private static let retireTimeout: TimeInterval = 60
